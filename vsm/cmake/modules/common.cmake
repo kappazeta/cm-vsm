@@ -22,6 +22,8 @@ macro(vsm_common_init)
 	set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 	set(LIBRARY_OUTPUT_PATH  ${CMAKE_BINARY_DIR}/lib)
 
+	include_directories(${VSM_ROOT}/include)
+
 	# Add generic flags to all builds,
 	# Add debug flags to the debug build.
 	add_compile_options(

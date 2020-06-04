@@ -12,5 +12,11 @@ project(CVAT_VSM)
 set(VSM_VERSION "0.1")
 vsm_common_init()
 
+find_package(OpenJPEG REQUIRED)
+find_package(PNG REQUIRED)
+find_package(GDAL REQUIRED)
+find_package(expat REQUIRED)
+include_directories(${OPENJPEG_INCLUDE_DIR} ${PNG_INCLUDE_DIRS} ${GDAL_INCLUDE_DIRS} ${expat_INCLUDE_DIRS})
+
 add_subdirectory(lib)
 add_subdirectory(vsm)
