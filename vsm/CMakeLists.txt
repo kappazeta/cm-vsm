@@ -9,7 +9,7 @@ check_out_of_source()
 
 # Initialize the project
 project(CVAT_VSM)
-set(VSM_VERSION "0.1")
+set(VSM_VERSION "0.2")
 vsm_common_init()
 
 find_package(OpenJPEG REQUIRED)

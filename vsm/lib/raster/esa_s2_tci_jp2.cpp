@@ -1,5 +1,6 @@
 #include "raster/esa_s2_tci_jp2.hpp"
 #include <openjpeg.h>
+#include <string.h>
 
 #define JP2_CFMT	1
 
@@ -154,6 +155,7 @@ bool ESA_S2_TCI_JP2_Image::load_subset(const std::filesystem::path &path, int da
 		if (pixels != nullptr)
 			delete [] pixels;
 		pixels = new unsigned char[w * h * num_components];
+		memset(pixels, 0, w * h * num_components);
 
 		if (num_components == 1)
 			color_type = CT_GRAYSCALE;

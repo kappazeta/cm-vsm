@@ -25,6 +25,8 @@ class RasterImage {
 		color_type_t color_type;
 		unsigned char *pixels;
 
+		void remap_values(const unsigned char *values);
+
 	protected:
 		bool save_png(const std::filesystem::path &path);
 };

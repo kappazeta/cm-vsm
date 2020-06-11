@@ -31,8 +31,16 @@ public:
 
 			GMLConverter gc;
 
-			std::vector<std::string> classes(&ESA_S2_SCL_JP2_Image::class_names[0], &ESA_S2_SCL_JP2_Image::class_names[11]);
-			std::vector<int> include_classes{3, 8, 9, 10};
+			// std::vector<std::string> classes(&ESA_S2_SCL_JP2_Image::class_names[0], &ESA_S2_SCL_JP2_Image::class_names[11]);
+			std::vector<std::string> classes {
+				"UNCLASSIFIED",
+				"CLEAR",
+				"CLOUD_SHADOW",
+				"CLOUD",
+				"SEMI_TRANSPARENT_CLOUD"
+			};
+			// std::vector<int> include_classes{3, 8, 9, 10};
+			std::vector<int> include_classes{1, 2, 3, 4};
 			gc.set_classes(classes, include_classes);
 			gc.set_multiplier(2);
 
@@ -41,6 +49,21 @@ public:
 		}
 		return true;
 	}
+};
+
+unsigned char new_class_map[] = {
+	0, // 0  NO_DATA                  -> UNCLASSIFIED
+	0, // 1  SATURATED_OR_DEFECTIVE   -> UNCLASSIFIED
+	1, // 2  DARK_AREA_PIXELS         -> CLEAR
+	2, // 3  CLOUD_SHADOWS            -> CLOUD_SHADOW
+	1, // 4  VEGETATION               -> CLEAR
+	1, // 5  NOT_VEGETATED            -> CLEAR
+	1, // 6  WATER                    -> CLEAR
+	0, // 7  UNCLASSIFIED             -> UNCLASSIFIED
+	3, // 8  CLOUD_MEDIUM_PROBABILITY -> CLOUD
+	3, // 9  CLOUD_HIGH_PROBABILITY   -> CLOUD
+	4, // 10 THIN_CIRRUS              -> SEMI_TRANSPARENT_CLOUD
+	1  // 11 SNOW                     -> CLEAR
 };
 
 int main(int argc, char* argv[]) {
@@ -61,6 +84,7 @@ int main(int argc, char* argv[]) {
 	std::filesystem::path path_dir_in(argv[1]);
 	std::filesystem::path path_dir_out(path_dir_in.parent_path().string() + "/" + path_dir_in.stem().string() + ".CVAT");
 
+	img.set_scl_class_map(new_class_map);
 	img.process(path_dir_in, path_dir_out, img_op);
 
 	return 0;

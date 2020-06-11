@@ -119,3 +119,11 @@ bool RasterImage::save_png(const std::filesystem::path &path) {
 	return retval;
 }
 
+void RasterImage::remap_values(const unsigned char *values) {
+	if (pixels == nullptr || values == nullptr)
+		return;
+
+	for (int i=0; i<w*h*num_components; i++)
+		pixels[i] = values[pixels[i]];
+}
+
