@@ -1,6 +1,6 @@
 #include "raster/esa_s2_tci_jp2.hpp"
 #include <openjpeg.h>
-#include <string.h>
+#include <cstring>
 
 #define JP2_CFMT	1
 
@@ -140,8 +140,15 @@ bool ESA_S2_TCI_JP2_Image::load_subset(const std::filesystem::path &path, int da
 
 		//! \note ESA S2 JP2 headers lack colorspace info. It seems that pixels are stored as RGB instead of YUV.
 
+		int da_x1_clamped = da_x1, da_y1_clamped = da_y1;
+
+		if (da_x1 > da_x0 + w)
+			da_x1_clamped = da_x0 + w;
+		if (da_y1 > da_y0 + h)
+			da_y1_clamped = da_y0 + h;
+
 		// Process the whole image.
-		if (!opj_set_decode_area(l_codec, l_image, da_x0, da_y0, da_x1, da_y1)) {
+		if (!opj_set_decode_area(l_codec, l_image, da_x0, da_y0, da_x1_clamped, da_y1_clamped)) {
 			std::cerr << "ERROR: OpenJPEG: Failed to set decoded area " <<
 				da_x0 << ", " << da_y0 << ", " << da_x1 << ", " << da_y1 << " for " << path << std::endl;
 			throw std::exception();
@@ -155,7 +162,7 @@ bool ESA_S2_TCI_JP2_Image::load_subset(const std::filesystem::path &path, int da
 		if (pixels != nullptr)
 			delete [] pixels;
 		pixels = new unsigned char[w * h * num_components];
-		memset(pixels, 0, w * h * num_components);
+		std::memset(pixels, 0, w * h * num_components);
 
 		if (num_components == 1)
 			color_type = CT_GRAYSCALE;
