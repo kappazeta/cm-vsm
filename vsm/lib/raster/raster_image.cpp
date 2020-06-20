@@ -95,7 +95,7 @@ bool RasterImage::save_png(const std::filesystem::path &path) {
 		// Generate a list of row pointers.
 		p_rows = new unsigned char *[h];
 		for (int y=0; y<h; y++)
-			p_rows[y] = &pixels[y * w * num_components];
+			p_rows[y] = &pixels[y * w * num_components * bit_depth / 8];
 		// Write the rows to file.
 		png_write_image(p_png, p_rows);
 

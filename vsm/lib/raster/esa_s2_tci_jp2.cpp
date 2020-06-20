@@ -73,7 +73,11 @@ bool ESA_S2_TCI_JP2_Image::load_header(const std::filesystem::path &path) {
 		y0 = l_image->y0;
 		w = l_image->x1 - x0;
 		h = l_image->y1 - y0;
-		bit_depth = 8;
+
+		if (l_image->comps->prec <= 8)
+			bit_depth = 8;
+		else
+			bit_depth = 16;
 		num_components = l_image->numcomps;
 
 	} catch(std::exception &e) {
@@ -157,12 +161,17 @@ bool ESA_S2_TCI_JP2_Image::load_subset(const std::filesystem::path &path, int da
 		// Allocate for the pixels.
 		w = da_x1 - da_x0;
 		h = da_y1 - da_y0;
-		bit_depth = 8;
+
+		if (l_image->comps->prec <= 8)
+			bit_depth = 8;
+		else
+			bit_depth = 16;
 		num_components = l_image->numcomps;
+
 		if (pixels != nullptr)
 			delete [] pixels;
-		pixels = new unsigned char[w * h * num_components];
-		std::memset(pixels, 0, w * h * num_components);
+		pixels = new unsigned char[w * h * num_components * bit_depth / 8];
+		std::memset(pixels, 0, w * h * num_components * bit_depth / 8);
 
 		if (num_components == 1)
 			color_type = CT_GRAYSCALE;
@@ -202,6 +211,8 @@ bool ESA_S2_TCI_JP2_Image::load_subset(const std::filesystem::path &path, int da
 
 				//! \todo Vectorize this?
 
+				unsigned short *s_data = (unsigned short *) l_data;
+				unsigned short *s_pixels = (unsigned short *) pixels;
 				unsigned int l_ctile_width = l_ctile_x1 - l_ctile_x0;
 				unsigned int l_ctile_height = l_ctile_y1 - l_ctile_y0;
 				unsigned int l_ctile_size = l_ctile_width * l_ctile_height;
@@ -221,10 +232,13 @@ bool ESA_S2_TCI_JP2_Image::load_subset(const std::filesystem::path &path, int da
 
 							// Verify that the pixel is within our decode area.
 							if (gp_x >= da_x0 && gp_y >= da_y0 && gp_x < da_x1 && gp_y < da_y1) {
-								// Subset pixel index
+								// Subset pixel index.
 								sspi = num_components * ((gp_y - da_y0) * w + gp_x - da_x0);
-
-								pixels[sspi + c] = l_data[tlpi];
+								// PNG and JP2 have different endianness for 16 bit pixel values.
+								if (bit_depth > 8)
+									s_pixels[sspi + c] = ((s_data[tlpi] & 0x00FF) << 8) | (s_data[tlpi] >> 8);
+								else
+									pixels[sspi + c] = l_data[tlpi];
 							}
 						}
 					}

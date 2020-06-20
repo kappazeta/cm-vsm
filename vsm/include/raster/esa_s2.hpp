@@ -6,12 +6,37 @@
 class ESA_S2_Image_Operator {
 public:
 	typedef enum data_type_t {
-		DT_TCI,
-		DT_SCL,
-		DT_GML
+		DT_TCI,	///< True Color Image (8 bit RGB), 10 m
+		DT_SCL,	///< Scene Classification Image (8 bit), 20 m
+		DT_AOT,	///< Aerosol Optical Thickness map (16 bit), 10 m
+		DT_B01,	///< 433 - 453 nm (16 bit), 60 m
+		DT_B02,	///< 457.5 - 522.5 nm (16 bit), 10 m
+		DT_B03,	///< 542.5 - 577.5 nm (16 bit), 10 m
+		DT_B04,	///< 650 - 680 nm (16 bit), 10 m
+		DT_B05,	///< 697.5 - 712.5 nm (16 bit), 20 m
+		DT_B06,	///< 732.5 - 747.5 nm (16 bit), 20 m
+		DT_B07,	///< 773 - 793 nm (16 bit), 20 m
+		DT_B08,	///< 784.5 - 899.5 nm (16 bit), 10 m
+		DT_B8A,	///< 855 - 875 nm (16 bit), 20 m
+		DT_B09,	///< 935 - 955 nm (16 bit), 60 m
+		DT_B10,
+		DT_B11,	///< 1565 - 1655 nm (16 bit), 20 m
+		DT_B12,	///< 2100 - 2280 nm (16 bit), 20 m
+		DT_WVP,	///< Water Vapour map (16 bit), 10 m
+		DT_GML	///< Vector mask layer
 	};
 
-	virtual bool operator()(const std::filesystem::path &path, data_type_t type) {}
+	typedef enum data_resolution_t {
+		DR_UNKNOWN,
+		DR_10M,
+		DR_20M,
+		DR_60M,
+		DR_VECTOR
+	};
+
+	static const data_resolution_t data_type_resolution[];
+
+	virtual bool operator()(const std::filesystem::path &path, data_type_t type) { return false; }
 };
 
 
@@ -30,6 +55,7 @@ class ESA_S2_Image {
 
 		bool split_tci_jp2(const std::filesystem::path &path_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op);
 		bool split_scl_jp2(const std::filesystem::path &path_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op);
+		bool split_band_jp2(const std::filesystem::path &path_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op, ESA_S2_Image_Operator::data_type_t data_type);
 
 	protected:
 		unsigned char *scl_value_map;
