@@ -34,8 +34,6 @@ public:
 		DR_VECTOR
 	};
 
-	static const data_resolution_t data_type_resolution[];
-
 	virtual bool operator()(const std::filesystem::path &path, data_type_t type) { return false; }
 };
 
@@ -53,9 +51,7 @@ class ESA_S2_Image {
 
 		bool process(const std::filesystem::path &path_dir_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op);
 
-		bool split_tci_jp2(const std::filesystem::path &path_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op);
-		bool split_scl_jp2(const std::filesystem::path &path_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op);
-		bool split_band_jp2(const std::filesystem::path &path_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op, ESA_S2_Image_Operator::data_type_t data_type);
+		bool split(const std::filesystem::path &path_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op, ESA_S2_Image_Operator::data_type_t data_type, ESA_S2_Image_Operator::data_resolution_t data_resolution);
 
 	protected:
 		unsigned char *scl_value_map;

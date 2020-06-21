@@ -1,31 +1,26 @@
-#include "raster/esa_s2_tci_jp2.hpp"
+#include "raster/jp2_image.hpp"
 #include <openjpeg.h>
 #include <cstring>
 
 #define JP2_CFMT	1
 
 
-ESA_S2_TCI_JP2_Image::ESA_S2_TCI_JP2_Image() {}
-ESA_S2_TCI_JP2_Image::~ESA_S2_TCI_JP2_Image() {}
+JP2_Image::JP2_Image() {}
+JP2_Image::~JP2_Image() {}
 
-
-std::ostream& operator<<(std::ostream &out, const ESA_S2_TCI_JP2_Image& img) {
-	return out << "ESA_S2_TCI_JP2_Image(x0=" << img.x0 << ", y0=" << img.y0 << ", w=" << img.w << ", h=" << img.h << ", d=" << img.bit_depth << ")"; 
-}
-
-void ESA_S2_TCI_JP2_Image::error_callback(const char *msg, void *client_data) {
+void JP2_Image::error_callback(const char *msg, void *client_data) {
 	std::cerr << "ERROR: OpenJPEG: " << msg;
 }
 
-void ESA_S2_TCI_JP2_Image::warning_callback(const char *msg, void *client_data) {
+void JP2_Image::warning_callback(const char *msg, void *client_data) {
 	std::cout << "WARN: OpenJPEG: " << msg;
 }
 
-void ESA_S2_TCI_JP2_Image::info_callback(const char *msg, void *client_data) {
+void JP2_Image::info_callback(const char *msg, void *client_data) {
 	std::cout << "INFO: OpenJPEG: " << msg;
 }
 
-bool ESA_S2_TCI_JP2_Image::load_header(const std::filesystem::path &path) {
+bool JP2_Image::load_header(const std::filesystem::path &path) {
 	// Used as reference:
 	//  https://github.com/uclouvain/openjpeg/blob/master/tests/test_tile_decoder.c
 
@@ -51,9 +46,9 @@ bool ESA_S2_TCI_JP2_Image::load_header(const std::filesystem::path &path) {
 
 		l_codec = opj_create_decompress(OPJ_CODEC_JP2);
 
-		opj_set_info_handler(l_codec, ESA_S2_TCI_JP2_Image::info_callback, nullptr);
-		opj_set_warning_handler(l_codec, ESA_S2_TCI_JP2_Image::warning_callback, nullptr);
-		opj_set_error_handler(l_codec, ESA_S2_TCI_JP2_Image::error_callback, nullptr);
+		opj_set_info_handler(l_codec, JP2_Image::info_callback, nullptr);
+		opj_set_warning_handler(l_codec, JP2_Image::warning_callback, nullptr);
+		opj_set_error_handler(l_codec, JP2_Image::error_callback, nullptr);
 
 		if (!opj_setup_decoder(l_codec, &l_param)) {
 			std::cerr << "ERROR: OpenJPEG: Failed to setup decoder for " << path << std::endl;
@@ -66,19 +61,23 @@ bool ESA_S2_TCI_JP2_Image::load_header(const std::filesystem::path &path) {
 			throw std::exception();
 		}
 
-		std::cout << "INFO: Image size: " << l_image->x0 << ", " << l_image->y0 << ", " << l_image->x1 << ", " << l_image->y1 << std::endl;
-		std::cout << "INFO: Number of pixel components: " << l_image->numcomps << std::endl;
+		if (subset != nullptr)
+			clear();
 
-		x0 = l_image->x0;
-		y0 = l_image->y0;
-		w = l_image->x1 - x0;
-		h = l_image->y1 - y0;
+		main_geometry.xOff(l_image->x0);
+		main_geometry.yOff(l_image->y0);
+		main_geometry.width(l_image->x1 - l_image->x0);
+		main_geometry.height(l_image->y1 - l_image->y0);
 
 		if (l_image->comps->prec <= 8)
-			bit_depth = 8;
+			main_depth = 8;
 		else
-			bit_depth = 16;
-		num_components = l_image->numcomps;
+			main_depth = 16;
+
+		main_num_components = l_image->numcomps;
+		
+		std::cout << "INFO: Image size: " << l_image->x0 << ", " << l_image->y0 << ", " << l_image->x1 << ", " << l_image->y1 << std::endl;
+		std::cout << "INFO: Number of pixel components: " << l_image->numcomps << " with depth: " << (int) main_depth << std::endl;
 
 	} catch(std::exception &e) {
 		retval = false;
@@ -94,7 +93,7 @@ bool ESA_S2_TCI_JP2_Image::load_header(const std::filesystem::path &path) {
 	return retval;
 }
 
-bool ESA_S2_TCI_JP2_Image::load_subset(const std::filesystem::path &path, int da_x0, int da_y0, int da_x1, int da_y1) {
+bool JP2_Image::load_subset(const std::filesystem::path &path, int da_x0, int da_y0, int da_x1, int da_y1) {
 	// Used as reference:
 	//  https://github.com/uclouvain/openjpeg/blob/master/tests/test_tile_decoder.c
 	//  https://web.archive.org/web/20180423091842/http://www.equasys.de/colorconversion.html
@@ -128,8 +127,8 @@ bool ESA_S2_TCI_JP2_Image::load_subset(const std::filesystem::path &path, int da
 		l_codec = opj_create_decompress(OPJ_CODEC_JP2);
 
 		// Avoid setting the info handler, to reduce spam.
-		opj_set_warning_handler(l_codec, ESA_S2_TCI_JP2_Image::warning_callback, nullptr);
-		opj_set_error_handler(l_codec, ESA_S2_TCI_JP2_Image::error_callback, nullptr);
+		opj_set_warning_handler(l_codec, JP2_Image::warning_callback, nullptr);
+		opj_set_error_handler(l_codec, JP2_Image::error_callback, nullptr);
 
 		if (!opj_setup_decoder(l_codec, &l_param)) {
 			std::cerr << "ERROR: OpenJPEG: Failed to setup decoder for " << path << std::endl;
@@ -145,6 +144,8 @@ bool ESA_S2_TCI_JP2_Image::load_subset(const std::filesystem::path &path, int da
 		//! \note ESA S2 JP2 headers lack colorspace info. It seems that pixels are stored as RGB instead of YUV.
 
 		int da_x1_clamped = da_x1, da_y1_clamped = da_y1;
+		int w = da_x1 - da_x0;
+		int h = da_y1 - da_y0;
 
 		if (da_x1 > da_x0 + w)
 			da_x1_clamped = da_x0 + w;
@@ -158,23 +159,21 @@ bool ESA_S2_TCI_JP2_Image::load_subset(const std::filesystem::path &path, int da
 			throw std::exception();
 		}
 
-		// Allocate for the pixels.
-		w = da_x1 - da_x0;
-		h = da_y1 - da_y0;
+		if (subset != nullptr)
+			clear();
 
-		if (l_image->comps->prec <= 8)
-			bit_depth = 8;
-		else
-			bit_depth = 16;
-		num_components = l_image->numcomps;
-
-		if (pixels != nullptr)
-			delete [] pixels;
-		pixels = new unsigned char[w * h * num_components * bit_depth / 8];
-		std::memset(pixels, 0, w * h * num_components * bit_depth / 8);
-
-		if (num_components == 1)
-			color_type = CT_GRAYSCALE;
+		subset = new Magick::Image();
+		subset->quiet(false);
+		subset->size(Magick::Geometry(w, h));
+		subset->depth((int) main_depth);
+		subset->endian(Magick::LSBEndian);
+		if (main_num_components == 1) {
+			subset->type(Magick::GrayscaleType);
+			subset->backgroundColor(Magick::ColorGray(0));
+		} else if (main_num_components == 3) {
+			subset->type(Magick::TrueColorType);
+			subset->backgroundColor(Magick::ColorRGB(0, 0, 0));
+		}
 
 		OPJ_BYTE l_val = 0;
 		OPJ_BOOL l_continue = OPJ_TRUE;
@@ -209,40 +208,51 @@ bool ESA_S2_TCI_JP2_Image::load_subset(const std::filesystem::path &path, int da
 
 				// OpenJPEG seems to have adjacent sub-component tiles.
 
-				//! \todo Vectorize this?
-
-				unsigned short *s_data = (unsigned short *) l_data;
-				unsigned short *s_pixels = (unsigned short *) pixels;
 				unsigned int l_ctile_width = l_ctile_x1 - l_ctile_x0;
 				unsigned int l_ctile_height = l_ctile_y1 - l_ctile_y0;
 				unsigned int l_ctile_size = l_ctile_width * l_ctile_height;
-				unsigned int gp_x, gp_y;
-				unsigned int tlpi, sspi;
-				// Iterate over components in the tile.
-				for (unsigned char c=0; c<l_n_components; c++) {
-					// Iterate over rows in the tile.
-					for (unsigned int y=0; y<l_ctile_height; y++) {
-						// Iterate on columns in the tile.
-						for (unsigned int x=0; x<l_ctile_width; x++) {
-							// Tile-local pixel index
-							tlpi = c * l_ctile_size + y * l_ctile_width + x;
-							// Global pixel coordinates
-							gp_x = l_ctile_x0 + x;
-							gp_y = l_ctile_y0 + y;
+				unsigned int l_ctile_size_b = l_ctile_width * l_ctile_height * main_depth / 8;
 
-							// Verify that the pixel is within our decode area.
-							if (gp_x >= da_x0 && gp_y >= da_y0 && gp_x < da_x1 && gp_y < da_y1) {
-								// Subset pixel index.
-								sspi = num_components * ((gp_y - da_y0) * w + gp_x - da_x0);
-								// PNG and JP2 have different endianness for 16 bit pixel values.
-								if (bit_depth > 8)
-									s_pixels[sspi + c] = ((s_data[tlpi] & 0x00FF) << 8) | (s_data[tlpi] >> 8);
-								else
-									pixels[sspi + c] = l_data[tlpi];
-							}
-						}
+				Magick::Image img;
+				img.quiet(false);
+				img.size(Magick::Geometry(l_ctile_width, l_ctile_height));
+				img.depth(main_depth);
+				img.type(subset->type());
+				img.endian(Magick::LSBEndian);
+				img.backgroundColor(subset->backgroundColor());
+
+				Magick::StorageType px_storage;
+				if (main_depth <= 8)
+					px_storage = Magick::CharPixel;
+				else if (main_depth <= 16)
+					px_storage = Magick::ShortPixel;
+
+				// Iterate over components in the tile and
+				// blit them on the tile image.
+				for (unsigned char c=0; c<l_n_components; c++) {
+					Magick::Image img_c(img);
+					img_c.quiet(false);
+					img_c.depth(main_depth);
+					img_c.type(img.type());
+
+					img_c.endian(Magick::MSBEndian);
+					img_c.read(l_ctile_width, l_ctile_height, "I", px_storage, &l_data[c * l_ctile_size_b]);
+					img_c.endian(Magick::LSBEndian);
+
+					if (l_n_components > 1) {
+						if (c == 0)
+							img.composite(img_c, 0, 0, Magick::CopyRedCompositeOp);
+						else if (c == 1)
+							img.composite(img_c, 0, 0, Magick::CopyGreenCompositeOp);
+						else if (c == 2)
+							img.composite(img_c, 0, 0, Magick::CopyBlueCompositeOp);
+					} else {
+						img = img_c;
 					}
 				}
+
+				// Blit the tile on the subset image.
+				subset->composite(img, l_ctile_x0 - da_x0, l_ctile_y0 - da_y0, Magick::AtopCompositeOp);
 			}
 		}
 
@@ -253,6 +263,7 @@ bool ESA_S2_TCI_JP2_Image::load_subset(const std::filesystem::path &path, int da
 		}
 
 	} catch(std::exception &e) {
+		std::cerr << e.what() << std::endl;
 		retval = false;
 	}
 

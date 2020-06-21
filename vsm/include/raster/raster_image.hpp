@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <filesystem>
+#include <Magick++.h>
 
 
 class RasterImage {
@@ -9,26 +10,18 @@ class RasterImage {
 		RasterImage();
 		~RasterImage();
 
-		typedef enum color_type_t {
-			CT_GRAYSCALE,
-			CT_RGB
-		};
-		
 		virtual bool load(const std::filesystem::path &path) {}
 		bool save(const std::filesystem::path &path);
 		void clear();
 
-		unsigned int x0, y0;
-		unsigned int w, h;
-		unsigned char num_components;
-		unsigned char bit_depth;
-		color_type_t color_type;
-		unsigned char *pixels;
+		Magick::Image *subset;
 
+		Magick::Geometry main_geometry;
+		unsigned char main_depth;
+		unsigned char main_num_components;
+
+		bool scale(float f, bool point_filter);
 		void remap_values(const unsigned char *values);
-
-	protected:
-		bool save_png(const std::filesystem::path &path);
 };
 
 std::ostream &operator<<(std::ostream &out, const RasterImage &img);

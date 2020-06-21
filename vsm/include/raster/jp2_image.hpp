@@ -5,10 +5,10 @@
 #include <filesystem>
 
 
-class ESA_S2_TCI_JP2_Image: public RasterImage {
+class JP2_Image: public RasterImage {
 	public:
-		ESA_S2_TCI_JP2_Image();
-		~ESA_S2_TCI_JP2_Image();
+		JP2_Image();
+		~JP2_Image();
 		
 		bool load_header(const std::filesystem::path &path);
 		
@@ -20,6 +20,4 @@ class ESA_S2_TCI_JP2_Image: public RasterImage {
 
 		static void info_callback(const char *msg, void *client_data);
 };
-
-std::ostream &operator<<(std::ostream &out, const ESA_S2_TCI_JP2_Image &img);
 

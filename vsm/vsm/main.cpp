@@ -12,6 +12,7 @@
 #include <iostream>
 #include <vector>
 #include <stdlib.h>
+#include <Magick++.h>
 
 
 class ImageOperator: public ESA_S2_Image_Operator {
@@ -31,7 +32,6 @@ public:
 
 			GMLConverter gc;
 
-			// std::vector<std::string> classes(&ESA_S2_SCL_JP2_Image::class_names[0], &ESA_S2_SCL_JP2_Image::class_names[11]);
 			std::vector<std::string> classes {
 				"UNCLASSIFIED",
 				"CLEAR",
@@ -39,7 +39,6 @@ public:
 				"CLOUD",
 				"SEMI_TRANSPARENT_CLOUD"
 			};
-			// std::vector<int> include_classes{3, 8, 9, 10};
 			std::vector<int> include_classes{1, 2, 3, 4};
 			gc.set_classes(classes, include_classes);
 			gc.set_multiplier(2);
@@ -71,13 +70,17 @@ int main(int argc, char* argv[]) {
 	std::cout << "Running with the following dependencies:" << std::endl
 		<< " GDAL " << GDAL_RELEASE_NAME << " (" << GDAL_RELEASE_DATE << ")" << std::endl
 		<< " OpenJPEG " << opj_version() << std::endl
-		<< " " << PNG_HEADER_VERSION_STRING << std::endl
+		<< PNG_HEADER_VERSION_STRING
+		<< " MagickLib " << MagickLibVersionText << std::endl
 		<< std::endl;
 
 	if (argc < 2) {
 		std::cerr << "Usage: cvat-vsm PATH" << std::endl << "\twhere PATH points to the .SAFE directory of an ESA S2 L2A product." << std::endl;
 		return 1;
 	}
+
+	//! \note Magick relies on jasper for JP2 files, and jasper is not able to open the ESA S2 JP2 images.
+	Magick::InitializeMagick(*argv);
 
 	ESA_S2_Image img;
 	ImageOperator img_op;

@@ -5,10 +5,6 @@ ESA_S2_SCL_JP2_Image::ESA_S2_SCL_JP2_Image() {}
 ESA_S2_SCL_JP2_Image::~ESA_S2_SCL_JP2_Image() {}
 
 
-std::ostream& operator<<(std::ostream &out, const ESA_S2_SCL_JP2_Image& img) {
-	return out << "ESA_S2_SCL_JP2_Image(x0=" << img.x0 << ", y0=" << img.y0 << ", w=" << img.w << ", h=" << img.h << ", d=" << img.bit_depth << ")"; 
-}
-
 // Used as reference:
 //  https://sentinel.esa.int/web/sentinel/technical-guides/sentinel-2-msi/level-2a/algorithm
 const std::string ESA_S2_SCL_JP2_Image::class_names[] = {
