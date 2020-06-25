@@ -39,7 +39,8 @@ public:
 		DT_B11,	///< 1565 - 1655 nm (16 bit), 20 m
 		DT_B12,	///< 2100 - 2280 nm (16 bit), 20 m
 		DT_WVP,	///< Water Vapour map (16 bit), 10 m
-		DT_GML	///< Vector mask layer
+		DT_GML,	///< Vector mask layer
+		DT_COUNT
 	};
 
 	typedef enum data_resolution_t {
@@ -47,8 +48,11 @@ public:
 		DR_10M,
 		DR_20M,
 		DR_60M,
-		DR_VECTOR
+		DR_VECTOR,
+		DR_COUNT
 	};
+
+	static const std::string data_type_name[DT_COUNT];
 
 	virtual bool operator()(const std::filesystem::path &path, data_type_t type) { return false; }
 };

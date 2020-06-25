@@ -21,6 +21,10 @@
 #include "util/text.hpp"
 
 
+const std::string ESA_S2_Image_Operator::data_type_name[ESA_S2_Image_Operator::DT_COUNT] = {
+	"TCI", "SCL", "AOT", "B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B8A", "B09", "B10", "B11", "B12", "WVP", "GML"
+};
+
 ESA_S2_Image::ESA_S2_Image(): tile_size(256), scl_value_map(nullptr) {}
 ESA_S2_Image::~ESA_S2_Image() {}
 
@@ -121,7 +125,7 @@ bool ESA_S2_Image::split(const std::filesystem::path &path_in, const std::filesy
 				img_src.scale(div_f, false);
 			}
 
-			std::ostringstream ss_path_out;
+			std::ostringstream ss_path_out, ss_path_out_png, ss_path_out_nc;
 
 			if (data_resolution == ESA_S2_Image_Operator::DR_20M)
 				ss_path_out << path_dir_out.string() << "/tile_" << x << "_" << y << "/";
@@ -132,11 +136,17 @@ bool ESA_S2_Image::split(const std::filesystem::path &path_in, const std::filesy
 
 			std::filesystem::create_directories(ss_path_out.str());
 
-			ss_path_out << path_in.stem().string() << "_" << x << "_" << y << ".png";
+			ss_path_out_nc << ss_path_out.str() << "bands.nc";
+			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << x << "_" << y << ".png";
 
-			img_src.save(ss_path_out.str());
+			// Save PNG.
+			img_src.save(ss_path_out_png.str());
+			// Add to NetCDF.
+			if (data_type != ESA_S2_Image_Operator::DT_TCI)
+				img_src.add_to_netcdf(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type], 9);
+
 			// Potential post-processing of the file.
-			if (!op(ss_path_out.str(), data_type))
+			if (!op(ss_path_out_png.str(), data_type))
 				return false;
 		}
 	}

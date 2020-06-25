@@ -178,15 +178,16 @@ bool JP2_Image::load_subset(const std::filesystem::path &path, int da_x0, int da
 		if (subset != nullptr)
 			clear();
 
-		subset = new Magick::Image();
-		subset->quiet(false);
-		subset->size(Magick::Geometry(w, h));
-		subset->depth((int) main_depth);
-		subset->endian(Magick::LSBEndian);
 		if (main_num_components == 1) {
+			subset = new Magick::Image(Magick::Geometry(w, h), Magick::ColorGray(0));
+			subset->quiet(false);
+			subset->depth((int) main_depth);
+			subset->endian(Magick::LSBEndian);
 			subset->type(Magick::GrayscaleType);
 			subset->backgroundColor(Magick::ColorGray(0));
 		} else if (main_num_components == 3) {
+			subset = new Magick::Image(Magick::Geometry(w, h), Magick::ColorRGB(0, 0, 0));
+			subset->quiet(false);
 			subset->type(Magick::TrueColorType);
 			subset->backgroundColor(Magick::ColorRGB(0, 0, 0));
 		}
