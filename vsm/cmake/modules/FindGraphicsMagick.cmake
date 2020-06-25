@@ -1,7 +1,7 @@
 # From https://github.com/buaazp/zimg/blob/master/src/CMakeModules/FindGraphicsMagick.cmake
 # Copied on June 20, 2020
 #
-# LICENSE (https://raw.githubusercontent.com/buaazp/zimg/master/LICENSE)
+# LICENSE BSD-3-Clause (https://raw.githubusercontent.com/buaazp/zimg/master/LICENSE)
 # 
 # Copyright (c) 2013 - 2014, 招牌疯子
 # All rights reserved.
