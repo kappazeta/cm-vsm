@@ -26,7 +26,10 @@ class RasterImage {
 		RasterImage();
 		~RasterImage();
 
+		Magick::Image *create_grayscale(const Magick::Geometry &geometry, int pixel_depth, int background_value);
+
 		virtual bool load(const std::filesystem::path &path) {}
+
 		bool save(const std::filesystem::path &path);
 		bool add_to_netcdf(const std::filesystem::path &path, const std::string &name_in_netcdf, int deflate_level);
 		void clear();

@@ -45,6 +45,22 @@ std::ostream& operator<<(std::ostream &out, const RasterImage& img) {
 	return out << "RasterImage()";
 }
 
+Magick::Image *RasterImage::create_grayscale(const Magick::Geometry &geometry, int pixel_depth, int background_value) {
+	clear();
+
+	main_geometry = geometry;
+	main_depth = pixel_depth;
+	main_num_components = 1;
+
+	subset = new Magick::Image(main_geometry, Magick::ColorGray(((double) background_value) / 255.0));
+	subset->quiet(false);
+	subset->type(Magick::GrayscaleType);
+	subset->depth(pixel_depth);
+	subset->endian(Magick::LSBEndian);
+
+	return subset;
+}
+
 bool RasterImage::save(const std::filesystem::path &path) {
 	if (subset != nullptr) {
 		subset->write(path.string());
@@ -160,35 +176,56 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 		int nd = sizeof(dimids) / sizeof(dimids[0]);
 		int dt = NC_FLOAT;
 
+		if (main_depth <= 8)
+			dt = NC_UBYTE;
+
 		// Define the variable.
-		if ((retval = nc_def_var(ncid, name_in_netcdf.c_str(), dt, nd, dimids, &varid))) {
+		retval = nc_def_var(ncid, name_in_netcdf.c_str(), dt, nd, dimids, &varid);
+		if (retval != NC_NOERR && retval != NC_ENAMEINUSE) {
 			std::ostringstream ss;
 			ss << "failed to create dimension " << nd << "D variable \"" << name_in_netcdf << "\"";
 			throw NCException(ss.str(), path, retval);
 		}
-		if ((retval = nc_def_var_deflate(ncid, varid, NC_SHUFFLE, 1, deflate_level))) {
-			std::ostringstream ss;
-			ss << "failed to set deflation level " << deflate_level << " for variable \"" << name_in_netcdf << "\"";
-			throw NCException(ss.str(), path, retval);
+		if (retval == NC_NOERR) {
+			if ((retval = nc_def_var_deflate(ncid, varid, NC_SHUFFLE, 1, deflate_level))) {
+				std::ostringstream ss;
+				ss << "failed to set deflation level " << deflate_level << " for variable \"" << name_in_netcdf << "\"";
+				throw NCException(ss.str(), path, retval);
+			}
+			if ((retval = nc_enddef(ncid)))
+				throw NCException("failed to finish a definition", path, retval);
 		}
-		if ((retval = nc_enddef(ncid)))
-			throw NCException("failed to finish a definition", path, retval);
 
 		Magick::PixelPacket *src_px = subset->getPixels(0, 0, w, h);
 		register double src_val;
 
 		// Store content.
-		float dst_px[size];
+		if (main_depth > 8) {
+			float dst_px[size];
 
-		for (unsigned int i=0; i<size; i++) {
-			src_val = Magick::ColorGray(src_px[i]).shade();
-			dst_px[i] = (float) src_val;
-		}
+			for (unsigned int i=0; i<size; i++) {
+				src_val = Magick::ColorGray(src_px[i]).shade();
+				dst_px[i] = (float) src_val;
+			}
 
-		if ((retval = nc_put_var_float(ncid, varid, dst_px))) {
-			std::ostringstream ss;
-			ss << "failed to store an array of " << w << " x " << h << " float values in a variable";
-			throw NCException(ss.str(), path, retval);
+			if ((retval = nc_put_var_float(ncid, varid, dst_px))) {
+				std::ostringstream ss;
+				ss << "failed to store an array of " << w << " x " << h << " float values in a variable";
+				throw NCException(ss.str(), path, retval);
+			}
+		} else {
+			unsigned char dst_px[size];
+
+			for (unsigned int i=0; i<size; i++) {
+				src_val = Magick::ColorGray(src_px[i]).shade();
+				dst_px[i] = (int) (src_val * 255);
+			}
+
+			if ((retval = nc_put_var_ubyte(ncid, varid, dst_px))) {
+				std::ostringstream ss;
+				ss << "failed to store an array of " << w << " x " << h << " unsigned byte values in a variable";
+				throw NCException(ss.str(), path, retval);
+			}
 		}
 
 	} catch (NCException &e) {
