@@ -19,6 +19,10 @@
 #include <string.h>
 
 
+const int CVATPolygon::class_priority[CVATPolygon::CV_COUNT] = {
+	0, -4, -3, -2, -1
+};
+
 CVATPolygon::CVATPolygon(): z_order(0), occluded(0), label_index(0) {}
 
 CVATPolygon::~CVATPolygon() {
@@ -27,6 +31,21 @@ CVATPolygon::~CVATPolygon() {
 
 void CVATPolygon::clear() {
 	points.clear();
+}
+
+CVATPolygon &CVATPolygon::operator=(const CVATPolygon &poly) {
+	z_order = poly.z_order;
+	occluded = poly.occluded;
+	label_index = poly.label_index;
+	points = poly.points;
+
+	return *this;
+}
+
+bool CVATPolygon::operator<(const CVATPolygon &poly) const {
+	if (label_index < CV_COUNT && poly.label_index < CV_COUNT)
+		return (class_priority[label_index] < class_priority[poly.label_index]);
+	return false;
 }
 
 bool CVATPolygon::parse_points(const std::string &content) {
@@ -177,9 +196,15 @@ bool CVATRasterizer::rasterize() {
 
 	std::list<Magick::Drawable> drawlist;
 
+	std::sort(polygons.begin(), polygons.end());
+
+	double color;
 	for (int i=0; i<polygons.size(); i++) {
+		color = polygons[i].label_index / 255.0;
+
 		drawlist.push_back(Magick::DrawableStrokeAntialias(false));
-		drawlist.push_back(Magick::DrawableFillColor(Magick::ColorGray(polygons[i].label_index / 255.0)));
+		drawlist.push_back(Magick::DrawableStrokeColor(Magick::ColorGray(color)));
+		drawlist.push_back(Magick::DrawableFillColor(Magick::ColorGray(color)));
 		drawlist.push_back(Magick::DrawablePolygon(polygons[i].points));
 	}
 

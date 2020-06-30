@@ -31,19 +31,26 @@ public:
 	~CVATPolygon();
 
 	typedef enum class_value_t {
-		CV_UNDEFINED = 0,
-		CV_CLEAR = 1,
-		CV_CLOUD_SHADOW = 2,
-		CV_SEMI_TRANSPARENT_CLOUD = 3,
-		CV_CLOUD = 4,
+		CV_UNDEFINED = 0,	///< Exclude pixel from training, priority 0.
+		CV_CLEAR = 1,	///< Clear pixel, priority -4.
+		CV_CLOUD_SHADOW = 2,	///< Cloud shadow pixel, priority -3.
+		CV_SEMI_TRANSPARENT_CLOUD = 3,	///< Cirrus pixel, priority -2.
+		CV_CLOUD = 4,	///< Cumulus pixel, priority -1.
 
-		CV_BACKGROUND = 1
+		CV_COUNT = 5,	///< Number of classes.
+		CV_BACKGROUND = 1	///< Default background class (clear, in this case).
 	};
+
+	//! Render priority per class. Higher priority is rendered on top of lower priority.
+	static const int class_priority[CV_COUNT];
 
 	int z_order;
 	int occluded;
 	int label_index;
 	Magick::CoordinateList points;
+
+	CVATPolygon &operator=(const CVATPolygon &poly);
+	bool operator<(const CVATPolygon &poly) const;
 
 	bool parse_points(const std::string &content);
 
