@@ -32,3 +32,7 @@ jobs:
       run: |
         cd vsm/build
         cmake ..
+
+    # Build
+    - name: Building
+      run: make
