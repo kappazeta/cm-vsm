@@ -23,6 +23,10 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
 
+    # Install dependencies
+    - name: Installing dependencies
+      run: sudo apt-get install libopenjp2-7-dev libgdal-dev gdal-bin libexpat1-dev libgraphicsmagick++1-dev libnetcdf-dev
+
     # Run CMake
     - name: Running CMake
       run: |
