@@ -23,15 +23,18 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
 
-    # Install dependencies
-    - name: Installing dependencies
-      run: sudo apt-get install libopenjp2-7-dev libgdal-dev gdal-bin libexpat1-dev libgraphicsmagick++1-dev libnetcdf-dev
+    # Install system dependencies
+    - name: Installing system dependencies
+      run: |
+        sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+        sudo apt update
+        sudo apt-get install -y gcc-9 g++-9 libopenjp2-7-dev libgdal-dev gdal-bin libexpat1-dev libgraphicsmagick++1-dev libnetcdf-dev
 
     # Run CMake
     - name: Running CMake
       run: |
         cd vsm/build
-        cmake ..
+        cmake -DCMAKE_CXX_COMPILER=g++-9 ..
 
     # Build
     - name: Building
