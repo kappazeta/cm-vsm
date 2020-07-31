@@ -1,0 +1,43 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+
+    # Install system dependencies
+    - name: Installing system dependencies
+      run: |
+        sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+        sudo apt update
+        sudo apt-get install -y gcc-9 g++-9 libopenjp2-7-dev libgdal-dev gdal-bin libexpat1-dev libgraphicsmagick++1-dev libnetcdf-dev
+
+    # Run CMake
+    - name: Running CMake
+      run: |
+        cd vsm/build
+        cmake -DCMAKE_CXX_COMPILER=g++-9 ..
+
+    # Build
+    - name: Building
+      run: |
+        cd vsm/build
+        make
