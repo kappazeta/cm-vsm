@@ -157,17 +157,21 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 		}
 
 		// Define dimensions.
-		retval = nc_def_dim(ncid, "x", w, &dimids[0]);
-		if (retval != NC_NOERR && retval != NC_ENAMEINUSE) {
-			std::ostringstream ss;
-			ss << "failed to create dimension x=" << w;
-			throw NCException(ss.str(), path, retval);
+		if (nc_inq_dimid(ncid, "x", &dimids[0]) != NC_NOERR) {
+			retval = nc_def_dim(ncid, "x", w, &dimids[0]);
+			if (retval != NC_NOERR && retval != NC_ENAMEINUSE) {
+				std::ostringstream ss;
+				ss << "failed to create dimension x=" << w;
+				throw NCException(ss.str(), path, retval);
+			}
 		}
-		retval = nc_def_dim(ncid, "y", h, &dimids[1]);
-		if (retval != NC_NOERR && retval != NC_ENAMEINUSE) {
-			std::ostringstream ss;
-			ss << "failed to create dimension y=" << h;
-			throw NCException(ss.str(), path, retval);
+		if (nc_inq_dimid(ncid, "y", &dimids[1]) != NC_NOERR) {
+			retval = nc_def_dim(ncid, "y", h, &dimids[1]);
+			if (retval != NC_NOERR && retval != NC_ENAMEINUSE) {
+				std::ostringstream ss;
+				ss << "failed to create dimension y=" << h;
+				throw NCException(ss.str(), path, retval);
+			}
 		}
 
 		//! \todo Support for groups.
@@ -180,20 +184,22 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 			dt = NC_UBYTE;
 
 		// Define the variable.
-		retval = nc_def_var(ncid, name_in_netcdf.c_str(), dt, nd, dimids, &varid);
-		if (retval != NC_NOERR && retval != NC_ENAMEINUSE) {
-			std::ostringstream ss;
-			ss << "failed to create dimension " << nd << "D variable \"" << name_in_netcdf << "\"";
-			throw NCException(ss.str(), path, retval);
-		}
-		if (retval == NC_NOERR) {
-			if ((retval = nc_def_var_deflate(ncid, varid, NC_SHUFFLE, 1, deflate_level))) {
+		if (nc_inq_varid(ncid, name_in_netcdf.c_str(), &varid) != NC_NOERR) {
+			retval = nc_def_var(ncid, name_in_netcdf.c_str(), dt, nd, dimids, &varid);
+			if (retval != NC_NOERR && retval != NC_ENAMEINUSE) {
 				std::ostringstream ss;
-				ss << "failed to set deflation level " << deflate_level << " for variable \"" << name_in_netcdf << "\"";
+				ss << "failed to create dimension " << nd << "D variable \"" << name_in_netcdf << "\"";
 				throw NCException(ss.str(), path, retval);
 			}
-			if ((retval = nc_enddef(ncid)))
-				throw NCException("failed to finish a definition", path, retval);
+			if (retval == NC_NOERR) {
+				if ((retval = nc_def_var_deflate(ncid, varid, NC_SHUFFLE, 1, deflate_level))) {
+					std::ostringstream ss;
+					ss << "failed to set deflation level " << deflate_level << " for variable \"" << name_in_netcdf << "\"";
+					throw NCException(ss.str(), path, retval);
+				}
+				if ((retval = nc_enddef(ncid)))
+					throw NCException("failed to finish a definition", path, retval);
+			}
 		}
 
 		Magick::PixelPacket *src_px = subset->getPixels(0, 0, w, h);
