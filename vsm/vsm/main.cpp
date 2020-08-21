@@ -128,6 +128,16 @@ int main(int argc, char* argv[]) {
 		std::filesystem::path path_in(arg_path_rasterize);
 		std::filesystem::path path_out_nc(arg_path_nc);
 		std::filesystem::path path_out_png(path_in.parent_path().string() + "/" + path_in.stem().string() + ".png");
+
+		if (!std::filesystem::exists(path_in)) {
+			std::cerr << "ERROR: Vector annotations file " << path_in << " does not exist." << std::endl;
+			return 1;
+		}
+		if (!std::filesystem::exists(path_out_nc)) {
+			std::cerr << "ERROR: NetCDF output file " << path_out_nc << " does not exist. Please process the product directory first." << std::endl;
+			return 2;
+		}
+
 		rasterizer.convert(path_in, path_out_nc, path_out_png);
 	}
 
