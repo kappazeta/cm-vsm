@@ -40,6 +40,8 @@ public:
 		DT_B12,	///< 2100 - 2280 nm (16 bit), 20 m
 		DT_WVP,	///< Water Vapour map (16 bit), 10 m
 		DT_GML,	///< Vector mask layer
+		DT_S2CC,	///< Sen2cor cloud probabilities (8 bit), 20 m
+		DT_S2CS,	///< Sen2cor snow probabilities (8 bit), 20 m
 		DT_COUNT
 	};
 

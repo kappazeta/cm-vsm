@@ -22,7 +22,7 @@
 
 
 const std::string ESA_S2_Image_Operator::data_type_name[ESA_S2_Image_Operator::DT_COUNT] = {
-	"TCI", "SCL", "AOT", "B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B8A", "B09", "B10", "B11", "B12", "WVP", "GML"
+	"TCI", "SCL", "AOT", "B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B8A", "B09", "B10", "B11", "B12", "WVP", "GML", "S2CC", "S2CS"
 };
 
 ESA_S2_Image::ESA_S2_Image(): tile_size(256), scl_value_map(nullptr) {}
@@ -76,6 +76,14 @@ bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::
 				split(r20m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B12, data_resolution);
 			}
 		}
+		// Split Sen2cor cloudmask probabilities.
+		for (const auto &r20m_entry: std::filesystem::directory_iterator(granule_entry.path().string() + "/QI_DATA")) {
+			if (endswith(r20m_entry.path().string(), "MSK_CLDPRB_20m.jp2")) {
+				split(r20m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_S2CC, data_resolution);
+			} else if (endswith(r20m_entry.path().string(), "MSK_SNWPRB_20m.jp2")) {
+				split(r20m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_S2CS, data_resolution);
+			}
+		}
 
 		data_resolution = ESA_S2_Image_Operator::DR_60M;
 		for (const auto &r60m_entry: std::filesystem::directory_iterator(granule_entry.path().string() + "/IMG_DATA/R60m/")) {
@@ -111,7 +119,6 @@ bool ESA_S2_Image::split(const std::filesystem::path &path_in, const std::filesy
 	for (int y=0; y<h; y+=tile_size_20m) {
 		std::cout << " " << y << std::endl;
 		for (int x=0; x<w; x+=tile_size_20m) {
-			// std::cout << "Tile " << x << ", " << y << std::endl;
 			img_src.load_subset(path_in, x, y, x + tile_size_20m, y + tile_size_20m);
 
 			// Remap pixel values for SCL.
