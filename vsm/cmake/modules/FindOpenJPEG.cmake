@@ -1,16 +1,24 @@
 # - Try to find libOPENJPEG
 # Once done, this will define
 #
-#  OPENJPEG_FOUND - system has asdcplib
-#  OPENJPEG_INCLUDE_DIRS - the asdcplib include directories
-#  OPENJPEG_LIBRARIES - link these to use asdcplib
+#  OPENJPEG_FOUND - system has libopenjp2
+#  OPENJPEG_INCLUDE_DIRS - the libopenjp2 include directories
+#  OPENJPEG_LIBRARIES - link these to use libopenjp2
 
 # Include dir
-FIND_PATH(OPENJPEG_INCLUDE_DIR openjpeg.h
-/usr/local/include/openjpeg
-/usr/local/include
+# Look from openjpeg-2.3 subdirectories first, then openjpeg, then finally check the generic include directories as well.
+FIND_PATH(OPENJPEG_INCLUDE_DIR NAMES openjpeg.h PATHS
+/usr/local/include/openjpeg-2.3
 /usr/include/openjpeg-2.3
+NO_DEFAULT_PATH
+)
+FIND_PATH(OPENJPEG_INCLUDE_DIR NAMES openjpeg.h PATHS
+/usr/local/include/openjpeg
 /usr/include/openjpeg
+NO_DEFAULT_PATH
+)
+FIND_PATH(OPENJPEG_INCLUDE_DIR NAMES openjpeg.h PATHS
+/usr/local/include
 /usr/include
 )
 
@@ -26,13 +34,14 @@ IF (OPENJPEG_LIBRARY AND OPENJPEG_INCLUDE_DIR)
     SET(OPENJPEG_LIBRARIES ${OPENJPEG_LIBRARY})
     SET(OPENJPEG_FOUND "YES")
 ELSE (OPENJPEG_LIBRARY AND OPENJPEG_INCLUDE_DIR)
-  SET(OPENJPEG_FOUND "NO")
+    SET(OPENJPEG_FOUND "NO")
 ENDIF (OPENJPEG_LIBRARY AND OPENJPEG_INCLUDE_DIR)
 
 
 IF (OPENJPEG_FOUND)
    IF (NOT OPENJPEG_FIND_QUIETLY)
-      MESSAGE(STATUS "Found OpenJPEG: ${OPENJPEG_LIBRARIES}")
+      MESSAGE(STATUS "Found OpenJPEG libraries: ${OPENJPEG_LIBRARIES}")
+      MESSAGE(STATUS "Found OpenJPEG headers: ${OPENJPEG_INCLUDE_DIR}")
    ENDIF (NOT OPENJPEG_FIND_QUIETLY)
 ELSE (OPENJPEG_FOUND)
    IF (OPENJPEG_FIND_REQUIRED)
