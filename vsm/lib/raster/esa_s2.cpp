@@ -149,8 +149,7 @@ bool ESA_S2_Image::split(const std::filesystem::path &path_in, const std::filesy
 			// Save PNG.
 			img_src.save(ss_path_out_png.str());
 			// Add to NetCDF.
-			if (data_type != ESA_S2_Image_Operator::DT_TCI)
-				img_src.add_to_netcdf(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type], 9);
+			img_src.add_to_netcdf(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type], 9);
 
 			// Potential post-processing of the file.
 			if (!op(ss_path_out_png.str(), data_type))

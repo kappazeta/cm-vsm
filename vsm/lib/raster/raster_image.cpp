@@ -15,7 +15,6 @@
 // limitations under the License.
 
 #include "raster/raster_image.hpp"
-#include <netcdf.h>
 #include <climits>
 
 
@@ -108,6 +107,51 @@ void RasterImage::remap_values(const unsigned char *values) {
 	}
 }
 
+int RasterImage::add_layer_to_netcdf(int ncid, const std::filesystem::path &path, const std::string &name_in_netcdf, unsigned int w, unsigned int h, const int *dimids, unsigned char nd, const void *dst_px, int deflate_level) {
+	int varid = 0;
+	int retval;
+
+	int dt = NC_FLOAT;
+
+	if (main_depth <= 8)
+		dt = NC_UBYTE;
+
+	// Define the variable.
+	if (nc_inq_varid(ncid, name_in_netcdf.c_str(), &varid) != NC_NOERR) {
+		retval = nc_def_var(ncid, name_in_netcdf.c_str(), dt, nd, dimids, &varid);
+		if (retval != NC_NOERR && retval != NC_ENAMEINUSE) {
+			std::ostringstream ss;
+			ss << "failed to create dimension " << nd << "D variable \"" << name_in_netcdf << "\"";
+			throw NCException(ss.str(), path, retval);
+		}
+		if (retval == NC_NOERR) {
+			if ((retval = nc_def_var_deflate(ncid, varid, NC_SHUFFLE, 1, deflate_level))) {
+				std::ostringstream ss;
+				ss << "failed to set deflation level " << deflate_level << " for variable \"" << name_in_netcdf << "\"";
+				throw NCException(ss.str(), path, retval);
+			}
+			if ((retval = nc_enddef(ncid)))
+				throw NCException("failed to finish a definition", path, retval);
+		}
+	}
+
+	// Store content.
+	if (main_depth > 8) {
+		if ((retval = nc_put_var_float(ncid, varid, (const float *) dst_px))) {
+			std::ostringstream ss;
+			ss << "failed to store an array of " << w << " x " << h << " float values in a variable";
+			throw NCException(ss.str(), path, retval);
+		}
+	} else {
+		if ((retval = nc_put_var_ubyte(ncid, varid, (const unsigned char *) dst_px))) {
+			std::ostringstream ss;
+			ss << "failed to store an array of " << w << " x " << h << " unsigned byte values in a variable";
+			throw NCException(ss.str(), path, retval);
+		}
+	}
+	return varid;
+}
+
 bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::string &name_in_netcdf, int deflate_level) {
 	int ncid = 0, varid = 0;
 	int dimids[2] = {0, 0};
@@ -120,33 +164,17 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 
 	unsigned int w = subset->columns();
 	unsigned int h = subset->rows();
+	unsigned int c;
 	unsigned int size = w * h;
 
-	class NCException: public std::exception {
-	public:
-		NCException(const std::string &msg, const std::filesystem::path &path, int retval) {
-			message = msg;
-			nc_path = path;
-			nc_retval = retval;
-
-			std::ostringstream ss;
-			ss << "NetCDF file " << nc_path << ": " << message << ", " << nc_strerror(nc_retval);
-			full_message.assign(ss.str());
-		}
-
-		std::string message;
-		std::filesystem::path nc_path;
-		int nc_retval;
-
-		virtual const char* what() const throw() {
-			return full_message.c_str();
-		}
-
-	protected:
-		std::string full_message;
-	};
-
 	try {
+		Magick::ImageType imgtype = subset->type();
+		
+		if (imgtype == Magick::GrayscaleType)
+			c = 1;
+		else if (imgtype == Magick::TrueColorType)
+			c = 3;
+
 		// Open or create the file.
 		if (std::filesystem::exists(path)) {
 			if ((retval = nc_open(path.string().c_str(), NC_WRITE, &ncid)))
@@ -178,60 +206,60 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 
 		// Variable dimensions and data type.
 		int nd = sizeof(dimids) / sizeof(dimids[0]);
-		int dt = NC_FLOAT;
-
-		if (main_depth <= 8)
-			dt = NC_UBYTE;
-
-		// Define the variable.
-		if (nc_inq_varid(ncid, name_in_netcdf.c_str(), &varid) != NC_NOERR) {
-			retval = nc_def_var(ncid, name_in_netcdf.c_str(), dt, nd, dimids, &varid);
-			if (retval != NC_NOERR && retval != NC_ENAMEINUSE) {
-				std::ostringstream ss;
-				ss << "failed to create dimension " << nd << "D variable \"" << name_in_netcdf << "\"";
-				throw NCException(ss.str(), path, retval);
-			}
-			if (retval == NC_NOERR) {
-				if ((retval = nc_def_var_deflate(ncid, varid, NC_SHUFFLE, 1, deflate_level))) {
-					std::ostringstream ss;
-					ss << "failed to set deflation level " << deflate_level << " for variable \"" << name_in_netcdf << "\"";
-					throw NCException(ss.str(), path, retval);
-				}
-				if ((retval = nc_enddef(ncid)))
-					throw NCException("failed to finish a definition", path, retval);
-			}
-		}
 
 		Magick::PixelPacket *src_px = subset->getPixels(0, 0, w, h);
-		register double src_val;
+		double src_val;
 
 		// Store content.
-		if (main_depth > 8) {
-			float dst_px[size];
+		if (c == 1) {
+			if (main_depth > 8) {
+				float dst_px[size];
+				unsigned int yw, fyw;
 
-			for (unsigned int i=0; i<size; i++) {
-				src_val = Magick::ColorGray(src_px[i]).shade();
-				dst_px[i] = (float) src_val;
+				for (unsigned int y=0; y<h; y++) {
+					yw = y * w;
+					fyw = (h - 1 - y) * w;
+					for (unsigned int x=0; x<w; x++) {
+						src_val = Magick::ColorGray(src_px[yw + x]).shade();
+						dst_px[fyw + x] = (float) src_val;
+					}
+				}
+
+				add_layer_to_netcdf(ncid, path, name_in_netcdf, w, h, dimids, nd, (const void *) dst_px, deflate_level);
+			} else {
+				unsigned char dst_px[size];
+				unsigned int yw, fyw;
+
+				for (unsigned int y=0; y<h; y++) {
+					yw = y * w;
+					fyw = (h - 1 - y) * w;
+					for (unsigned int x=0; x<w; x++) {
+						src_val = Magick::ColorGray(src_px[yw + x]).shade();
+						dst_px[fyw + x] = (int) (src_val * 255);
+					}
+				}
+
+				add_layer_to_netcdf(ncid, path, name_in_netcdf, w, h, dimids, nd, (const void *) dst_px, deflate_level);
+			}
+		} else if (c == 3) {
+			unsigned char dst_px_r[size], dst_px_g[size], dst_px_b[size];
+			unsigned int yw, fyw;
+
+			for (unsigned int y=0; y<h; y++) {
+				yw = y * w;
+				fyw = (h - 1 - y) * w;
+				for (unsigned int x=0; x<w; x++) {
+					//! \todo TODO:: Figure out why pixels of an 8-bit image are stored as 16-bit values.
+					// Is it due to the TrueColorType?
+					dst_px_r[fyw + x] = (int) (src_px[yw + x].red * 255 / 65535.0f);
+					dst_px_g[fyw + x] = (int) (src_px[yw + x].green * 255 / 65535.0f);
+					dst_px_b[fyw + x] = (int) (src_px[yw + x].blue * 255 / 65535.0f);
+				}
 			}
 
-			if ((retval = nc_put_var_float(ncid, varid, dst_px))) {
-				std::ostringstream ss;
-				ss << "failed to store an array of " << w << " x " << h << " float values in a variable";
-				throw NCException(ss.str(), path, retval);
-			}
-		} else {
-			unsigned char dst_px[size];
-
-			for (unsigned int i=0; i<size; i++) {
-				src_val = Magick::ColorGray(src_px[i]).shade();
-				dst_px[i] = (int) (src_val * 255);
-			}
-
-			if ((retval = nc_put_var_ubyte(ncid, varid, dst_px))) {
-				std::ostringstream ss;
-				ss << "failed to store an array of " << w << " x " << h << " unsigned byte values in a variable";
-				throw NCException(ss.str(), path, retval);
-			}
+			add_layer_to_netcdf(ncid, path, name_in_netcdf + "_R", w, h, dimids, nd, (const void *) dst_px_r, deflate_level);
+			add_layer_to_netcdf(ncid, path, name_in_netcdf + "_G", w, h, dimids, nd, (const void *) dst_px_g, deflate_level);
+			add_layer_to_netcdf(ncid, path, name_in_netcdf + "_B", w, h, dimids, nd, (const void *) dst_px_b, deflate_level);
 		}
 
 	} catch (NCException &e) {

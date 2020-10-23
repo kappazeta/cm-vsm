@@ -19,7 +19,32 @@
 #include <iostream>
 #include <filesystem>
 #include <Magick++.h>
+#include <netcdf.h>
 
+
+class NCException: public std::exception {
+	public:
+		NCException(const std::string &msg, const std::filesystem::path &path, int retval) {
+			message = msg;
+			nc_path = path;
+			nc_retval = retval;
+
+			std::ostringstream ss;
+			ss << "NetCDF file " << nc_path << ": " << message << ", " << nc_strerror(nc_retval);
+			full_message.assign(ss.str());
+		}
+
+		std::string message;
+		std::filesystem::path nc_path;
+		int nc_retval;
+
+		virtual const char* what() const throw() {
+			return full_message.c_str();
+		}
+
+	protected:
+		std::string full_message;
+};
 
 class RasterImage {
 	public:
@@ -42,6 +67,9 @@ class RasterImage {
 
 		bool scale(float f, bool point_filter);
 		void remap_values(const unsigned char *values);
+
+	private:
+		int add_layer_to_netcdf(int ncid, const std::filesystem::path &path, const std::string &name_in_netcdf, unsigned int w, unsigned int h, const int *dimids, unsigned char nd, const void *src_px, int deflate_level);
 };
 
 std::ostream &operator<<(std::ostream &out, const RasterImage &img);
