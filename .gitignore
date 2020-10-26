@@ -1,2 +1,5 @@
 vsm/build
 *.swp
+/.idea
+/.cache
+__pycache__
