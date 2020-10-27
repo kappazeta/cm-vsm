@@ -8,26 +8,16 @@ import dias.utilities as utilities
 
 
 class Downloader:
-    def __init__(self, infile, outdir):
+    def __init__(self, product_reader, outdir):
         self.n_threads = 2
-        self.infile = infile
+        self.product_reader = product_reader
         self.outdir = outdir
         self.s3_bucket_name = "EODATA"
         self.disk_quota_str = "200G"
         self.disk_quota = utilities.size_from_str(self.disk_quota_str)
 
-    @staticmethod
-    def get_product_titles(filename):
-        try:
-            with open(filename) as f:
-                lines = f.read().splitlines()
-            return lines
-        except OSError:
-            print("Unable to open file " + filename)
-            return []
-
     def start(self):
-        product_titles = self.get_product_titles(self.infile)
+        product_titles = self.product_reader.get_products()
         n_products = len(product_titles)
         if n_products == 0:
             print('Nothing to download.')
