@@ -5,13 +5,14 @@ from multiprocessing import Process, Queue
 
 import dias.s3 as s3
 import dias.utilities as utilities
+from dias.logger import Logger
 
 
-class Downloader:
-    def __init__(self, product_reader, outdir):
+class Downloader(Logger):
+    def __init__(self, product_reader, data_dir):
+        super(Downloader, self).__init__(data_dir)
         self.n_threads = 2
         self.product_reader = product_reader
-        self.outdir = outdir
         self.s3_bucket_name = "EODATA"
         self.disk_quota_str = "200G"
         self.disk_quota = utilities.size_from_str(self.disk_quota_str)
@@ -20,10 +21,10 @@ class Downloader:
         product_titles = self.product_reader.get_products()
         n_products = len(product_titles)
         if n_products == 0:
-            print('Nothing to download.')
+            self.info('Nothing to download.')
             return
 
-        print("Downloading {} products(s) with {} processes(s)".format(n_products, self.n_threads))
+        self.info("Downloading {} products(s) with {} processes(s)".format(n_products, self.n_threads))
 
         jobs_queue = Queue()
         [jobs_queue.put(product) for product in product_titles]
@@ -43,34 +44,30 @@ class Downloader:
         finally:
             [process.join() for process in processes]
 
-        print("Finished downloading.")
+        self.info("Finished downloading.")
 
     def download(self, control_queue, jobs_queue):
-        # If the output directory doesn't exist yet, then create it.
-        if not Path(self.outdir).is_dir():
-            os.makedirs(self.outdir)
-
         # In case of ctrl+c, control_queue will become empty
         while (not control_queue.empty()) and (not jobs_queue.empty()):
             product_title = jobs_queue.get()
             product_path = s3.get_path(product_title)
             download_size = s3.get_size(self.s3_bucket_name, product_path)
-            dir_size = utilities.get_dir_size(self.outdir) + download_size
+            dir_size = utilities.get_dir_size(self.data_dir) + download_size
             if dir_size > self.disk_quota:
-                print("Skipping product {} as disk is full: {}/{}"
+                self.info("Skipping product {} as disk is full: {}/{}"
                       .format(product_title, utilities.size_to_str(dir_size), self.disk_quota_str))
                 continue
 
-            download_path = os.path.join(self.outdir, product_title + ".SAFE.part")
+            download_path = os.path.join(self.data_dir, product_title + ".SAFE.part")
             if not Path(download_path).is_dir():
                 os.makedirs(download_path)
 
             try:
                 command, suppress = s3.get_command(self.s3_bucket_name, product_path, download_path)
-                print("Downloading product {} as {}")
+                self.info("Downloading product {} as {}")
                 self.download_product(command + suppress, download_size, download_path, product_title)
             except RuntimeError as error:
-                print(str(error))
+                self.info(str(error))
 
     @staticmethod
     def download_product(s3_command, download_size, download_path, product_title):
