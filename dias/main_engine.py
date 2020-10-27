@@ -4,15 +4,20 @@ import os
 from dias.product_reader import ProductReader
 from dias.product_tiler import ProductTiler
 from dias.downloader import Downloader
+from dias.logger import Logger
 
 
-def main(data_dir, infile):
-    product_reader = ProductReader(os.path.join(data_dir, infile))
-    downloader = Downloader(product_reader, data_dir)
-    product_tiler = ProductTiler(product_reader, data_dir)
+class MainEngine(Logger):
+    def __init__(self, data_dir):
+        super(MainEngine, self).__init__(data_dir)
 
-    downloader.start()
-    product_tiler.start()
+    def start(self, infile):
+        product_reader = ProductReader(os.path.join(self.data_dir, infile))
+        downloader = Downloader(product_reader, self.data_dir)
+        product_tiler = ProductTiler(product_reader, self.data_dir)
+
+        downloader.start()
+        product_tiler.start()
 
 
 if __name__ == "__main__":
@@ -23,5 +28,7 @@ if __name__ == "__main__":
     p.add_argument("-f", "--infile", action="store", dest="infile", type=str,
                    default="products.dat",
                    help="File holding product titles that need to be processed.")
+
     args = p.parse_args()
-    main(args.data_dir, args.infile)
+    main_engine = MainEngine(args.data_dir)
+    main_engine.start(args.infile)
