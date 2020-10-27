@@ -1,9 +1,8 @@
-import boto3
-import subprocess
 import re
+import subprocess
 
 
-def get_s3_path(product_title):
+def get_path(product_title):
     """
     Generate S3 path from product title
     """
@@ -24,11 +23,7 @@ def get_s3_path(product_title):
     return prefix + product_title + ".SAFE/"
 
 
-# ======================================================
-#           Functions related to usage of s3cmd
-# ======================================================
-
-def get_s3_command(bucket, product_path, output_path):
+def get_command(bucket_name, product_path, output_path):
     """
     Generate a S3 command to download the product.
     """
@@ -40,11 +35,11 @@ def get_s3_command(bucket, product_path, output_path):
     # WARNING: Empty object name on S3 found, ignoring.
     # ERROR: Skipping /home/am_app/data/s1_zip/S1A_IW_SLC__1SDV_20180514T161303_20180514T161330_021903_025D6A_CDE5.SAFE/annotation/calibration/: Is a directory
     suppress = ' 2>&1 | sed -u -e "/^WARNING: Empty.\+/d" -e "/^ERROR: Skipping.\+: Is a directory$/d"'
-    command = "s3cmd get --recursive {}--force s3://{}/{} {}".format(quiet_flag, bucket, product_path, output_path)
+    command = "s3cmd get --recursive {}--force s3://{}/{} {}".format(quiet_flag, bucket_name, product_path, output_path)
     return [command, suppress]
 
 
-def get_s3_size(bucket_name, product_path, host):
+def get_size(bucket_name, product_path, host=""):
     """
     Measure the size of file or folder in bytes from S3 query.
     If remote host is specified, the query will be performed over ssh.
