@@ -51,20 +51,23 @@ class Downloader(Logger):
         while (not control_queue.empty()) and (not jobs_queue.empty()):
             product_title = jobs_queue.get()
             product_path = s3.get_path(product_title)
-            download_size = s3.get_size(self.s3_bucket_name, product_path)
+            download_path = os.path.join(self.data_dir, product_title + ".SAFE.part")
+            download_size = self.get_download_size(product_title, product_path, download_path)
+            if download_size < 0:
+                continue
+
             dir_size = utilities.get_dir_size(self.data_dir) + download_size
             if dir_size > self.disk_quota:
                 self.info("Skipping product {} as disk is full: {}/{}"
-                      .format(product_title, utilities.size_to_str(dir_size), self.disk_quota_str))
+                          .format(product_title, utilities.size_to_str(dir_size), self.disk_quota_str))
                 continue
 
-            download_path = os.path.join(self.data_dir, product_title + ".SAFE.part")
             if not Path(download_path).is_dir():
                 os.makedirs(download_path)
 
             try:
                 command, suppress = s3.get_command(self.s3_bucket_name, product_path, download_path)
-                self.info("Downloading product {} as {}")
+                self.info("Downloading product {} as {}".format(product_title, command))
                 self.download_product(command + suppress, download_size, download_path, product_title)
             except RuntimeError as error:
                 self.info(str(error))
@@ -91,3 +94,22 @@ class Downloader(Logger):
 
         # Remove .part from the dir name, so that other modules can start using it
         shutil.move(download_path, result_path)
+
+    def get_download_size(self, product_title, product_path, download_path):
+        try:
+            # Get the size of the download.
+            download_size = s3.get_size(self.s3_bucket_name, product_path)
+            size_str = utilities.size_to_str(download_size)
+            if Path(download_path).is_dir():
+                local_size = utilities.get_dir_size(download_path)
+                # In case product with the same size already exists, do not download it again
+                if download_size == local_size:
+                    self.info("Product {} already exists and occupies {}".format(product_title, size_str))
+                    return -1
+            else:
+                self.info("Size of product {} is {}".format(product_title, size_str))
+            return download_size
+
+        except Exception as e:
+            self.info("Failed to obtain size of product {}".format(product_title))
+            return -1
