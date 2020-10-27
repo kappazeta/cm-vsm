@@ -1,17 +1,21 @@
+import os
+from dias.logger import Logger
 
-class ProductReader:
-    def __init__(self, infile):
+
+class ProductReader(Logger):
+    def __init__(self, data_dir):
+        super(ProductReader, self).__init__(data_dir)
+        infile = os.path.join(data_dir, "products.dat")
         self.products = self.read_products_from_file(infile)
 
     def get_products(self):
         return self.products
 
-    @staticmethod
-    def read_products_from_file(filename):
+    def read_products_from_file(self, filename):
         try:
             with open(filename) as f:
                 lines = f.read().splitlines()
             return lines
         except OSError:
-            print("Unable to open file " + filename)
+            self.info("Unable to open file " + filename)
             return []

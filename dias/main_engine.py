@@ -1,5 +1,4 @@
 import argparse
-import os
 
 from dias.product_reader import ProductReader
 from dias.product_tiler import ProductTiler
@@ -11,8 +10,8 @@ class MainEngine(Logger):
     def __init__(self, data_dir):
         super(MainEngine, self).__init__(data_dir)
 
-    def start(self, infile):
-        product_reader = ProductReader(os.path.join(self.data_dir, infile))
+    def start(self):
+        product_reader = ProductReader(self.data_dir)
         downloader = Downloader(product_reader, self.data_dir)
         product_tiler = ProductTiler(product_reader, self.data_dir)
 
@@ -25,10 +24,7 @@ if __name__ == "__main__":
     p.add_argument("-d", "--datadir", action="store", dest="data_dir", type=str,
                    default="~/data/s2_zip",
                    help="Path to folder holding unpacked Sentinel-2 products.")
-    p.add_argument("-f", "--infile", action="store", dest="infile", type=str,
-                   default="products.dat",
-                   help="File holding product titles that need to be processed.")
 
     args = p.parse_args()
     main_engine = MainEngine(args.data_dir)
-    main_engine.start(args.infile)
+    main_engine.start()
