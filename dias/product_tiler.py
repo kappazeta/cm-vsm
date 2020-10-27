@@ -16,10 +16,10 @@ class ProductTiler(Logger):
         product_titles = self.product_reader.get_products()
         n_products = len(product_titles)
         if n_products == 0:
-            self.info('Nothing to split.')
+            self.info('Nothing to tile.')
             return
 
-        self.info("Splitting {} products(s) with {} processes(s)".format(n_products, self.n_threads))
+        self.info("Tiling {} products(s) with {} processes(s)".format(n_products, self.n_threads))
 
         jobs_queue = Queue()
         [jobs_queue.put(product) for product in product_titles]
@@ -39,11 +39,12 @@ class ProductTiler(Logger):
         finally:
             [process.join() for process in processes]
 
-        self.info("Finished splitting.")
+        self.info("Finished tiling.")
 
     def split(self, control_queue, jobs_queue):
         # In case of ctrl+c, control_queue will become empty
         while (not control_queue.empty()) and (not jobs_queue.empty()):
             product_title = jobs_queue.get()
             product_path = os.path.join(self.data_dir, product_title + ".SAFE")
+            self.info("Tiling product {}".format(product_title))
             utilities.execute(self.cvat_exec + product_path)
