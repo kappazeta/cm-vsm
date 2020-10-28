@@ -90,7 +90,7 @@ bool RasterImage::save(const std::filesystem::path &path) {
 	return false;
 }
 
-bool RasterImage::scale(float f, bool point_filter) {
+bool RasterImage::scale_f(float f, bool point_filter) {
 	if (subset != nullptr) {
 		// No scaling needed?
 		if (f >= 0.999f && f <= 1.001f)
@@ -98,6 +98,24 @@ bool RasterImage::scale(float f, bool point_filter) {
 
 		Magick::Geometry geom_orig = subset->size();
 		Magick::Geometry geom_new(geom_orig.width() * f, geom_orig.height() * f);
+		if (point_filter)
+			subset->filterType(Magick::PointFilter);
+		else
+			subset->filterType(Magick::SincFilter);
+		subset->resize(geom_new);
+		return true;
+	}
+	return false;
+}
+
+bool RasterImage::scale_to(unsigned int size, bool point_filter) {
+	if (subset != nullptr) {
+		Magick::Geometry geom_orig = subset->size();
+
+		if (geom_orig.width() == size && geom_orig.height() == size)
+			return true;
+
+		Magick::Geometry geom_new(size, size);
 		if (point_filter)
 			subset->filterType(Magick::PointFilter);
 		else

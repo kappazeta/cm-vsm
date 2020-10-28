@@ -120,10 +120,6 @@ bool ESA_S2_Image::split(const std::filesystem::path &path_in, const std::filesy
 	int w = img_src.main_geometry.width();
 	int h = img_src.main_geometry.height();
 
-	float div_f_downscaled = (float) div_f;
-	if (f_downscale > 0.0f)
-		div_f_downscaled /= f_downscale;
-
 	std::cout << "Processing " << path_in << std::endl;
 
 	// Subset the image, and store the subsets in a dedicated directory.
@@ -137,10 +133,10 @@ bool ESA_S2_Image::split(const std::filesystem::path &path_in, const std::filesy
 				if (scl_value_map != nullptr)
 					img_src.remap_values(scl_value_map);
 				// Scale SCL with point filter.
-				img_src.scale(div_f_downscaled, true);
+				img_src.scale_to(tile_size * f_downscale, true);
 			} else {
 				// Scale other images with sinc filter.
-				img_src.scale(div_f_downscaled, false);
+				img_src.scale_to(tile_size * f_downscale, false);
 			}
 
 			std::ostringstream ss_path_out, ss_path_out_png, ss_path_out_nc;

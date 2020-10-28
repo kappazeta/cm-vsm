@@ -85,7 +85,8 @@ class RasterImage {
 		unsigned char main_depth;
 		unsigned char main_num_components;
 
-		bool scale(float f, bool point_filter);
+		bool scale_f(float f, bool point_filter);
+		bool scale_to(unsigned int size, bool point_filter);
 		void remap_values(const unsigned char *values);
 
 	private:
