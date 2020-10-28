@@ -127,9 +127,9 @@ bool ESA_S2_Image::split(const std::filesystem::path &path_in, const std::filesy
 	std::cout << "Processing " << path_in << std::endl;
 
 	// Subset the image, and store the subsets in a dedicated directory.
-	for (int y=0; y<h; y+=tile_size_div) {
+	for (int y=0,yi=0; y<h; y+=tile_size_div,yi++) {
 		std::cout << " " << y << std::endl;
-		for (int x=0; x<w; x+=tile_size_div) {
+		for (int x=0,xi=0; x<w; x+=tile_size_div,xi++) {
 			img_src.load_subset(path_in, x, y, x + tile_size_div, y + tile_size_div);
 
 			// Remap pixel values for SCL.
@@ -145,7 +145,7 @@ bool ESA_S2_Image::split(const std::filesystem::path &path_in, const std::filesy
 
 			std::ostringstream ss_path_out, ss_path_out_png, ss_path_out_nc;
 
-			ss_path_out << path_dir_out.string() << "/tile_" << x * div_f << "_" << y * div_f << "/";
+			ss_path_out << path_dir_out.string() << "/tile_" << xi << "_" << yi << "/";
 
 			std::filesystem::create_directories(ss_path_out.str());
 
