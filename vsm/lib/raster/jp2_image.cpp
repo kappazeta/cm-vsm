@@ -71,6 +71,9 @@ bool JP2_Image::load_header(const std::filesystem::path &path) {
 			throw std::exception();
 		}
 
+		// Limit to a single thread (allows to parallelize over multiple JP2 files).
+		opj_codec_set_threads(l_codec, 1);
+
 		// Read file header with image size, number of components, etc.
 		if (!opj_read_header(l_stream, l_codec, &l_image)) {
 			std::cerr << "ERROR: OpenJPEG: Failed to read header from " << path << std::endl;

@@ -25,7 +25,7 @@ const std::string ESA_S2_Image_Operator::data_type_name[ESA_S2_Image_Operator::D
 	"TCI", "SCL", "AOT", "B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B8A", "B09", "B10", "B11", "B12", "WVP", "GML", "S2CC", "S2CS"
 };
 
-ESA_S2_Image::ESA_S2_Image(): tile_size(512), scl_value_map(nullptr), f_downscale(-1) {}
+ESA_S2_Image::ESA_S2_Image(): tile_size(512), scl_value_map(nullptr), f_downscale(1) {}
 ESA_S2_Image::~ESA_S2_Image() {}
 
 void ESA_S2_Image::set_tile_size(int tile_size) {
@@ -37,7 +37,10 @@ void ESA_S2_Image::set_scl_class_map(unsigned char *class_map) {
 }
 
 void ESA_S2_Image::set_downscale_factor(int f) {
-	f_downscale = f;
+	if (f <= 0)
+		f_downscale = 1;
+	else
+		f_downscale = f;
 }
 
 bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op) {
@@ -133,10 +136,10 @@ bool ESA_S2_Image::split(const std::filesystem::path &path_in, const std::filesy
 				if (scl_value_map != nullptr)
 					img_src.remap_values(scl_value_map);
 				// Scale SCL with point filter.
-				img_src.scale_to(tile_size * f_downscale, true);
+				img_src.scale_to((unsigned int) (tile_size / f_downscale), true);
 			} else {
 				// Scale other images with sinc filter.
-				img_src.scale_to(tile_size * f_downscale, false);
+				img_src.scale_to((unsigned int) (tile_size / f_downscale), false);
 			}
 
 			std::ostringstream ss_path_out, ss_path_out_png, ss_path_out_nc;
