@@ -76,9 +76,9 @@ unsigned char new_class_map[] = {
 	1, // 5  NOT_VEGETATED            -> CLEAR
 	1, // 6  WATER                    -> CLEAR
 	0, // 7  UNCLASSIFIED             -> UNCLASSIFIED
-	3, // 8  CLOUD_MEDIUM_PROBABILITY -> CLOUD
-	3, // 9  CLOUD_HIGH_PROBABILITY   -> CLOUD
-	4, // 10 THIN_CIRRUS              -> SEMI_TRANSPARENT_CLOUD
+	4, // 8  CLOUD_MEDIUM_PROBABILITY -> CLOUD
+	4, // 9  CLOUD_HIGH_PROBABILITY   -> CLOUD
+	3, // 10 THIN_CIRRUS              -> SEMI_TRANSPARENT_CLOUD
 	1  // 11 SNOW                     -> CLEAR
 };
 
