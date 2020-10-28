@@ -69,6 +69,8 @@ class ESA_S2_Image {
 
 		void set_tile_size(int tile_size);
 
+		void set_downscale_factor(int f);
+
 		void set_scl_class_map(unsigned char *class_map);
 
 		bool process(const std::filesystem::path &path_dir_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op);
@@ -77,5 +79,7 @@ class ESA_S2_Image {
 
 	protected:
 		unsigned char *scl_value_map;
+
+		int f_downscale;
 };
 

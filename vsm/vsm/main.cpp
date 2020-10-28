@@ -91,10 +91,12 @@ int main(int argc, char* argv[]) {
 		<< std::endl;
 
 	if (argc < 2) {
-		std::cerr << "Usage: cvat-vsm [-d PATH][-r CVAT_XML [-n NETCDF]]" << std::endl
+		std::cerr << "Usage: cvat-vsm [-d PATH] [-r CVAT_XML [-n NETCDF]] [-S TILESIZE [-s SHRINK]]" << std::endl
 			<< "\twhere PATH points to the .SAFE directory of an ESA S2 L2A product." << std::endl
-			<< "\tCVAT_XML to an annotations vector layer which is to be rasterized." << std::endl
-			<< "\tNETCDF to a NetCDF file to be updated with the rasterized annotations." << std::endl;
+			<< "\tCVAT_XML points to an annotations vector layer which is to be rasterized." << std::endl
+			<< "\tNETCDF points to a NetCDF file to be updated with the rasterized annotations." << std::endl
+			<< "\tTILESIZE is the number of pixels per the edge of a square subtile (default: 512)." << std::endl
+			<< "\tSHRINK is the factor by which to downscale from the 10 x 10 m^2 S2 bands (default: -1 (original size))." << std::endl;
 		return 1;
 	}
 
@@ -102,6 +104,8 @@ int main(int argc, char* argv[]) {
 	Magick::InitializeMagick(*argv);
 
 	std::string arg_path_dir, arg_path_rasterize, arg_path_nc;
+	unsigned int tilesize = 512;
+	int downscale = -1;
 	for (int i=0; i<argc; i++) {
 		if (!strncmp(argv[i], "-d", 2))
 			arg_path_dir.assign(argv[i + 1]);
@@ -109,6 +113,10 @@ int main(int argc, char* argv[]) {
 			arg_path_rasterize.assign(argv[i + 1]);
 		else if (!strncmp(argv[i], "-n", 2))
 			arg_path_nc.assign(argv[i + 1]);
+		else if (!strncmp(argv[i], "-S", 2))
+			tilesize = atoi(argv[i + 1]);
+		else if (!strncmp(argv[i], "-s", 2))
+			downscale = atoi(argv[i + 1]);
 	}
 
 	if (arg_path_dir.length() > 0) {
@@ -117,7 +125,9 @@ int main(int argc, char* argv[]) {
 		std::filesystem::path path_dir_in(arg_path_dir);
 		std::filesystem::path path_dir_out(path_dir_in.parent_path().string() + "/" + path_dir_in.stem().string() + ".CVAT");
 
+		img.set_tile_size(tilesize);
 		img.set_scl_class_map(new_class_map);
+		img.set_downscale_factor(downscale);
 		img.process(path_dir_in, path_dir_out, img_op);
 	}
 

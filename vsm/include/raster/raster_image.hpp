@@ -46,6 +46,26 @@ class NCException: public std::exception {
 		std::string full_message;
 };
 
+template <typename T>
+class RasterBufferPan {
+	public:
+		RasterBufferPan(unsigned long int size);
+		~RasterBufferPan();
+
+		T *v;
+};
+
+template <typename T>
+class RasterBufferRGB {
+	public:
+		RasterBufferRGB(unsigned long int size);
+		~RasterBufferRGB();
+
+		T *r;
+		T *g;
+		T *b;
+};
+
 class RasterImage {
 	public:
 		RasterImage();
