@@ -107,15 +107,13 @@ bool ESA_S2_Image::split(const std::filesystem::path &path_in, const std::filesy
 	ESA_S2_Band_JP2_Image img_src;
 	bool retval = true;
 
-	unsigned int div_f = 1;
+	float div_f = 1.0f;
 	if (data_resolution == ESA_S2_Image_Operator::DR_20M)
-		div_f = 2;
+		div_f = 2.0f;
 	else if (data_resolution == ESA_S2_Image_Operator::DR_60M)
-		div_f = 6;
+		div_f = 6.0f;
 
-	unsigned int tile_size_div = tile_size / div_f;
-	if (tile_size % div_f != 0)
-		tile_size_div++;
+	float tile_size_div = tile_size / div_f;
 
 	// Get image dimensions.
 	retval &= img_src.load_header(path_in);
@@ -126,10 +124,12 @@ bool ESA_S2_Image::split(const std::filesystem::path &path_in, const std::filesy
 	std::cout << "Processing " << path_in << std::endl;
 
 	// Subset the image, and store the subsets in a dedicated directory.
-	for (int y=0,yi=0; y<h; y+=tile_size_div,yi++) {
-		std::cout << " " << y << std::endl;
-		for (int x=0,xi=0; x<w; x+=tile_size_div,xi++) {
-			img_src.load_subset(path_in, x, y, x + tile_size_div, y + tile_size_div);
+	int xi, yi;
+	float xf, yf;
+	int xi0 = 0, yi0 = 0;
+	for (yi=yi0, yf=yi*tile_size_div; yf<(float)h; yf+=tile_size_div,yi++) {
+		for (xi=xi0, xf=xi*tile_size_div; xf<(float)w; xf+=tile_size_div,xi++) {
+			img_src.load_subset(path_in, (int) xf, (int) yf, (int) (xf + tile_size_div), (int) (yf + tile_size_div));
 
 			// Remap pixel values for SCL.
 			if (data_type == ESA_S2_Image_Operator::DT_SCL) {
@@ -149,7 +149,7 @@ bool ESA_S2_Image::split(const std::filesystem::path &path_in, const std::filesy
 			std::filesystem::create_directories(ss_path_out.str());
 
 			ss_path_out_nc << ss_path_out.str() << "bands.nc";
-			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << x << "_" << y << ".png";
+			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << (int) xf << "_" << (int) yf << ".png";
 
 			// Save PNG.
 			img_src.save(ss_path_out_png.str());
