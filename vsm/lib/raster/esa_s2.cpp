@@ -25,15 +25,22 @@ const std::string ESA_S2_Image_Operator::data_type_name[ESA_S2_Image_Operator::D
 	"TCI", "SCL", "AOT", "B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B8A", "B09", "B10", "B11", "B12", "WVP", "GML", "S2CC", "S2CS"
 };
 
-ESA_S2_Image::ESA_S2_Image(): tile_size(256), scl_value_map(nullptr) {}
+ESA_S2_Image::ESA_S2_Image(): tile_size(512), scl_value_map(nullptr), f_downscale(1) {}
 ESA_S2_Image::~ESA_S2_Image() {}
 
 void ESA_S2_Image::set_tile_size(int tile_size) {
-	tile_size = tile_size;
+	this->tile_size = tile_size;
 }
 
 void ESA_S2_Image::set_scl_class_map(unsigned char *class_map) {
 	scl_value_map = class_map;
+}
+
+void ESA_S2_Image::set_downscale_factor(int f) {
+	if (f <= 0)
+		f_downscale = 1;
+	else
+		f_downscale = f;
 }
 
 bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op) {
@@ -98,53 +105,51 @@ bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::
 
 bool ESA_S2_Image::split(const std::filesystem::path &path_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op, ESA_S2_Image_Operator::data_type_t data_type, ESA_S2_Image_Operator::data_resolution_t data_resolution) {
 	ESA_S2_Band_JP2_Image img_src;
-	int div_f = 1;
 	bool retval = true;
 
+	float div_f = 1.0f;
 	if (data_resolution == ESA_S2_Image_Operator::DR_20M)
-		div_f = 2;
+		div_f = 2.0f;
 	else if (data_resolution == ESA_S2_Image_Operator::DR_60M)
-		div_f = 6;
+		div_f = 6.0f;
+
+	float tile_size_div = tile_size / div_f;
 
 	// Get image dimensions.
 	retval &= img_src.load_header(path_in);
 
 	int w = img_src.main_geometry.width();
 	int h = img_src.main_geometry.height();
-	int tile_size_20m = 2 * tile_size / div_f;
 
 	std::cout << "Processing " << path_in << std::endl;
 
 	// Subset the image, and store the subsets in a dedicated directory.
-	for (int y=0; y<h; y+=tile_size_20m) {
-		std::cout << " " << y << std::endl;
-		for (int x=0; x<w; x+=tile_size_20m) {
-			img_src.load_subset(path_in, x, y, x + tile_size_20m, y + tile_size_20m);
+	int xi, yi;
+	float xf, yf;
+	int xi0 = 0, yi0 = 0;
+	for (yi=yi0, yf=yi*tile_size_div; yf<(float)h; yf+=tile_size_div,yi++) {
+		for (xi=xi0, xf=xi*tile_size_div; xf<(float)w; xf+=tile_size_div,xi++) {
+			img_src.load_subset(path_in, (int) xf, (int) yf, (int) (xf + tile_size_div), (int) (yf + tile_size_div));
 
 			// Remap pixel values for SCL.
 			if (data_type == ESA_S2_Image_Operator::DT_SCL) {
 				if (scl_value_map != nullptr)
 					img_src.remap_values(scl_value_map);
 				// Scale SCL with point filter.
-				img_src.scale(div_f, true);
+				img_src.scale_to((unsigned int) (tile_size / f_downscale), true);
 			} else {
 				// Scale other images with sinc filter.
-				img_src.scale(div_f, false);
+				img_src.scale_to((unsigned int) (tile_size / f_downscale), false);
 			}
 
 			std::ostringstream ss_path_out, ss_path_out_png, ss_path_out_nc;
 
-			if (data_resolution == ESA_S2_Image_Operator::DR_20M)
-				ss_path_out << path_dir_out.string() << "/tile_" << x << "_" << y << "/";
-			else if (data_resolution == ESA_S2_Image_Operator::DR_10M)
-				ss_path_out << path_dir_out.string() << "/tile_" << x / 2 << "_" << y / 2 << "/";
-			else if (data_resolution == ESA_S2_Image_Operator::DR_60M)
-				ss_path_out << path_dir_out.string() << "/tile_" << x * 3 + x / tile_size_20m << "_" << y * 3 + y / tile_size_20m << "/";
+			ss_path_out << path_dir_out.string() << "/tile_" << xi << "_" << yi << "/";
 
 			std::filesystem::create_directories(ss_path_out.str());
 
 			ss_path_out_nc << ss_path_out.str() << "bands.nc";
-			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << x << "_" << y << ".png";
+			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << (int) xf << "_" << (int) yf << ".png";
 
 			// Save PNG.
 			img_src.save(ss_path_out_png.str());

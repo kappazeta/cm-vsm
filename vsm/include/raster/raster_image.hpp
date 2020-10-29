@@ -46,6 +46,26 @@ class NCException: public std::exception {
 		std::string full_message;
 };
 
+template <typename T>
+class RasterBufferPan {
+	public:
+		RasterBufferPan(unsigned long int size);
+		~RasterBufferPan();
+
+		T *v;
+};
+
+template <typename T>
+class RasterBufferRGB {
+	public:
+		RasterBufferRGB(unsigned long int size);
+		~RasterBufferRGB();
+
+		T *r;
+		T *g;
+		T *b;
+};
+
 class RasterImage {
 	public:
 		RasterImage();
@@ -65,7 +85,8 @@ class RasterImage {
 		unsigned char main_depth;
 		unsigned char main_num_components;
 
-		bool scale(float f, bool point_filter);
+		bool scale_f(float f, bool point_filter);
+		bool scale_to(unsigned int size, bool point_filter);
 		void remap_values(const unsigned char *values);
 
 	private:

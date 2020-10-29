@@ -18,6 +18,28 @@
 #include <climits>
 
 
+template<typename T>
+RasterBufferPan<T>::RasterBufferPan(unsigned long int size) {
+	v = new T[size];
+}
+template<typename T>
+RasterBufferPan<T>::~RasterBufferPan() {
+	delete [] v;
+}
+
+template<typename T>
+RasterBufferRGB<T>::RasterBufferRGB(unsigned long int size) {
+	r = new T[size];
+	g = new T[size];
+	b = new T[size];
+}
+template<typename T>
+RasterBufferRGB<T>::~RasterBufferRGB() {
+	delete [] r;
+	delete [] g;
+	delete [] b;
+}
+
 RasterImage::RasterImage(): main_depth(0), main_num_components(0), subset(nullptr) {}
 RasterImage::~RasterImage() {
 	clear();
@@ -68,7 +90,7 @@ bool RasterImage::save(const std::filesystem::path &path) {
 	return false;
 }
 
-bool RasterImage::scale(float f, bool point_filter) {
+bool RasterImage::scale_f(float f, bool point_filter) {
 	if (subset != nullptr) {
 		// No scaling needed?
 		if (f >= 0.999f && f <= 1.001f)
@@ -76,6 +98,24 @@ bool RasterImage::scale(float f, bool point_filter) {
 
 		Magick::Geometry geom_orig = subset->size();
 		Magick::Geometry geom_new(geom_orig.width() * f, geom_orig.height() * f);
+		if (point_filter)
+			subset->filterType(Magick::PointFilter);
+		else
+			subset->filterType(Magick::SincFilter);
+		subset->resize(geom_new);
+		return true;
+	}
+	return false;
+}
+
+bool RasterImage::scale_to(unsigned int size, bool point_filter) {
+	if (subset != nullptr) {
+		Magick::Geometry geom_orig = subset->size();
+
+		if (geom_orig.width() == size && geom_orig.height() == size)
+			return true;
+
+		Magick::Geometry geom_new(size, size);
 		if (point_filter)
 			subset->filterType(Magick::PointFilter);
 		else
@@ -95,11 +135,11 @@ void RasterImage::remap_values(const unsigned char *values) {
 
 		Magick::PixelPacket *px = subset->getPixels(0, 0, w, h);
 
-		register double src_val, dst_val;
+		float src_val, dst_val;
 
 		for (unsigned int i=0; i<size; i++) {
 			src_val = Magick::ColorGray(px[i]).shade();
-			dst_val = values[(unsigned char) (255 * src_val)] / 255.0;
+			dst_val = values[(unsigned char) (255 * src_val)] / 255.0f;
 			px[i] = Magick::ColorGray(dst_val);
 		}
 
@@ -169,7 +209,7 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 
 	try {
 		Magick::ImageType imgtype = subset->type();
-		
+
 		if (imgtype == Magick::GrayscaleType)
 			c = 1;
 		else if (imgtype == Magick::TrueColorType)
@@ -208,42 +248,45 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 		int nd = sizeof(dimids) / sizeof(dimids[0]);
 
 		Magick::PixelPacket *src_px = subset->getPixels(0, 0, w, h);
-		double src_val;
+		float src_val;
 
 		// Store content.
 		if (c == 1) {
 			if (main_depth > 8) {
-				float dst_px[size];
 				unsigned int yw, fyw;
+
+				RasterBufferPan<float> dst_px(size);
 
 				for (unsigned int y=0; y<h; y++) {
 					yw = y * w;
 					fyw = (h - 1 - y) * w;
 					for (unsigned int x=0; x<w; x++) {
 						src_val = Magick::ColorGray(src_px[yw + x]).shade();
-						dst_px[fyw + x] = (float) src_val;
+						dst_px.v[fyw + x] = src_val;
 					}
 				}
 
-				add_layer_to_netcdf(ncid, path, name_in_netcdf, w, h, dimids, nd, (const void *) dst_px, deflate_level);
+				add_layer_to_netcdf(ncid, path, name_in_netcdf, w, h, dimids, nd, (const void *) dst_px.v, deflate_level);
 			} else {
-				unsigned char dst_px[size];
 				unsigned int yw, fyw;
+
+				RasterBufferPan<unsigned char> dst_px(size);
 
 				for (unsigned int y=0; y<h; y++) {
 					yw = y * w;
 					fyw = (h - 1 - y) * w;
 					for (unsigned int x=0; x<w; x++) {
 						src_val = Magick::ColorGray(src_px[yw + x]).shade();
-						dst_px[fyw + x] = (int) (src_val * 255);
+						dst_px.v[fyw + x] = (int) (src_val * 255);
 					}
 				}
 
-				add_layer_to_netcdf(ncid, path, name_in_netcdf, w, h, dimids, nd, (const void *) dst_px, deflate_level);
+				add_layer_to_netcdf(ncid, path, name_in_netcdf, w, h, dimids, nd, (const void *) dst_px.v, deflate_level);
 			}
 		} else if (c == 3) {
-			unsigned char dst_px_r[size], dst_px_g[size], dst_px_b[size];
 			unsigned int yw, fyw;
+
+			RasterBufferRGB<unsigned char> dst_px(size);
 
 			for (unsigned int y=0; y<h; y++) {
 				yw = y * w;
@@ -251,15 +294,15 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 				for (unsigned int x=0; x<w; x++) {
 					//! \todo TODO:: Figure out why pixels of an 8-bit image are stored as 16-bit values.
 					// Is it due to the TrueColorType?
-					dst_px_r[fyw + x] = (int) (src_px[yw + x].red * 255 / 65535.0f);
-					dst_px_g[fyw + x] = (int) (src_px[yw + x].green * 255 / 65535.0f);
-					dst_px_b[fyw + x] = (int) (src_px[yw + x].blue * 255 / 65535.0f);
+					dst_px.r[fyw + x] = (int) (src_px[yw + x].red * 255 / 65535.0f);
+					dst_px.g[fyw + x] = (int) (src_px[yw + x].green * 255 / 65535.0f);
+					dst_px.b[fyw + x] = (int) (src_px[yw + x].blue * 255 / 65535.0f);
 				}
 			}
 
-			add_layer_to_netcdf(ncid, path, name_in_netcdf + "_R", w, h, dimids, nd, (const void *) dst_px_r, deflate_level);
-			add_layer_to_netcdf(ncid, path, name_in_netcdf + "_G", w, h, dimids, nd, (const void *) dst_px_g, deflate_level);
-			add_layer_to_netcdf(ncid, path, name_in_netcdf + "_B", w, h, dimids, nd, (const void *) dst_px_b, deflate_level);
+			add_layer_to_netcdf(ncid, path, name_in_netcdf + "_R", w, h, dimids, nd, (const void *) dst_px.r, deflate_level);
+			add_layer_to_netcdf(ncid, path, name_in_netcdf + "_G", w, h, dimids, nd, (const void *) dst_px.g, deflate_level);
+			add_layer_to_netcdf(ncid, path, name_in_netcdf + "_B", w, h, dimids, nd, (const void *) dst_px.b, deflate_level);
 		}
 
 	} catch (NCException &e) {
@@ -269,6 +312,7 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 		// Close the file.
 		if ((retval = nc_close(ncid)))
 			std::cerr << "Failed to close NetCDF file \"" << path << "\", error " << retval << std::endl;
+
 		return false;
 	}
 
@@ -277,6 +321,7 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 		std::cerr << "Failed to close NetCDF file \"" << path << "\", error " << retval << std::endl;
 		return false;
 	}
+
 	return true;
 }
 
