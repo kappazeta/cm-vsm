@@ -117,6 +117,37 @@ void XMLCALL CVATRasterizer::tag_start_handler(void *user_data, const XML_Char *
 			else if (!strncmp(attr[i], "points", 6))
 				p_inst->last_polygon.parse_points(attr[i + 1]);
 		}
+	} else if (!strncmp(el, "box", 3)) {
+		p_inst->last_polygon.clear();
+		Magick::Coordinate points[4];
+
+		for (int i=0; attr[i]; i+=2) {
+			if (!strncmp(attr[i], "label", 5)) {
+				p_inst->last_polygon.set_label(attr[i + 1]);
+			} else if (!strncmp(attr[i], "occluded", 8)) {
+				p_inst->last_polygon.occluded = atoi(attr[i + 1]);
+			} else if (!strncmp(attr[i], "z_order", 7)) {
+				p_inst->last_polygon.z_order = atoi(attr[i + 1]);
+			} else if (!strncmp(attr[i], "xtl", 3)) {
+				float f = atof(attr[i + 1]);
+				points[0].x(f);
+				points[3].x(f);
+			} else if (!strncmp(attr[i], "ytl", 3)) {
+				float f = atof(attr[i + 1]);
+				points[0].y(f);
+				points[1].y(f);
+			} else if (!strncmp(attr[i], "xbr", 3)) {
+				float f = atof(attr[i + 1]);
+				points[1].x(f);
+				points[2].x(f);
+			} else if (!strncmp(attr[i], "ybr", 3)) {
+				float f = atof(attr[i + 1]);
+				points[2].y(f);
+				points[3].y(f);
+			}
+		}
+
+		p_inst->last_polygon.points.insert(p_inst->last_polygon.points.begin(), std::begin(points), std::end(points));
 	}
 
 	p_inst->last_last_tag.assign(p_inst->last_tag);
@@ -136,6 +167,9 @@ void XMLCALL CVATRasterizer::tag_end_handler(void *user_data, const XML_Char *el
 	CVATRasterizer *p_inst = (CVATRasterizer *) user_data;
 
 	if (!strncmp(el, "polygon", 7)) {
+		p_inst->polygons.push_back(p_inst->last_polygon);
+		p_inst->last_polygon.clear();
+	} else if (!strncmp(el, "box", 3)) {
 		p_inst->polygons.push_back(p_inst->last_polygon);
 		p_inst->last_polygon.clear();
 	}
