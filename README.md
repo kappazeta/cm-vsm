@@ -5,35 +5,36 @@ A raster conversion and segmentation mask vectorization tool for CVAT.
 The following system dependencies are needed:
 * g++8 or later
 * CMake 3.4.3 or later
+* cget (https://github.com/pfultz2/cget)
 * OpenJPEG (`libopenjp2-7-dev`)
 * GDAL (`libgdal-dev`, `gdal-bin`)
 * Expat (`libexpat1-dev`)
 * GraphicsMagick++ (`libgraphicsmagick++1-dev`)
 * NetCDF (`libnetcdf-dev`)
+* nlohmann's JSON (https://github.com/nlohmann/json)
 
 On Ubuntu, the following commands could be used to install the dependencies:
 
 ```
 sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 sudo apt update
-sudo apt-get install cmake gcc-9 g++-9 libopenjp2-7-dev libgdal-dev gdal-bin libexpat1-dev libgraphicsmagick++1-dev libnetcdf-dev
+sudo apt-get install cmake gcc-9 g++-9 python-pip libopenjp2-7-dev libgdal-dev gdal-bin libexpat1-dev libgraphicsmagick++1-dev libnetcdf-dev
+pip install cget
 ```
 
 ## Building
 A release version of the tool can be built as follows:
 
 ```
-cd vsm/build
-cmake -DCMAKE_CXX_COMPILER=g++-9 ..
-make
+cd vsm
+cget build -DCMAKE_CXX_COMPILER=g++-9
 ```
 
 Similarly, a debug version can be built as follows:
 
 ```
-cd vsm/build
-cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=g++-9 ..
-make
+cd vsm
+cget build -DCMAKE_CXX_COMPILER=g++-9
 ```
 
 ## Usage
