@@ -46,5 +46,9 @@ class ProductTiler(Logger):
         while (not control_queue.empty()) and (not jobs_queue.empty()):
             product_title = jobs_queue.get()
             product_path = os.path.join(self.data_dir, product_title + ".SAFE")
-            self.info("Tiling product {}".format(product_title))
-            utilities.execute(self.cvat_exec + product_path)
+            command = self.cvat_exec + product_path
+            self.info("Tiling product {} with command {}".format(product_title, command))
+            errcode, errmsg = utilities.execute(command)
+            if errcode:
+                self.info("Failed to tile product {}; error code: {}, error msg:\n{}"
+                          .format(product_title, errcode, errmsg))
