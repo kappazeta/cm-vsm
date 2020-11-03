@@ -100,6 +100,7 @@ class Downloader(Logger):
             # Get the size of the download.
             download_size = s3.get_size(self.s3_bucket_name, product_path)
             size_str = utilities.size_to_str(download_size)
+            download_path = download_path.replace(".part", "")
             if Path(download_path).is_dir():
                 local_size = utilities.get_dir_size(download_path)
                 # In case product with the same size already exists, do not download it again
