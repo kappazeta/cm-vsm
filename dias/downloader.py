@@ -66,9 +66,9 @@ class Downloader(Logger):
                 os.makedirs(download_path)
 
             try:
-                command, suppress = s3.get_command(self.s3_bucket_name, product_path, download_path)
+                command = s3.get_command(self.s3_bucket_name, product_path, download_path)
                 self.info("Downloading product {} as {}".format(product_title, command))
-                self.download_product(command + suppress, download_size, download_path, product_title)
+                self.download_product(command, download_size, download_path, product_title)
             except RuntimeError as error:
                 self.info(str(error))
 

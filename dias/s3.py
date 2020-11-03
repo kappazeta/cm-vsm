@@ -28,16 +28,10 @@ def get_command(bucket_name, product_path, output_path):
     """
     Generate a S3 command to download the product.
     """
+    # It might be, that in quiet mode the download misbehaves. If this happens, switch to verbose mode
     quiet_flag = "--quiet "
-
-    # Prevent s3cmd printing erroneous errors and warnings by first redirecting stderr to stdout (2>&1)
-    # and then sed-ing away error & warning messages.
-    # Sample messages:
-    # WARNING: Empty object name on S3 found, ignoring.
-    # ERROR: Skipping /home/am_app/data/s2_zip/S2A_MSIL2A_20200506T093041_N0214_R136_T35VMF_20200506T140446.SAFE/HTML/: Is a directory
-    suppress = ' 2>&1 | sed -u -e "/^WARNING: Empty.\+/d" -e "/^ERROR: Skipping.\+: Is a directory$/d"'
     command = "s3cmd get --recursive {}--force s3://{}/{} {}".format(quiet_flag, bucket_name, product_path, output_path)
-    return [command, suppress]
+    return command
 
 
 def get_size(bucket_name, product_path, host=""):
