@@ -7,19 +7,20 @@ def get_path(product_title):
     Generate S3 path from product title
     """
 
-    # Sample title: 'S1A_IW_SLC__1SDV_20180504T044207_20180504T044237_021750_025872_81A4'
+    # Sample title: 'S2A_MSIL2A_20200506T093041_N0214_R136_T35VMF_20200506T140446'
     split_title = product_title.split('_')
 
     satellite = "Sentinel-" + split_title[0][1]
-    product_type = split_title[2]
-    year = split_title[5][0:4]
-    month = split_title[5][4:6]
-    day = split_title[5][6:8]
+    product_type1 = split_title[1][0:3]
+    product_type2 = split_title[1][3:]
+    year = split_title[2][0:4]
+    month = split_title[2][4:6]
+    day = split_title[2][6:8]
 
-    # Sample prefix: 'Sentinel-1/SAR/SLC/2018/05/04/'
-    prefix = "{}/{}/{}/{}/{}/{}/".format(satellite, "SAR", product_type, year, month, day)
+    # Sample prefix: 'Sentinel-2/MSI/L2A/2020/05/06/'
+    prefix = "{}/{}/{}/{}/{}/{}/".format(satellite, product_type1, product_type2, year, month, day)
 
-    # Sample path: 'Sentinel-1/SAR/SLC/2018/05/04/S1A_IW_SLC__1SDV_20180504T044207_20180504T044237_021750_025872_81A4.SAFE/'
+    # Sample path: 'Sentinel-2/MSI/L2A/2020/05/06/S2A_MSIL2A_20200506T093041_N0214_R136_T35VMF_20200506T140446.SAFE/'
     return prefix + product_title + ".SAFE/"
 
 
@@ -33,7 +34,7 @@ def get_command(bucket_name, product_path, output_path):
     # and then sed-ing away error & warning messages.
     # Sample messages:
     # WARNING: Empty object name on S3 found, ignoring.
-    # ERROR: Skipping /home/am_app/data/s1_zip/S1A_IW_SLC__1SDV_20180514T161303_20180514T161330_021903_025D6A_CDE5.SAFE/annotation/calibration/: Is a directory
+    # ERROR: Skipping /home/am_app/data/s2_zip/S2A_MSIL2A_20200506T093041_N0214_R136_T35VMF_20200506T140446.SAFE/HTML/: Is a directory
     suppress = ' 2>&1 | sed -u -e "/^WARNING: Empty.\+/d" -e "/^ERROR: Skipping.\+: Is a directory$/d"'
     command = "s3cmd get --recursive {}--force s3://{}/{} {}".format(quiet_flag, bucket_name, product_path, output_path)
     return [command, suppress]
