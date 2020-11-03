@@ -3,9 +3,9 @@ import shutil
 from pathlib import Path
 from multiprocessing import Process, Queue
 
-import dias.s3 as s3
-import dias.utilities as utilities
-from dias.logger import Logger
+import s3 as s3
+import utilities as utilities
+from logger import Logger
 
 
 class Downloader(Logger):

@@ -1,9 +1,9 @@
 import argparse
 
-from dias.product_reader import ProductReader
-from dias.product_tiler import ProductTiler
-from dias.downloader import Downloader
-from dias.logger import Logger
+from product_reader import ProductReader
+from product_tiler import ProductTiler
+from downloader import Downloader
+from logger import Logger
 
 
 class MainEngine(Logger):

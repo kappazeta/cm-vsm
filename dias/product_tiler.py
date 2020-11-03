@@ -1,8 +1,8 @@
 import os
 from multiprocessing import Process, Queue
 
-import dias.utilities as utilities
-from dias.logger import Logger
+import utilities as utilities
+from logger import Logger
 
 
 class ProductTiler(Logger):

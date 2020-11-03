@@ -1,5 +1,5 @@
 import os
-from dias.logger import Logger
+from logger import Logger
 
 
 class ProductReader(Logger):
