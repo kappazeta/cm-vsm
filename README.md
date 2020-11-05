@@ -18,23 +18,29 @@ On Ubuntu, the following commands could be used to install the dependencies:
 ```
 sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 sudo apt update
-sudo apt-get install cmake gcc-9 g++-9 python-pip libopenjp2-7-dev libgdal-dev gdal-bin libexpat1-dev libgraphicsmagick++1-dev libnetcdf-dev
-pip install cget
+sudo apt-get install cmake gcc-9 g++-9 python3-pip libgdal-dev gdal-bin libexpat1-dev libgraphicsmagick++1-dev
+pip3 install cget
 ```
 
 ## Building
 A release version of the tool can be built as follows:
 
 ```
-cd vsm
-cget build -DCMAKE_CXX_COMPILER=g++-9
+cd vsm/build
+cget install
+cmake .. -DCMAKE_CXX_COMPILER=g++-9
+make
+sudo make install
 ```
 
 Similarly, a debug version can be built as follows:
 
 ```
-cd vsm
-cget build -DCMAKE_CXX_COMPILER=g++-9
+cd vsm/build
+cget install
+cmake .. -DCMAKE_CXX_COMPILER=g++-9 -DCMAKE_BUILD_TYPE=Debug
+make
+sudo make install
 ```
 
 ## Usage

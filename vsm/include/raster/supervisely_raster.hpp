@@ -26,5 +26,5 @@ class SuperviselyRaster: public RasterImage {
 		SuperviselyRaster();
 		~SuperviselyRaster();
 
-        bool load(const std::filesystem::path &path, const std::string &product_tile_name);
+	bool load(const std::filesystem::path &path, const std::string &product_tile_name);
 };

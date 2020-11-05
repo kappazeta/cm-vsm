@@ -20,6 +20,7 @@
 #include <filesystem>
 #include <Magick++.h>
 #include <netcdf.h>
+#include <vector>
 
 
 class NCException: public std::exception {
@@ -44,6 +45,25 @@ class NCException: public std::exception {
 
 	protected:
 		std::string full_message;
+};
+
+class PixelRGB8 {
+	public:
+		PixelRGB8(unsigned char _r, unsigned char _g, unsigned char _b);
+		PixelRGB8(const Magick::PixelPacket &px);
+		PixelRGB8(unsigned char c);
+		PixelRGB8();
+		~PixelRGB8();
+
+		unsigned char r;
+		unsigned char g;
+		unsigned char b;
+
+		PixelRGB8 &set(const std::vector<int> &components);
+		PixelRGB8 &set(const Magick::PixelPacket &px);
+
+		PixelRGB8 &operator=(const PixelRGB8 &a);
+		bool operator==(const PixelRGB8 &a);
 };
 
 template <typename T>

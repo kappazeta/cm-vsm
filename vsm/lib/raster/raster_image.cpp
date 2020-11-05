@@ -17,6 +17,45 @@
 #include "raster/raster_image.hpp"
 #include <climits>
 
+PixelRGB8::PixelRGB8(unsigned char _r, unsigned char _g, unsigned char _b):
+	r(_r), g(_g), b(_b) {}
+PixelRGB8::PixelRGB8(unsigned char c): r(c), g(c), b(c) {}
+PixelRGB8::PixelRGB8(const Magick::PixelPacket &px) {
+	set(px);
+}
+PixelRGB8::PixelRGB8(): r(0), g(0), b(0) {}
+PixelRGB8::~PixelRGB8() {}
+
+PixelRGB8 &PixelRGB8::operator=(const PixelRGB8 &a) {
+	r = a.r;
+	g = a.g;
+	b = a.b;
+
+	return *this;
+}
+
+bool PixelRGB8::operator==(const PixelRGB8 &a) {
+	return (a.r == r && a.g == g && a.b == b);
+}
+
+PixelRGB8 &PixelRGB8::set(const std::vector<int> &components) {
+	if (components.size() >= 1)
+		r = components[0];
+	if (components.size() >= 2)
+		g = components[1];
+	if (components.size() >= 3)
+		b = components[2];
+
+	return *this;
+}
+PixelRGB8 &PixelRGB8::set(const Magick::PixelPacket &px) {
+	Magick::ColorRGB c(px);
+	r = (unsigned char) (255 * c.red());
+	g = (unsigned char) (255 * c.green());
+	b = (unsigned char) (255 * c.blue());
+
+	return *this;
+}
 
 template<typename T>
 RasterBufferPan<T>::RasterBufferPan(unsigned long int size) {

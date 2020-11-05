@@ -16,6 +16,7 @@
 
 #include "raster/esa_s2.hpp"
 #include "raster/esa_s2_scl_jp2.hpp"
+#include "raster/supervisely_raster.hpp"
 #include "vector/gml.hpp"
 #include "vector/cvat_rasterizer.hpp"
 #include "util/text.hpp"
@@ -91,9 +92,9 @@ int main(int argc, char* argv[]) {
 		<< std::endl;
 
 	if (argc < 2) {
-		std::cerr << "Usage: cvat-vsm [-d PATH] [-r CVAT_XML [-n NETCDF]] [-S TILESIZE [-s SHRINK]]" << std::endl
+		std::cerr << "Usage: cvat-vsm [-d PATH] [-r ANNOTATIONS [-n NETCDF]] [-S TILESIZE [-s SHRINK]]" << std::endl
 			<< "\twhere PATH points to the .SAFE directory of an ESA S2 L2A product." << std::endl
-			<< "\tCVAT_XML points to an annotations vector layer which is to be rasterized." << std::endl
+			<< "\tANNOTATIONS points to a CVAT annotations.xml or Supervise.ly annotations directory." << std::endl
 			<< "\tNETCDF points to a NetCDF file to be updated with the rasterized annotations." << std::endl
 			<< "\tTILESIZE is the number of pixels per the edge of a square subtile (default: 512)." << std::endl
 			<< "\tSHRINK is the factor by which to downscale from the 10 x 10 m^2 S2 bands (default: -1 (original size))." << std::endl;
@@ -148,7 +149,12 @@ int main(int argc, char* argv[]) {
 			return 2;
 		}
 
-		rasterizer.convert(path_in, path_out_nc, path_out_png);
+		if (endswith(path_in.string(), ".xml")) {
+			rasterizer.convert(path_in, path_out_nc, path_out_png);
+		} else {
+			SuperviselyRaster s;
+			s.load(path_in, "T35VME_20200509T094041_TCI_10m_1536_10240");
+		}
 	}
 
 	return 0;
