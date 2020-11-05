@@ -223,7 +223,7 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 			// Save PNG.
 			img_src.save(ss_path_out_png.str());
 			// Add to NetCDF.
-			img_src.add_to_netcdf(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type], 9);
+			img_src.add_to_netcdf(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type]);
 
 			// Potential post-processing of the file.
 			if (!op(ss_path_out_png.str(), data_type))
@@ -285,7 +285,7 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 			// Save PNG.
 			img_src.save(ss_path_out_png.str());
 			// Add to NetCDF.
-			img_src.add_to_netcdf(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type], 9);
+			img_src.add_to_netcdf(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type]);
 
 			// Potential post-processing of the file.
 			if (!op(ss_path_out_png.str(), data_type))

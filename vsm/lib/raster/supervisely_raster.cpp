@@ -16,11 +16,16 @@
 
 #include "raster/supervisely_raster.hpp"
 #include "vector/cvat_rasterizer.hpp"
+#include "util/text.hpp"
 #include <fstream>
 #include <nlohmann/json.hpp>
 
 SuperviselyRaster::SuperviselyRaster() {}
 SuperviselyRaster::~SuperviselyRaster() {}
+
+void SuperviselyRaster::set_tile_name(const std::string &product_tile_name) {
+	tile_name.assign(product_tile_name);
+}
 
 bool SuperviselyRaster::load(const std::filesystem::path &path_dir_in, const std::string &product_tile_name) {
 	if (subset != nullptr)
@@ -50,7 +55,6 @@ bool SuperviselyRaster::load(const std::filesystem::path &path_dir_in, const std
 
 	// Create output raster (grayscale).
 	subset = create_grayscale(img.size(), 8, CVATPolygon::CV_BACKGROUND);
-	subset->modifyImage();
 
 	unsigned int w = img.columns();
 	unsigned int h = img.rows();
@@ -59,8 +63,6 @@ bool SuperviselyRaster::load(const std::filesystem::path &path_dir_in, const std
 	Magick::PixelPacket *spx = img.getPixels(0, 0, w, h);
 	Magick::PixelPacket *dpx = subset->getPixels(0, 0, w, h);
 	PixelRGB8 pixel;
-
-	float src_val, dst_val;
 
 	for (unsigned int i=0; i<size; i++) {
 		pixel = PixelRGB8(spx[i]);
@@ -74,3 +76,30 @@ bool SuperviselyRaster::load(const std::filesystem::path &path_dir_in, const std
 
 	return true;
 }
+
+bool SuperviselyRaster::convert(const std::filesystem::path &path_dir, const std::filesystem::path &path_nc) {
+	bool retval = true;
+
+	// Get the name of the first tile, unless already specified.
+	if (tile_name.empty()) {
+		for (const auto &entry: std::filesystem::directory_iterator(path_dir.string() + "/ds0/masks_machine")) {
+			if (endswith(entry.path().string(), ".png")) {
+				// Just take the first PNG in the directory.
+				tile_name.assign(entry.path().stem().string());
+				break;
+			}
+		}
+	}
+
+	std::filesystem::path path_out_png(path_dir.parent_path().string() + "/supervisely_" + tile_name + ".png");
+
+	retval &= load(path_dir, tile_name);
+
+	if (retval)
+		retval &= save(path_out_png);
+	if (retval)
+		retval &= add_to_netcdf(path_nc, "Label");
+
+	return retval;
+}
+

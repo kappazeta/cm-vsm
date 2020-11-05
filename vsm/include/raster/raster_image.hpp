@@ -93,10 +93,12 @@ class RasterImage {
 
 		Magick::Image *create_grayscale(const Magick::Geometry &geometry, int pixel_depth, int background_value);
 
-		virtual bool load(const std::filesystem::path &path) {}
+		virtual bool load(const std::filesystem::path &) {
+			return false;
+		}
 
 		bool save(const std::filesystem::path &path);
-		bool add_to_netcdf(const std::filesystem::path &path, const std::string &name_in_netcdf, int deflate_level);
+		bool add_to_netcdf(const std::filesystem::path &path, const std::string &name_in_netcdf);
 		void clear();
 
 		Magick::Image *subset;
@@ -104,13 +106,16 @@ class RasterImage {
 		Magick::Geometry main_geometry;
 		unsigned char main_depth;
 		unsigned char main_num_components;
+		unsigned int deflate_level;
+
+		unsigned int set_deflate_level(unsigned int level);
 
 		bool scale_f(float f, bool point_filter);
 		bool scale_to(unsigned int size, bool point_filter);
 		void remap_values(const unsigned char *values);
 
 	private:
-		int add_layer_to_netcdf(int ncid, const std::filesystem::path &path, const std::string &name_in_netcdf, unsigned int w, unsigned int h, const int *dimids, unsigned char nd, const void *src_px, int deflate_level);
+		int add_layer_to_netcdf(int ncid, const std::filesystem::path &path, const std::string &name_in_netcdf, unsigned int w, unsigned int h, const int *dimids, unsigned char nd, const void *src_px);
 };
 
 std::ostream &operator<<(std::ostream &out, const RasterImage &img);

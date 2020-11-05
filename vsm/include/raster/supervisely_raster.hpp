@@ -26,5 +26,12 @@ class SuperviselyRaster: public RasterImage {
 		SuperviselyRaster();
 		~SuperviselyRaster();
 
+	void set_tile_name(const std::string &product_tile_name);
+
 	bool load(const std::filesystem::path &path, const std::string &product_tile_name);
+
+	bool convert(const std::filesystem::path &path_dir, const std::filesystem::path &path_nc);
+
+	protected:
+		std::string tile_name;
 };

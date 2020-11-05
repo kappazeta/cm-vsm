@@ -92,9 +92,11 @@ int main(int argc, char* argv[]) {
 		<< std::endl;
 
 	if (argc < 2) {
-		std::cerr << "Usage: cvat-vsm [-d PATH] [-r ANNOTATIONS [-n NETCDF]] [-S TILESIZE [-s SHRINK]]" << std::endl
+		std::cerr << "Usage: cvat-vsm [-d PATH] [-r CVAT_XML [-n NETCDF]] [-c SUPERVISELY_DIR [-t TILE]] [-S TILESIZE [-s SHRINK]]" << std::endl
 			<< "\twhere PATH points to the .SAFE directory of an ESA S2 L2A product." << std::endl
-			<< "\tANNOTATIONS points to a CVAT annotations.xml or Supervise.ly annotations directory." << std::endl
+			<< "\tCVAT_XML points to a CVAT annotations.xml file." << std::endl
+			<< "\tSUPERVISELY_DIR points to a Supervise.ly annotations directory." << std::endl
+			<< "\tTILE is the name of the tile to take from the Supervise.ly annotations directory. By default, the first tile is taken." << std::endl
 			<< "\tNETCDF points to a NetCDF file to be updated with the rasterized annotations." << std::endl
 			<< "\tTILESIZE is the number of pixels per the edge of a square subtile (default: 512)." << std::endl
 			<< "\tSHRINK is the factor by which to downscale from the 10 x 10 m^2 S2 bands (default: -1 (original size))." << std::endl;
@@ -104,7 +106,7 @@ int main(int argc, char* argv[]) {
 	//! \note Magick relies on jasper for JP2 files, and jasper is not able to open the ESA S2 JP2 images.
 	Magick::InitializeMagick(*argv);
 
-	std::string arg_path_dir, arg_path_rasterize, arg_path_nc;
+	std::string arg_path_dir, arg_path_rasterize, arg_path_nc, arg_path_supervisely, arg_tilename;
 	unsigned int tilesize = 512;
 	int downscale = -1;
 	for (int i=0; i<argc; i++) {
@@ -118,6 +120,10 @@ int main(int argc, char* argv[]) {
 			tilesize = atoi(argv[i + 1]);
 		else if (!strncmp(argv[i], "-s", 2))
 			downscale = atoi(argv[i + 1]);
+		else if (!strncmp(argv[i], "-c", 2))
+			arg_path_supervisely.assign(argv[i + 1]);
+		else if (!strncmp(argv[i], "-t", 2))
+			arg_tilename.assign(argv[i + 1]);
 	}
 
 	if (arg_path_dir.length() > 0) {
@@ -133,12 +139,10 @@ int main(int argc, char* argv[]) {
 	}
 
 	if (arg_path_rasterize.length() > 0) {
-		std::cout << arg_path_rasterize << std::endl;
 		CVATRasterizer rasterizer;
 
 		std::filesystem::path path_in(arg_path_rasterize);
 		std::filesystem::path path_out_nc(arg_path_nc);
-		std::filesystem::path path_out_png(path_in.parent_path().string() + "/" + path_in.stem().string() + ".png");
 
 		if (!std::filesystem::exists(path_in)) {
 			std::cerr << "ERROR: Vector annotations file " << path_in << " does not exist." << std::endl;
@@ -149,11 +153,25 @@ int main(int argc, char* argv[]) {
 			return 2;
 		}
 
+		// Is it an XML file?
 		if (endswith(path_in.string(), ".xml")) {
+			std::filesystem::path path_out_png(path_in.parent_path().string() + "/" + path_in.stem().string() + ".png");
+
 			rasterizer.convert(path_in, path_out_nc, path_out_png);
+		}
+	}
+
+	if (arg_path_supervisely.length() > 0) {
+		SuperviselyRaster s;
+
+		std::filesystem::path path_in(arg_path_rasterize);
+
+		if (std::filesystem::is_directory(path_in)) {
+			if (arg_tilename)
+			s.convert(path_in);
 		} else {
-			SuperviselyRaster s;
-			s.load(path_in, "T35VME_20200509T094041_TCI_10m_1536_10240");
+			std::cerr << "Directory " << path_in << " does not exist." << std::endl;
+			return 1;
 		}
 	}
 

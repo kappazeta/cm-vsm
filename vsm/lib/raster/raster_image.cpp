@@ -79,9 +79,17 @@ RasterBufferRGB<T>::~RasterBufferRGB() {
 	delete [] b;
 }
 
-RasterImage::RasterImage(): main_depth(0), main_num_components(0), subset(nullptr) {}
+RasterImage::RasterImage(): main_depth(0), main_num_components(0), subset(nullptr), deflate_level(9) {}
 RasterImage::~RasterImage() {
 	clear();
+}
+
+unsigned int RasterImage::set_deflate_level(unsigned int level) {
+	if (level >= 9)
+		deflate_level = 9;
+	else
+		deflate_level = level;
+	return deflate_level;
 }
 
 void RasterImage::clear() {
@@ -117,6 +125,8 @@ Magick::Image *RasterImage::create_grayscale(const Magick::Geometry &geometry, i
 	subset->type(Magick::GrayscaleType);
 	subset->depth(pixel_depth);
 	subset->endian(Magick::LSBEndian);
+	//! \note Need at least one operation on the image for syncPixels() to work. erase() is not enough.
+	subset->roll(1, 0);
 
 	return subset;
 }
@@ -186,7 +196,7 @@ void RasterImage::remap_values(const unsigned char *values) {
 	}
 }
 
-int RasterImage::add_layer_to_netcdf(int ncid, const std::filesystem::path &path, const std::string &name_in_netcdf, unsigned int w, unsigned int h, const int *dimids, unsigned char nd, const void *dst_px, int deflate_level) {
+int RasterImage::add_layer_to_netcdf(int ncid, const std::filesystem::path &path, const std::string &name_in_netcdf, unsigned int w, unsigned int h, const int *dimids, unsigned char nd, const void *dst_px) {
 	int varid = 0;
 	int retval;
 
@@ -231,7 +241,7 @@ int RasterImage::add_layer_to_netcdf(int ncid, const std::filesystem::path &path
 	return varid;
 }
 
-bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::string &name_in_netcdf, int deflate_level) {
+bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::string &name_in_netcdf) {
 	int ncid = 0, varid = 0;
 	int dimids[2] = {0, 0};
 	int retval;
@@ -305,7 +315,7 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 					}
 				}
 
-				add_layer_to_netcdf(ncid, path, name_in_netcdf, w, h, dimids, nd, (const void *) dst_px.v, deflate_level);
+				add_layer_to_netcdf(ncid, path, name_in_netcdf, w, h, dimids, nd, (const void *) dst_px.v);
 			} else {
 				unsigned int yw, fyw;
 
@@ -320,7 +330,7 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 					}
 				}
 
-				add_layer_to_netcdf(ncid, path, name_in_netcdf, w, h, dimids, nd, (const void *) dst_px.v, deflate_level);
+				add_layer_to_netcdf(ncid, path, name_in_netcdf, w, h, dimids, nd, (const void *) dst_px.v);
 			}
 		} else if (c == 3) {
 			unsigned int yw, fyw;
@@ -339,9 +349,9 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 				}
 			}
 
-			add_layer_to_netcdf(ncid, path, name_in_netcdf + "_R", w, h, dimids, nd, (const void *) dst_px.r, deflate_level);
-			add_layer_to_netcdf(ncid, path, name_in_netcdf + "_G", w, h, dimids, nd, (const void *) dst_px.g, deflate_level);
-			add_layer_to_netcdf(ncid, path, name_in_netcdf + "_B", w, h, dimids, nd, (const void *) dst_px.b, deflate_level);
+			add_layer_to_netcdf(ncid, path, name_in_netcdf + "_R", w, h, dimids, nd, (const void *) dst_px.r);
+			add_layer_to_netcdf(ncid, path, name_in_netcdf + "_G", w, h, dimids, nd, (const void *) dst_px.g);
+			add_layer_to_netcdf(ncid, path, name_in_netcdf + "_B", w, h, dimids, nd, (const void *) dst_px.b);
 		}
 
 	} catch (NCException &e) {
