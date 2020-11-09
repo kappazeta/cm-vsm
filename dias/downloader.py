@@ -69,7 +69,7 @@ class Downloader(Logger):
             product_path = s3.get_path(product_title)
             download_path = os.path.join(self.data_dir, product_title + ".SAFE.part")
             download_size = self.get_download_size(product_title, product_path, download_path)
-            if download_size < 0:
+            if download_size <= 0:
                 continue
 
             dir_size = utilities.get_dir_size(self.data_dir) + download_size
@@ -85,6 +85,7 @@ class Downloader(Logger):
                 command = s3.get_command(self.s3_bucket_name, product_path, download_path)
                 self.info("Downloading product {} as {}".format(product_title, command))
                 self.download_product(command, download_size, download_path, product_title)
+                self.info("Finished downloading product {}".format(product_title))
             except RuntimeError as error:
                 self.info(str(error))
 
@@ -115,6 +116,10 @@ class Downloader(Logger):
         try:
             # Get the size of the download.
             download_size = s3.get_size(self.s3_bucket_name, product_path)
+            if download_size == 0:
+                self.info("Could not find from s3 the product {}".format(product_title))
+                return -1
+
             size_str = utilities.size_to_str(download_size)
             download_path = download_path.replace(".part", "")
             if Path(download_path).is_dir():

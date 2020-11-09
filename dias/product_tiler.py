@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import os
+from pathlib import Path
 from multiprocessing import Process, Queue
 
 import utilities as utilities
@@ -26,7 +27,7 @@ class ProductTiler(Logger):
         super(ProductTiler, self).__init__(data_dir)
         self.n_threads = 10
         self.product_reader = product_reader
-        self.cvat_exec = "../vsm/build/bin/cvat_vsm -d "
+        self.cvat_command = "../vsm/build/bin/cvat_vsm -S 3072 -s 6 -d "
 
     def start(self):
         product_titles = self.product_reader.get_products()
@@ -62,7 +63,23 @@ class ProductTiler(Logger):
         while (not control_queue.empty()) and (not jobs_queue.empty()):
             product_title = jobs_queue.get()
             product_path = os.path.join(self.data_dir, product_title + ".SAFE")
-            command = self.cvat_exec + product_path
+            ref_data_path = os.path.join(self.data_dir, "Reference_dataset", product_title.replace("MSIL2A", "MSIL1C"))
+
+            # Check for the existence of downloaded data
+            if not Path(product_path).is_dir():
+                self.info("Could not find data for product " + product_title)
+                continue
+
+            # Create reference data
+            if not Path(ref_data_path).is_dir():
+                self.info("Could not find reference dataset for product " + product_title)
+                continue
+            # Create link instead of coping, as this does not affect the size of the .SAFE dir
+            # and therefore does not corrupt the check of the correctness of the dir
+            utilities.execute("ln -s {} {}".format(ref_data_path, product_path + "/ref_dataset"))
+
+            # Start the tiling process
+            command = self.cvat_command + product_path
             self.info("Tiling product {} with command {}".format(product_title, command))
             errcode, errmsg = utilities.execute(command)
             if errcode:
