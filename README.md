@@ -19,6 +19,13 @@ sudo apt update
 sudo apt-get install cmake gcc-9 g++-9 libopenjp2-7-dev libgdal-dev gdal-bin libexpat1-dev libgraphicsmagick++1-dev libnetcdf-dev
 ```
 
+Under CentOS-8, run
+
+```
+sudo yum install cmake gcc gcc-c++ openjpeg2-devel libpng-devel gdal gdal-devel expat-devel GraphicsMagick-c++-devel netcdf-devel
+```
+
+
 ## Building
 A release version of the tool can be built as follows:
 
