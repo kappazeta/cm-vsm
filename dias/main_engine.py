@@ -19,6 +19,7 @@ import argparse
 from product_reader import ProductReader
 from product_tiler import ProductTiler
 from downloader import Downloader
+from uploader import Uploader
 from logger import Logger
 
 
@@ -30,9 +31,11 @@ class MainEngine(Logger):
         product_reader = ProductReader(self.data_dir)
         downloader = Downloader(product_reader, self.data_dir)
         product_tiler = ProductTiler(product_reader, self.data_dir)
+        uploader = Uploader(product_reader, self.data_dir)
 
         downloader.start()
         product_tiler.start()
+        uploader.start()
 
 
 if __name__ == "__main__":
