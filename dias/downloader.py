@@ -83,7 +83,7 @@ class Downloader(Logger):
 
             try:
                 command = s3.get_command(self.s3_bucket_name, product_path, download_path)
-                self.info("Downloading product {} as {}".format(product_title, command))
+                self.info("Downloading product as {}".format(command))
                 self.download_product(command, download_size, download_path, product_title)
                 self.info("Finished downloading product {}".format(product_title))
             except RuntimeError as error:
