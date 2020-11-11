@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import os
+import shutil
 from pathlib import Path
 from multiprocessing import Process, Queue
 
@@ -26,7 +27,7 @@ class Uploader(Logger):
     def __init__(self, product_reader, data_dir):
         super(Uploader, self).__init__(data_dir)
         self.product_reader = product_reader
-        self.n_threads = 10
+        self.max_n_threads = 10
         self.host = "hpc_cloudmask@rocket.hpc.ut.ee"
         self.remote_data_dir = "bands"
 
@@ -37,10 +38,12 @@ class Uploader(Logger):
             self.info('Nothing to upload.')
             return
 
-        self.info("Uploading {} products(s) with {} processes(s)".format(n_products, self.n_threads))
+        n_threads = min(self.max_n_threads, n_products)
+
+        self.info("Uploading {} products(s) with {} processes(s)".format(n_products, n_threads))
 
         try:
-            self.create_remote_dir(self.host, self.remote_data_dir)
+            self.run_remote_command(self.host, "mkdir -p " + self.remote_data_dir)
         except RuntimeError as e:
             self.info(str(e))
             return
@@ -53,7 +56,7 @@ class Uploader(Logger):
         # In case of Ctrl+C, send a cancel signal to all processes so that they could return
         try:
             args = [control_queue, jobs_queue]
-            processes = [Process(target=self.upload, args=args) for _ in range(self.n_threads)]
+            processes = [Process(target=self.upload, args=args) for _ in range(n_threads)]
             [process.start() for process in processes]
             [process.join() for process in processes]
         except KeyboardInterrupt:
@@ -76,26 +79,48 @@ class Uploader(Logger):
                 continue
 
             split_title = product_title.split("_")
-            band_file_prefix = "{}_{}_".format(split_title[-2], split_title[-1])
+            band_file_prefix = "{}_{}".format(split_title[-2], split_title[-1])
 
             tile_dirs = [f.name for f in os.scandir(product_path) if f.is_dir()]
             self.info("Uploading {} tiles of product {}".format(len(tile_dirs), product_title))
 
+            # Make separate empty directory for all the bands.nc files
+            bands_dir_path = product_path.replace(".CVAT", ".BANDS")
+            if Path(bands_dir_path).is_dir():
+                shutil.rmtree(bands_dir_path)
+            os.makedirs(bands_dir_path)
+
+            # Copy all the bands.nc files into a separate directory
             for tile_dir in tile_dirs:
-                destination_file = band_file_prefix + tile_dir + ".nc"
+                destination_file = "{}_{}.nc".format(band_file_prefix, tile_dir)
                 from_path = os.path.join(product_path, tile_dir, "bands.nc")
-                to_path = "{host}:{dir}/{file}".format(host=self.host, dir=self.remote_data_dir, file=destination_file)
-                command = "scp {} {}".format(from_path, to_path)
-                error_code, error_msg = utilities.execute(command)
-                if error_code != 0:
-                    self.info("Failed to upload data to {}. Error code: {}, error message:\n{}"
-                              .format(to_path, error_code, error_msg))
+                to_path = os.path.join(bands_dir_path, destination_file)
+                shutil.copy(from_path, to_path)
+
+            # Upload this directory to a remote host
+            from_path = bands_dir_path
+            to_path = "{host}:{dir}/{bands}".format(host=self.host, dir=self.remote_data_dir, bands=product_title)
+
+            try:
+                self.send_to_remote(from_path, to_path)
+                self.run_remote_command(self.host, "mv {dir1}/{dir2}/* {dir1}/ && rm -rf {dir1}/{dir2}"
+                                        .format(dir1=self.remote_data_dir, dir2=product_title))
+                self.info("Sent {} to {}:{}".format(from_path, self.host, self.remote_data_dir))
+            except RuntimeError as e:
+                self.info(str(e))
 
     @staticmethod
-    def create_remote_dir(host, remote_data_dir):
-        command = "mkdir -p " + remote_data_dir
-        command = 'ssh -o "StrictHostKeyChecking=no" {host} "{cmd}"'.format(host=host, cmd=command)
+    def run_remote_command(host, cmd):
+        command = 'ssh -o "StrictHostKeyChecking=no" {host} "{cmd}"'.format(host=host, cmd=cmd)
         error_code, error_msg = utilities.execute(command)
         if error_code != 0:
-            raise RuntimeError("Failed to create data directory {} to {}; Error code: {}, error message:\n{}"
-                               .format(remote_data_dir, host, error_code, error_msg))
+            raise RuntimeError("Failed to run remote command {}; error code: {}, error message:\n{}"
+                               .format(command, host, error_code, error_msg))
+
+    @staticmethod
+    def send_to_remote(from_path, to_path):
+        command = "scp -r {} {}".format(from_path, to_path)
+        error_code, error_msg = utilities.execute(command)
+        if error_code != 0:
+            raise RuntimeError("Failed to upload {}; error code: {}, error message:\n{}"
+                               .format(from_path, error_code, error_msg))
