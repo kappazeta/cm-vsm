@@ -50,7 +50,8 @@ class Downloader(Logger):
         # In case of Ctrl+C, send a cancel signal to all processes so that they could return
         try:
             args = [control_queue, jobs_queue]
-            processes = [Process(target=self.download, args=args) for _ in range(self.n_threads)]
+            processes = [Process(target=self.download_s3, args=args) for _ in range(self.n_threads)]
+            # processes = [Process(target=self.download_web, args=args) for _ in range(self.n_threads)]
             [process.start() for process in processes]
             [process.join() for process in processes]
         except KeyboardInterrupt:
@@ -62,7 +63,7 @@ class Downloader(Logger):
 
         self.info("Finished downloading.")
 
-    def download(self, control_queue, jobs_queue):
+    def download_s3(self, control_queue, jobs_queue):
         # In case of ctrl+c, control_queue will become empty
         while (not control_queue.empty()) and (not jobs_queue.empty()):
             product_title = jobs_queue.get()
@@ -88,6 +89,47 @@ class Downloader(Logger):
                 self.info("Finished downloading product {}".format(product_title))
             except RuntimeError as error:
                 self.info(str(error))
+
+    def download_web(self, control_queue, jobs_queue):
+        scihub_dir = os.path.join(self.data_dir, "scihub")
+        peps_dir = os.path.join(self.data_dir, "peps")
+
+        if not Path(scihub_dir).is_dir():
+            os.makedirs(scihub_dir)
+        if not Path(peps_dir).is_dir():
+            os.makedirs(peps_dir)
+
+        scihub_url = "https://scihub.copernicus.eu/dhus/search?q="
+        peps_url = "https://peps.cnes.fr/rocket/#/searchsemantic?q="
+
+        # In case of ctrl+c, control_queue will become empty
+        while (not control_queue.empty()) and (not jobs_queue.empty()):
+            product_title = jobs_queue.get()
+            scihub_path = os.path.join(scihub_dir, product_title + ".xml")
+            peps_path = os.path.join(peps_dir, product_title + ".xml")
+
+            try:
+                self.info("Downloading product {}".format(product_title))
+                extended_product = product_title.replace("MSIL2A", "MSIL2*")
+                self.download_xml(scihub_url, extended_product, scihub_path, login=True)
+                self.download_xml(peps_url, product_title, peps_path, login=False)
+            except RuntimeError as error:
+                self.info(str(error))
+
+    @staticmethod
+    def download_xml(url, product, out_path, login):
+        user_name = "user_name"
+        user_password = "user_password"
+
+        command = "wget --no-verbose --no-check-certificate --output-document={out} {url}".format(out=out_path, url=url + product)
+        if login:
+            command = "wget --no-verbose --no-check-certificate --user={user} --password={pwd} --output-document={out}"\
+                      " {url}".format(user=user_name, pwd=user_password, out=out_path, url=(url + product))
+
+        error_code, error_msg = utilities.execute(command)
+        if error_code != 0:
+            raise RuntimeError("Failed to download product {}. Error code: {}, error message:\n{}"
+                               .format(product, error_code, error_msg))
 
     @staticmethod
     def download_product(s3_command, download_size, download_path, product_title):
