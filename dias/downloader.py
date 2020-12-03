@@ -27,7 +27,7 @@ from logger import Logger
 class Downloader(Logger):
     def __init__(self, product_reader, data_dir):
         super(Downloader, self).__init__(data_dir)
-        self.n_threads = 2
+        self.n_threads = 4
         self.product_reader = product_reader
         self.s3_bucket_name = "EODATA"
         self.disk_quota_str = "200G"
@@ -110,35 +110,31 @@ class Downloader(Logger):
             peps_path = os.path.join(peps_dir, product_title + ".xml")
 
             try:
-                self.info("Downloading product {}".format(product_title))
                 # extended_product = product_title.replace("MSIL2A", "MSIL2*")
                 # self.download_xml(scihub_url, extended_product, scihub_path, login=True)
                 # self.download_xml(peps_url, product_title, peps_path, login=False)
                 self.download_zip(esa_url, product_title, self.data_dir)
-
-                self.info("Unpacking product {}".format(product_title))
                 self.unpack(self.data_dir, product_title)
             except RuntimeError as error:
                 self.info(str(error))
 
-    @staticmethod
-    def download_zip(url, product, data_dir):
-        command = "wget --output-document={dir}/{prod} {url}{prod}".format(dir=data_dir, url=url, prod=product + ".zip")
+    def download_zip(self, url, product, data_dir):
+        command = "wget --no-verbose --no-check-certificate --output-document={dir}/{prod} {url}{prod}".format(dir=data_dir, url=url, prod=product + ".zip")
+        self.info("Downloading product as " + command)
         error_code, error_msg = utilities.execute(command)
         if error_code != 0:
             raise RuntimeError("Failed to download compressed product {}. Error code: {}, error message:\n{}"
                                .format(product, error_code, error_msg))
 
-    @staticmethod
-    def unpack(data_dir, product)
-        command = "unzip -q -d {dir} {dir}/{prod}.zip".format(dir=data_dir, prod=product)
+    def unpack(self, data_dir, product):
+        command = "unzip -qf -d {dir} {dir}/{prod}.zip".format(dir=data_dir, prod=product)
+        self.info("Unpacking product as " + command)
         error_code, error_msg = utilities.execute(command)
         if error_code != 0:
             raise RuntimeError("Failed to unzip product {}. Error code: {}, error message:\n{}"
                                .format(product, error_code, error_msg))
 
-    @staticmethod
-    def download_xml(url, product, out_path, login):
+    def download_xml(self, url, product, out_path, login):
         user_name = "user_name"
         user_password = "user_password"
 
@@ -147,6 +143,7 @@ class Downloader(Logger):
             command = "wget --no-verbose --no-check-certificate --user={user} --password={pwd} --output-document={out}"\
                       " {url}".format(user=user_name, pwd=user_password, out=out_path, url=(url + product))
 
+        self.info("Downloading product as " + command)
         error_code, error_msg = utilities.execute(command)
         if error_code != 0:
             raise RuntimeError("Failed to download product {}. Error code: {}, error message:\n{}"
