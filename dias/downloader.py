@@ -50,8 +50,8 @@ class Downloader(Logger):
         # In case of Ctrl+C, send a cancel signal to all processes so that they could return
         try:
             args = [control_queue, jobs_queue]
-            processes = [Process(target=self.download_s3, args=args) for _ in range(self.n_threads)]
-            # processes = [Process(target=self.download_web, args=args) for _ in range(self.n_threads)]
+            # processes = [Process(target=self.download_s3, args=args) for _ in range(self.n_threads)]
+            processes = [Process(target=self.download_web, args=args) for _ in range(self.n_threads)]
             [process.start() for process in processes]
             [process.join() for process in processes]
         except KeyboardInterrupt:
@@ -100,7 +100,8 @@ class Downloader(Logger):
             os.makedirs(peps_dir)
 
         scihub_url = "https://scihub.copernicus.eu/dhus/search?q="
-        peps_url = "https://peps.cnes.fr/rocket/#/searchsemantic?q="
+        peps_url = "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?identifier="
+        esa_url = "http://185.178.85.174/S2_L2A_results/"
 
         # In case of ctrl+c, control_queue will become empty
         while (not control_queue.empty()) and (not jobs_queue.empty()):
@@ -110,11 +111,31 @@ class Downloader(Logger):
 
             try:
                 self.info("Downloading product {}".format(product_title))
-                extended_product = product_title.replace("MSIL2A", "MSIL2*")
-                self.download_xml(scihub_url, extended_product, scihub_path, login=True)
-                self.download_xml(peps_url, product_title, peps_path, login=False)
+                # extended_product = product_title.replace("MSIL2A", "MSIL2*")
+                # self.download_xml(scihub_url, extended_product, scihub_path, login=True)
+                # self.download_xml(peps_url, product_title, peps_path, login=False)
+                self.download_zip(esa_url, product_title, self.data_dir)
+
+                self.info("Unpacking product {}".format(product_title))
+                self.unpack(self.data_dir, product_title)
             except RuntimeError as error:
                 self.info(str(error))
+
+    @staticmethod
+    def download_zip(url, product, data_dir):
+        command = "wget --output-document={dir}/{prod} {url}{prod}".format(dir=data_dir, url=url, prod=product + ".zip")
+        error_code, error_msg = utilities.execute(command)
+        if error_code != 0:
+            raise RuntimeError("Failed to download compressed product {}. Error code: {}, error message:\n{}"
+                               .format(product, error_code, error_msg))
+
+    @staticmethod
+    def unpack(data_dir, product)
+        command = "unzip -q -d {dir} {dir}/{prod}.zip".format(dir=data_dir, prod=product)
+        error_code, error_msg = utilities.execute(command)
+        if error_code != 0:
+            raise RuntimeError("Failed to unzip product {}. Error code: {}, error message:\n{}"
+                               .format(product, error_code, error_msg))
 
     @staticmethod
     def download_xml(url, product, out_path, login):
