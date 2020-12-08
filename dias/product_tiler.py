@@ -63,17 +63,16 @@ class ProductTiler(Logger):
         while (not control_queue.empty()) and (not jobs_queue.empty()):
             product_title = jobs_queue.get()
             product_path = os.path.join(self.data_dir, product_title + ".SAFE")
-            ref_data_path = os.path.join(self.data_dir, "Reference_dataset", product_title.replace("MSIL2A", "MSIL1C"))
+            ref_data_path = self.find_ref_data(product_title, [0, 2, 5])
 
-            # Check for the existence of downloaded data
+            # Check for the existence of data
             if not Path(product_path).is_dir():
                 self.info("Could not find data for product " + product_title)
                 continue
-
-            # Create reference data
             if not Path(ref_data_path).is_dir():
-                self.info("Could not find reference dataset for product " + product_title)
+                self.info("Could not find reference data for product " + product_title)
                 continue
+
             # Create link instead of coping, as this does not affect the size of the .SAFE dir
             # and therefore does not corrupt the check of the correctness of the dir
             utilities.execute("ln -s {} {}".format(ref_data_path, product_path + "/ref_dataset"))
@@ -85,3 +84,24 @@ class ProductTiler(Logger):
             if errcode:
                 self.info("Failed to tile product {}; error code: {}, error msg:\n{}"
                           .format(product_title, errcode, errmsg))
+
+    def find_ref_data(self, product, cols):
+        ref_data_dir = os.path.join(self.data_dir, "Reference_dataset")
+        split_product = product.split("_")
+        for col in cols:
+            if col >= len(split_product):
+                raise RuntimeError("Column indices {} could not be matched with product {}".format(cols, product))
+
+        # Loop through all the folder names in a Reference_dataset folder
+        refs = [f.name for f in os.scandir(ref_data_dir) if f.is_dir()]
+        for ref in refs:
+            split_ref = ref.split("_")
+            if len(split_ref) != len(split_product):
+                continue
+
+            # Return the first reference data whose code matches well enough with the input product
+            matches = [True for col in cols if split_ref[col] == split_product[col]]
+            if len(matches) == len(cols):
+                return os.path.join(ref_data_dir, ref)
+
+        return ""
