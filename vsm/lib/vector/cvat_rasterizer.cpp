@@ -212,7 +212,7 @@ bool CVATRasterizer::convert(const std::filesystem::path &path_in, const std::fi
 		if (path_out_png.string().length() > 0)
 			retval &= image.save(path_out_png);
 		if (path_out_nc.string().length() > 0)
-			retval &= image.add_to_netcdf(path_out_nc, "Label", 9);
+			retval &= image.add_to_netcdf(path_out_nc, "Label");
 
 	} catch(std::exception &e) {
 		retval = false;

@@ -23,10 +23,6 @@
 SuperviselyRaster::SuperviselyRaster() {}
 SuperviselyRaster::~SuperviselyRaster() {}
 
-void SuperviselyRaster::set_tile_name(const std::string &product_tile_name) {
-	tile_name.assign(product_tile_name);
-}
-
 bool SuperviselyRaster::load(const std::filesystem::path &path_dir_in, const std::string &product_tile_name) {
 	if (subset != nullptr)
 		clear();
@@ -36,22 +32,32 @@ bool SuperviselyRaster::load(const std::filesystem::path &path_dir_in, const std
 	const std::string legend_filepath = path_dir_in.string() + "/obj_class_to_machine_color.json";
 
 	if (!std::filesystem::exists(raster_filepath)) {
-		//! \todo Raise exception.
+		std::ostringstream stream;
+		stream << "Raster file " << raster_filepath << " does not exist.";
+		throw std::runtime_error(stream.str());
 	}
 	if (!std::filesystem::exists(legend_filepath)) {
-		//! \todo Raise exception.
+		std::ostringstream stream;
+		stream << "Legend file " << legend_filepath << " does not exist.";
+		throw std::runtime_error(stream.str());
 	}
+
+	std::cout << legend_filepath << std::endl;
 
 	// Load the RGB raster.
 	Magick::Image img(raster_filepath);
 	img.quiet(false);
 
 	// Load metadata.
-	PixelRGB8 c_cloud, c_cloud_shadow;
+	PixelRGB8 c_cloud, c_cloud_shadow, c_semi_cloud, c_clear, c_undefined;
 	std::ifstream ifs(legend_filepath);
 	nlohmann::json j = nlohmann::json::parse(ifs);
-	c_cloud.set(j["Cloud"]);
-	c_cloud_shadow.set(j["Cloud shadow"]);
+	// Pixel colors for different classes.
+	c_cloud.set(j["CLOUD"]);
+	c_semi_cloud.set(j["SEMI_TRANSPARENT_CLOUD"]);
+	c_cloud_shadow.set(j["CLOUD_SHADOW"]);
+	c_clear.set(j["CLEAR"]);
+	c_undefined.set(j["UNDEFINED"]);
 
 	// Create output raster (grayscale).
 	subset = create_grayscale(img.size(), 8, CVATPolygon::CV_BACKGROUND);
@@ -70,6 +76,12 @@ bool SuperviselyRaster::load(const std::filesystem::path &path_dir_in, const std
 			dpx[i] = Magick::ColorGray(CVATPolygon::CV_CLOUD / 255.0f);
 		else if (pixel == c_cloud_shadow)
 			dpx[i] = Magick::ColorGray(CVATPolygon::CV_CLOUD_SHADOW / 255.0f);
+		else if (pixel == c_semi_cloud)
+			dpx[i] = Magick::ColorGray(CVATPolygon::CV_SEMI_TRANSPARENT_CLOUD / 255.0f);
+		else if (pixel == c_clear)
+			dpx[i] = Magick::ColorGray(CVATPolygon::CV_CLEAR / 255.0f);
+		else if (pixel == c_undefined)
+			dpx[i] = Magick::ColorGray(CVATPolygon::CV_CLEAR / 255.0f);
 	}
 
 	subset->syncPixels();
@@ -77,19 +89,8 @@ bool SuperviselyRaster::load(const std::filesystem::path &path_dir_in, const std
 	return true;
 }
 
-bool SuperviselyRaster::convert(const std::filesystem::path &path_dir, const std::filesystem::path &path_nc) {
+bool SuperviselyRaster::convert(const std::filesystem::path &path_dir, const std::string &tile_name, const std::filesystem::path &path_nc) {
 	bool retval = true;
-
-	// Get the name of the first tile, unless already specified.
-	if (tile_name.empty()) {
-		for (const auto &entry: std::filesystem::directory_iterator(path_dir.string() + "/ds0/masks_machine")) {
-			if (endswith(entry.path().string(), ".png")) {
-				// Just take the first PNG in the directory.
-				tile_name.assign(entry.path().stem().string());
-				break;
-			}
-		}
-	}
 
 	std::filesystem::path path_out_png(path_dir.parent_path().string() + "/supervisely_" + tile_name + ".png");
 

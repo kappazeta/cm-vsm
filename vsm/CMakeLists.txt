@@ -21,7 +21,7 @@ include(${VSM_ROOT}/config.cmake OPTIONAL)
 include(${VSM_ROOT}/cmake/modules/common.cmake)
 
 # Make sure that the build files are in a separate directory
-check_out_of_source()
+# check_out_of_source()
 
 # Initialize the project
 project(CVAT_VSM)

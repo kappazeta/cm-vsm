@@ -30,6 +30,7 @@
 #include <vector>
 #include <stdlib.h>
 #include <Magick++.h>
+#include <nlohmann/json.hpp>
 
 
 class ImageOperator: public ESA_S2_Image_Operator {
@@ -86,18 +87,20 @@ unsigned char new_class_map[] = {
 int main(int argc, char* argv[]) {
 	std::cout << "Vectorization and splitting tool for CVAT." << std::endl;
 	std::cout << "Running with the following dependencies:" << std::endl
-		<< " GDAL " << GDAL_RELEASE_NAME << " (" << GDAL_RELEASE_DATE << ")" << std::endl
+		// << " GDAL " << GDAL_RELEASE_NAME << " (" << GDAL_RELEASE_DATE << ")" << std::endl
+		<< " " << nlohmann::json::meta()["name"] << " " << nlohmann::json::meta()["version"]["string"] << std::endl
 		<< " OpenJPEG " << opj_version() << std::endl
 		<< " MagickLib " << MagickLibVersionText << std::endl
 		<< std::endl;
 
 	if (argc < 2) {
-		std::cerr << "Usage: cvat-vsm [-d PATH] [-r CVAT_XML [-n NETCDF]] [-c SUPERVISELY_DIR [-t TILE]] [-S TILESIZE [-s SHRINK]]" << std::endl
-			<< "\twhere PATH points to the .SAFE directory of an ESA S2 L2A product." << std::endl
+		std::cerr << "Usage: cvat-vsm [-d S2_PATH] [-D CVAT_PATH] [-r CVAT_XML -n NETCDF] [-R SUPERVISELY_DIR -t TILENAME -n NETCDF] [-S TILESIZE [-s SHRINK]]" << std::endl
+			<< "\twhere S2_PATH points to the .SAFE directory of an ESA S2 L2A or L1C product." << std::endl
+			<< "\tCVAT_PATH points to the .CVAT directory (pre-processed ESA S2 product)." << std::endl
 			<< "\tCVAT_XML points to a CVAT annotations.xml file." << std::endl
-			<< "\tSUPERVISELY_DIR points to a Supervise.ly annotations directory." << std::endl
-			<< "\tTILE is the name of the tile to take from the Supervise.ly annotations directory. By default, the first tile is taken." << std::endl
+			<< "\tSUPERVISELY_DIR points to a directory with the Supervise.ly annotations files." << std::endl
 			<< "\tNETCDF points to a NetCDF file to be updated with the rasterized annotations." << std::endl
+			<< "\tTILENAME is the name of the tile to pick from the Supervise.ly directory." << std::endl
 			<< "\tTILESIZE is the number of pixels per the edge of a square subtile (default: 512)." << std::endl
 			<< "\tSHRINK is the factor by which to downscale from the 10 x 10 m^2 S2 bands (default: -1 (original size))." << std::endl;
 		return 1;
@@ -106,36 +109,40 @@ int main(int argc, char* argv[]) {
 	//! \note Magick relies on jasper for JP2 files, and jasper is not able to open the ESA S2 JP2 images.
 	Magick::InitializeMagick(*argv);
 
-	std::string arg_path_dir, arg_path_rasterize, arg_path_nc, arg_path_supervisely, arg_tilename;
+	std::string arg_path_s2_dir, arg_path_cvat_dir, arg_path_rasterize, arg_path_nc, arg_path_supervisely, arg_tilename;
 	unsigned int tilesize = 512;
 	int downscale = -1;
 	for (int i=0; i<argc; i++) {
 		if (!strncmp(argv[i], "-d", 2))
-			arg_path_dir.assign(argv[i + 1]);
+			arg_path_s2_dir.assign(argv[i + 1]);
+		else if (!strncmp(argv[i], "-D", 2))
+			arg_path_cvat_dir.assign(argv[i + 1]);
 		else if (!strncmp(argv[i], "-r", 2))
 			arg_path_rasterize.assign(argv[i + 1]);
+		else if (!strncmp(argv[i], "-R", 2))
+			arg_path_supervisely.assign(argv[i + 1]);
 		else if (!strncmp(argv[i], "-n", 2))
 			arg_path_nc.assign(argv[i + 1]);
 		else if (!strncmp(argv[i], "-S", 2))
 			tilesize = atoi(argv[i + 1]);
 		else if (!strncmp(argv[i], "-s", 2))
 			downscale = atoi(argv[i + 1]);
-		else if (!strncmp(argv[i], "-c", 2))
-			arg_path_supervisely.assign(argv[i + 1]);
 		else if (!strncmp(argv[i], "-t", 2))
 			arg_tilename.assign(argv[i + 1]);
 	}
 
-	if (arg_path_dir.length() > 0) {
+	if (arg_path_s2_dir.length() > 0) {
 		ESA_S2_Image img;
 		ImageOperator img_op;
-		std::filesystem::path path_dir_in(arg_path_dir);
+		std::filesystem::path path_dir_in(arg_path_s2_dir);
 		std::filesystem::path path_dir_out(path_dir_in.parent_path().string() + "/" + path_dir_in.stem().string() + ".CVAT");
 
 		img.set_tile_size(tilesize);
 		img.set_scl_class_map(new_class_map);
 		img.set_downscale_factor(downscale);
 		img.process(path_dir_in, path_dir_out, img_op);
+	} else if (arg_path_cvat_dir.length() > 0) {
+		std::cout << arg_path_cvat_dir << std::endl;
 	}
 
 	if (arg_path_rasterize.length() > 0) {
@@ -159,16 +166,14 @@ int main(int argc, char* argv[]) {
 
 			rasterizer.convert(path_in, path_out_nc, path_out_png);
 		}
-	}
-
-	if (arg_path_supervisely.length() > 0) {
+	} else if (arg_path_supervisely.length() > 0) {
 		SuperviselyRaster s;
 
-		std::filesystem::path path_in(arg_path_rasterize);
+		std::filesystem::path path_in(arg_path_supervisely);
+		std::filesystem::path path_out_nc(arg_path_nc);
 
 		if (std::filesystem::is_directory(path_in)) {
-			if (arg_tilename)
-			s.convert(path_in);
+			s.convert(path_in, arg_tilename, path_out_nc);
 		} else {
 			std::cerr << "Directory " << path_in << " does not exist." << std::endl;
 			return 1;
