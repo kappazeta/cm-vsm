@@ -42,8 +42,6 @@ bool SuperviselyRaster::load(const std::filesystem::path &path_dir_in, const std
 		throw std::runtime_error(stream.str());
 	}
 
-	std::cout << legend_filepath << std::endl;
-
 	// Load the RGB raster.
 	Magick::Image img(raster_filepath);
 	img.quiet(false);
@@ -92,7 +90,7 @@ bool SuperviselyRaster::load(const std::filesystem::path &path_dir_in, const std
 bool SuperviselyRaster::convert(const std::filesystem::path &path_dir, const std::string &tile_name, const std::filesystem::path &path_nc) {
 	bool retval = true;
 
-	std::filesystem::path path_out_png(path_dir.parent_path().string() + "/supervisely_" + tile_name + ".png");
+	std::filesystem::path path_out_png(path_dir.parent_path().string() + "/supervisely_raster_" + tile_name + ".png");
 
 	retval &= load(path_dir, tile_name);
 

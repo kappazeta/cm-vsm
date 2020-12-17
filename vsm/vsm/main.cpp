@@ -19,6 +19,7 @@
 #include "raster/supervisely_raster.hpp"
 #include "vector/gml.hpp"
 #include "vector/cvat_rasterizer.hpp"
+#include "vector/supervisely_rasterizer.hpp"
 #include "util/text.hpp"
 #include "util/geometry.hpp"
 #include <openjpeg.h>
@@ -167,13 +168,17 @@ int main(int argc, char* argv[]) {
 			rasterizer.convert(path_in, path_out_nc, path_out_png);
 		}
 	} else if (arg_path_supervisely.length() > 0) {
-		SuperviselyRaster s;
+		// SuperviselyRaster s;
+		SuperviselyRasterizer r;
 
 		std::filesystem::path path_in(arg_path_supervisely);
 		std::filesystem::path path_out_nc(arg_path_nc);
 
 		if (std::filesystem::is_directory(path_in)) {
-			s.convert(path_in, arg_tilename, path_out_nc);
+			std::filesystem::path path_out_png(path_in.parent_path().string() + "/supervisely_vector_" + path_in.stem().string() + ".png");
+
+			// s.convert(path_in, arg_tilename, path_out_nc);
+			r.convert(path_in, arg_tilename, path_out_nc, path_out_png);
 		} else {
 			std::cerr << "Directory " << path_in << " does not exist." << std::endl;
 			return 1;
