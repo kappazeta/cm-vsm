@@ -33,7 +33,7 @@ macro(vsm_common_init)
 
 	# Load cget modules.
 	if(NOT DEFINED CGET_PREFIX)
-		include(${VSM_ROOT}/cget/cget/cget.cmake)
+		include(${VSM_ROOT}/build/cget/cget/cget.cmake)
 	endif(NOT DEFINED CGET_PREFIX)
 endmacro(vsm_common_init)
 
