@@ -30,6 +30,11 @@ macro(vsm_common_init)
 		"-Wall" "-Wpedantic" "-Wextra" "-fexceptions"
 		"$<$<CONFIG:DEBUG>:-O0;-g3;-ggdb>"
 	)
+
+	# Load cget modules.
+	if(NOT DEFINED CGET_PREFIX)
+		include(${VSM_ROOT}/build/cget/cget/cget.cmake)
+	endif(NOT DEFINED CGET_PREFIX)
 endmacro(vsm_common_init)
 
 # A macro to search for source files

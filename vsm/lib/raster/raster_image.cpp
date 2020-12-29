@@ -17,6 +17,45 @@
 #include "raster/raster_image.hpp"
 #include <climits>
 
+PixelRGB8::PixelRGB8(unsigned char _r, unsigned char _g, unsigned char _b):
+	r(_r), g(_g), b(_b) {}
+PixelRGB8::PixelRGB8(unsigned char c): r(c), g(c), b(c) {}
+PixelRGB8::PixelRGB8(const Magick::PixelPacket &px) {
+	set(px);
+}
+PixelRGB8::PixelRGB8(): r(0), g(0), b(0) {}
+PixelRGB8::~PixelRGB8() {}
+
+PixelRGB8 &PixelRGB8::operator=(const PixelRGB8 &a) {
+	r = a.r;
+	g = a.g;
+	b = a.b;
+
+	return *this;
+}
+
+bool PixelRGB8::operator==(const PixelRGB8 &a) {
+	return (a.r == r && a.g == g && a.b == b);
+}
+
+PixelRGB8 &PixelRGB8::set(const std::vector<int> &components) {
+	if (components.size() >= 1)
+		r = components[0];
+	if (components.size() >= 2)
+		g = components[1];
+	if (components.size() >= 3)
+		b = components[2];
+
+	return *this;
+}
+PixelRGB8 &PixelRGB8::set(const Magick::PixelPacket &px) {
+	Magick::ColorRGB c(px);
+	r = (unsigned char) (255 * c.red());
+	g = (unsigned char) (255 * c.green());
+	b = (unsigned char) (255 * c.blue());
+
+	return *this;
+}
 
 template<typename T>
 RasterBufferPan<T>::RasterBufferPan(unsigned long int size) {
@@ -40,9 +79,17 @@ RasterBufferRGB<T>::~RasterBufferRGB() {
 	delete [] b;
 }
 
-RasterImage::RasterImage(): main_depth(0), main_num_components(0), subset(nullptr) {}
+RasterImage::RasterImage(): main_depth(0), main_num_components(0), subset(nullptr), deflate_level(9) {}
 RasterImage::~RasterImage() {
 	clear();
+}
+
+unsigned int RasterImage::set_deflate_level(unsigned int level) {
+	if (level >= 9)
+		deflate_level = 9;
+	else
+		deflate_level = level;
+	return deflate_level;
 }
 
 void RasterImage::clear() {
@@ -78,6 +125,8 @@ Magick::Image *RasterImage::create_grayscale(const Magick::Geometry &geometry, i
 	subset->type(Magick::GrayscaleType);
 	subset->depth(pixel_depth);
 	subset->endian(Magick::LSBEndian);
+	//! \note Need at least one operation on the image for syncPixels() to work. erase() is not enough.
+	subset->roll(1, 0);
 
 	return subset;
 }
@@ -126,7 +175,7 @@ bool RasterImage::scale_to(unsigned int size, bool point_filter) {
 	return false;
 }
 
-void RasterImage::remap_values(const unsigned char *values) {
+void RasterImage::remap_values(const unsigned char *values, unsigned char max_value) {
 	//! \todo Implement support for remapping colors.
 	if (subset != nullptr) {
 		unsigned int w = subset->columns();
@@ -139,7 +188,13 @@ void RasterImage::remap_values(const unsigned char *values) {
 
 		for (unsigned int i=0; i<size; i++) {
 			src_val = Magick::ColorGray(px[i]).shade();
-			dst_val = values[(unsigned char) (255 * src_val)] / 255.0f;
+
+			//! \note The last value is reserved for the mapping of invalid values.
+			unsigned char idx = (unsigned char) (255 * src_val);
+			if (idx > max_value)
+				idx = max_value;
+
+			dst_val = values[idx] / 255.0f;
 			px[i] = Magick::ColorGray(dst_val);
 		}
 
@@ -147,7 +202,7 @@ void RasterImage::remap_values(const unsigned char *values) {
 	}
 }
 
-int RasterImage::add_layer_to_netcdf(int ncid, const std::filesystem::path &path, const std::string &name_in_netcdf, unsigned int w, unsigned int h, const int *dimids, unsigned char nd, const void *dst_px, int deflate_level) {
+int RasterImage::add_layer_to_netcdf(int ncid, const std::filesystem::path &path, const std::string &name_in_netcdf, unsigned int w, unsigned int h, const int *dimids, unsigned char nd, const void *dst_px) {
 	int varid = 0;
 	int retval;
 
@@ -192,7 +247,7 @@ int RasterImage::add_layer_to_netcdf(int ncid, const std::filesystem::path &path
 	return varid;
 }
 
-bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::string &name_in_netcdf, int deflate_level) {
+bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::string &name_in_netcdf) {
 	int ncid = 0, varid = 0;
 	int dimids[2] = {0, 0};
 	int retval;
@@ -266,7 +321,7 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 					}
 				}
 
-				add_layer_to_netcdf(ncid, path, name_in_netcdf, w, h, dimids, nd, (const void *) dst_px.v, deflate_level);
+				add_layer_to_netcdf(ncid, path, name_in_netcdf, w, h, dimids, nd, (const void *) dst_px.v);
 			} else {
 				unsigned int yw, fyw;
 
@@ -281,7 +336,7 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 					}
 				}
 
-				add_layer_to_netcdf(ncid, path, name_in_netcdf, w, h, dimids, nd, (const void *) dst_px.v, deflate_level);
+				add_layer_to_netcdf(ncid, path, name_in_netcdf, w, h, dimids, nd, (const void *) dst_px.v);
 			}
 		} else if (c == 3) {
 			unsigned int yw, fyw;
@@ -300,9 +355,9 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 				}
 			}
 
-			add_layer_to_netcdf(ncid, path, name_in_netcdf + "_R", w, h, dimids, nd, (const void *) dst_px.r, deflate_level);
-			add_layer_to_netcdf(ncid, path, name_in_netcdf + "_G", w, h, dimids, nd, (const void *) dst_px.g, deflate_level);
-			add_layer_to_netcdf(ncid, path, name_in_netcdf + "_B", w, h, dimids, nd, (const void *) dst_px.b, deflate_level);
+			add_layer_to_netcdf(ncid, path, name_in_netcdf + "_R", w, h, dimids, nd, (const void *) dst_px.r);
+			add_layer_to_netcdf(ncid, path, name_in_netcdf + "_G", w, h, dimids, nd, (const void *) dst_px.g);
+			add_layer_to_netcdf(ncid, path, name_in_netcdf + "_B", w, h, dimids, nd, (const void *) dst_px.b);
 		}
 
 	} catch (NCException &e) {

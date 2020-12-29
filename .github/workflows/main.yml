@@ -28,7 +28,15 @@ jobs:
       run: |
         sudo add-apt-repository ppa:ubuntu-toolchain-r/test
         sudo apt update
-        sudo apt-get install -y gcc-9 g++-9 libopenjp2-7-dev libgdal-dev gdal-bin libexpat1-dev libgraphicsmagick++1-dev libnetcdf-dev
+        sudo apt-get install -y gcc-9 g++-9 python3-pip libopenjp2-7-dev libgdal-dev gdal-bin libexpat1-dev libgraphicsmagick++1-dev libnetcdf-dev
+        pip3 install cget
+
+    # Install dependencies with cget
+    - name: Installing dependencies with cget
+      run: |
+        cd vsm/build
+        mv requirements.txt cget_requirements.backup
+        $HOME/.local/bin/cget install nlohmann/json
 
     # Run CMake
     - name: Running CMake
