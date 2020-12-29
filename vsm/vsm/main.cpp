@@ -87,9 +87,8 @@ unsigned char new_class_map[] = {
 };
 
 int main(int argc, char* argv[]) {
-	std::cout << "Vectorization and splitting tool for CVAT." << std::endl;
+	std::cout << "Vectorization and splitting tool for the KappaZeta Cloudmask project." << std::endl;
 	std::cout << "Running with the following dependencies:" << std::endl
-		// << " GDAL " << GDAL_RELEASE_NAME << " (" << GDAL_RELEASE_DATE << ")" << std::endl
 		<< " " << nlohmann::json::meta()["name"] << " " << nlohmann::json::meta()["version"]["string"] << std::endl
 		<< " OpenJPEG " << opj_version() << std::endl
 		<< " MagickLib " << MagickLibVersionText << std::endl
@@ -145,6 +144,9 @@ int main(int argc, char* argv[]) {
 		img.process(path_dir_in, path_dir_out, img_op);
 	} else if (arg_path_cvat_dir.length() > 0) {
 		std::cout << arg_path_cvat_dir << std::endl;
+
+		std::cerr << "ERROR: Processing of pre-processed products is not supported yet." << std::endl;
+		return 3;
 	}
 
 	if (arg_path_rasterize.length() > 0) {
@@ -169,7 +171,6 @@ int main(int argc, char* argv[]) {
 			rasterizer.convert(path_in, path_out_nc, path_out_png);
 		}
 	} else if (arg_path_supervisely.length() > 0) {
-		// SuperviselyRaster s;
 		SuperviselyRasterizer r;
 
 		std::filesystem::path path_in(arg_path_supervisely);
@@ -178,7 +179,6 @@ int main(int argc, char* argv[]) {
 		if (std::filesystem::is_directory(path_in)) {
 			std::filesystem::path path_out_png(path_in.parent_path().string() + "/supervisely_vector_" + path_in.stem().string() + ".png");
 
-			// s.convert(path_in, arg_tilename, path_out_nc);
 			r.convert(path_in, arg_tilename, path_out_nc, path_out_png);
 		} else {
 			std::cerr << "Directory " << path_in << " does not exist." << std::endl;
