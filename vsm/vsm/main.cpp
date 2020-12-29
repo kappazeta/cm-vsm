@@ -82,7 +82,8 @@ unsigned char new_class_map[] = {
 	4, // 8  CLOUD_MEDIUM_PROBABILITY -> CLOUD
 	4, // 9  CLOUD_HIGH_PROBABILITY   -> CLOUD
 	3, // 10 THIN_CIRRUS              -> SEMI_TRANSPARENT_CLOUD
-	1  // 11 SNOW                     -> CLEAR
+	1, // 11 SNOW                     -> CLEAR
+	0  // 12 - 255                    -> UNCLASSIFIED
 };
 
 int main(int argc, char* argv[]) {

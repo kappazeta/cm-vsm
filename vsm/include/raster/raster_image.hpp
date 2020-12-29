@@ -112,7 +112,7 @@ class RasterImage {
 
 		bool scale_f(float f, bool point_filter);
 		bool scale_to(unsigned int size, bool point_filter);
-		void remap_values(const unsigned char *values);
+		void remap_values(const unsigned char *values, unsigned char max_value);
 
 	private:
 		int add_layer_to_netcdf(int ncid, const std::filesystem::path &path, const std::string &name_in_netcdf, unsigned int w, unsigned int h, const int *dimids, unsigned char nd, const void *src_px);

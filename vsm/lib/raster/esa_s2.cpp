@@ -23,22 +23,34 @@
 
 
 const std::string ESA_S2_Image_Operator::data_type_name[ESA_S2_Image_Operator::DT_COUNT] = {
-	"TCI", "SCL", "AOT", "B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B8A", "B09", "B10", "B11", "B12", "WVP", "GML", "S2CC", "S2CS", "BHC"
+	"TCI", "SCL", "AOT", "B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B8A", "B09", "B10", "B11", "B12",	"WVP",
+	"GML", "S2CC", "S2CS", "FMC", "SS2C", "SS2CC", "BHC"
 };
 
 //! Map BHC classes to SCL classes.
-const unsigned char ESA_S2_Image_Operator::bhc_scl_value_map[8] = {
-	0, // 0  NO_DATA                  -> NO_DATA
-	0, // 1  NOT_USED                 -> NO_DATA
-	8, // 2  LOW_CLOUDS               -> CLOUD_MEDIUM_PROBABILITY
-	9, // 3  HIGH_CLOUDS              -> CLOUD_HIGH_PROBABILITY
-	3, // 4  CLOUD_SHADOWS            -> CLOUD_SHADOWS
-	4, // 5  LAND                     -> VEGETATION
-	6, // 6  WATER                    -> WATER
-	11 // 7  SNOW                     -> SNOW
+const unsigned char ESA_S2_Image_Operator::bhc_scl_value_map[9] = {
+	0,  // 0  NO_DATA                  -> NO_DATA
+	0,  // 1  NOT_USED                 -> NO_DATA
+	8,  // 2  LOW_CLOUDS               -> CLOUD_MEDIUM_PROBABILITY
+	9,  // 3  HIGH_CLOUDS              -> CLOUD_HIGH_PROBABILITY
+	3,  // 4  CLOUD_SHADOWS            -> CLOUD_SHADOWS
+	4,  // 5  LAND                     -> VEGETATION
+	6,  // 6  WATER                    -> WATER
+	11, // 7  SNOW                     -> SNOW
+	0   // 8 - 255                     -> NO_DATA
 };
 
-ESA_S2_Image::ESA_S2_Image(): tile_size(512), scl_value_map(nullptr), f_downscale(1) {}
+//! Map FMC classes to SCL classes.
+const unsigned char ESA_S2_Image_Operator::fmc_scl_value_map[6] = {
+	4,  // 0  CLEAR                    -> VEGETATION
+	6,  // 1  WATER                    -> WATER
+	3,  // 2  CLOUD_SHADOWS            -> CLOUD_SHADOWS
+	11, // 3  SNOW                     -> SNOW
+	9,  // 4  CLOUD                    -> CLOUD_HIGH_PROBABILITY
+	0   // 5 - 255                     -> NO_DATA
+};
+
+ESA_S2_Image::ESA_S2_Image(): tile_size(512), scl_value_map(nullptr), max_scl_value(12), f_downscale(1) {}
 ESA_S2_Image::~ESA_S2_Image() {}
 
 void ESA_S2_Image::set_tile_size(int tile_size) {
@@ -139,6 +151,12 @@ bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::
 				splitJP2(r20m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_S2CS, data_resolution);
 			}
 		}
+		// Fmask4 classification map within an L1C product, with a 20 m resolution.
+		for (const auto &fmask_entry: std::filesystem::directory_iterator(granule_entry.path().string() + "/FMASK_DATA/")) {
+			if (endswith(fmask_entry.path().string(), "_Fmask4.tif")) {
+				splitTIF(fmask_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_FMC, data_resolution);
+			}
+		}
 
 		data_resolution = ESA_S2_Image_Operator::DR_60M;
 		// Files within an L2A product with a 60 m resolution.
@@ -203,7 +221,7 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 			// Remap pixel values for SCL.
 			if (data_type == ESA_S2_Image_Operator::DT_SCL) {
 				if (scl_value_map != nullptr)
-					img_src.remap_values(scl_value_map);
+					img_src.remap_values(scl_value_map, max_scl_value);
 				// Scale SCL with point filter.
 				img_src.scale_to((unsigned int) (tile_size / f_downscale), true);
 			} else {
@@ -237,6 +255,7 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 }
 
 bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op, ESA_S2_Image_Operator::data_type_t data_type, ESA_S2_Image_Operator::data_resolution_t data_resolution) {
+	ESA_S2_Image_Operator::data_type_t tmp_data_type = data_type;
 	BHC_TIF_Image img_src;
 	bool retval = true;
 
@@ -264,12 +283,20 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 		for (xi=xi0, xf=xi*tile_size_div; xf<(float)w; xf+=tile_size_div,xi++) {
 			img_src.load_subset(path_in, (int) xf, (int) yf, (int) (xf + tile_size_div), (int) (yf + tile_size_div));
 
-			// Remap pixel values from BHC into SCL and then from SCL into the desired classes.
+			// Remap pixel values from BHC or FMC into SCL and then from SCL into the desired classes.
+			// This helps to ensure that there's only a single place in code which is responsible for the mapping
+			// and that the mapping is configurable.
 			if (data_type == ESA_S2_Image_Operator::DT_BHC) {
-				img_src.remap_values(ESA_S2_Image_Operator::bhc_scl_value_map);
+				img_src.remap_values(ESA_S2_Image_Operator::bhc_scl_value_map, sizeof(ESA_S2_Image_Operator::bhc_scl_value_map));
+				tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
+			} else if (data_type == ESA_S2_Image_Operator::DT_FMC) {
+				img_src.remap_values(ESA_S2_Image_Operator::fmc_scl_value_map, sizeof(ESA_S2_Image_Operator::fmc_scl_value_map));
+				tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
+			}
+			if (tmp_data_type == ESA_S2_Image_Operator::DT_SCL) {
 				if (scl_value_map != nullptr)
-					img_src.remap_values(scl_value_map);
-				// Scale BHC with point filter.
+					img_src.remap_values(scl_value_map, max_scl_value);
+				// Scale with point filter.
 				img_src.scale_to((unsigned int) (tile_size / f_downscale), true);
 			}
 

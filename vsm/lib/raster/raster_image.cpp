@@ -175,7 +175,7 @@ bool RasterImage::scale_to(unsigned int size, bool point_filter) {
 	return false;
 }
 
-void RasterImage::remap_values(const unsigned char *values) {
+void RasterImage::remap_values(const unsigned char *values, unsigned char max_value) {
 	//! \todo Implement support for remapping colors.
 	if (subset != nullptr) {
 		unsigned int w = subset->columns();
@@ -188,7 +188,13 @@ void RasterImage::remap_values(const unsigned char *values) {
 
 		for (unsigned int i=0; i<size; i++) {
 			src_val = Magick::ColorGray(px[i]).shade();
-			dst_val = values[(unsigned char) (255 * src_val)] / 255.0f;
+
+			//! \note The last value is reserved for the mapping of invalid values.
+			unsigned char idx = (unsigned char) (255 * src_val);
+			if (idx > max_value)
+				idx = max_value;
+
+			dst_val = values[idx] / 255.0f;
 			px[i] = Magick::ColorGray(dst_val);
 		}
 

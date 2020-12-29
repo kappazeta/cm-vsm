@@ -23,7 +23,7 @@ class ESA_S2_Image_Operator {
 public:
 	typedef enum data_type_t {
 		DT_TCI,	///< True Color Image (8 bit RGB), 10 m
-		DT_SCL,	///< Scene Classification Image (8 bit), 20 m
+		DT_SCL,	///< Sen2Cor Scene Classification Image (8 bit), 20 m
 		DT_AOT,	///< Aerosol Optical Thickness map (16 bit), 10 m
 		DT_B01,	///< 433 - 453 nm (16 bit), 60 m
 		DT_B02,	///< 457.5 - 522.5 nm (16 bit), 10 m
@@ -42,6 +42,9 @@ public:
 		DT_GML,	///< Vector mask layer
 		DT_S2CC,	///< Sen2cor cloud probabilities (8 bit), 20 m
 		DT_S2CS,	///< Sen2cor snow probabilities (8 bit), 20 m
+		DT_FMC,	///< Fmask classification map, 20 m
+		DT_SS2C,	///< Sinergise's S2Cloudless classification map, 60 m
+		DT_SS2CC,	///< Sinergise's S2Cloudless cloud probabilities (8 bit), 60 m
 		DT_BHC,	///< Baetens & Hagolle classification map, 60 m
 		DT_COUNT
 	};
@@ -56,7 +59,8 @@ public:
 	};
 
 	static const std::string data_type_name[DT_COUNT];
-	static const unsigned char bhc_scl_value_map[8];
+	static const unsigned char bhc_scl_value_map[9];
+	static const unsigned char fmc_scl_value_map[6];
 
 	virtual bool operator()(const std::filesystem::path &path, data_type_t type) { return false; }
 };
@@ -82,6 +86,7 @@ class ESA_S2_Image {
 
 	protected:
 		unsigned char *scl_value_map;
+		unsigned char max_scl_value;
 
 		int f_downscale;
 };
