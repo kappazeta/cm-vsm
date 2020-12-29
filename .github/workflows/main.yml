@@ -28,12 +28,14 @@ jobs:
       run: |
         sudo add-apt-repository ppa:ubuntu-toolchain-r/test
         sudo apt update
-        sudo apt-get install -y gcc-9 g++-9 libopenjp2-7-dev libgdal-dev gdal-bin libexpat1-dev libgraphicsmagick++1-dev libnetcdf-dev
+        sudo apt-get install -y gcc-9 g++-9 python3-pip libgdal-dev gdal-bin libexpat1-dev libgraphicsmagick++1-dev
+        pip3 install cget
 
     # Run CMake
     - name: Running CMake
       run: |
         cd vsm/build
+        cget install
         cmake -DCMAKE_CXX_COMPILER=g++-9 ..
 
     # Build

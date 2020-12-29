@@ -23,7 +23,6 @@
 #include "util/text.hpp"
 #include "util/geometry.hpp"
 #include <openjpeg.h>
-#include <gdal.h>
 #include <chrono>
 #include <sstream>
 #include <fstream>
