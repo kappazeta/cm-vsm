@@ -14,6 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "version.hpp"
 #include "raster/esa_s2.hpp"
 #include "raster/esa_s2_scl_jp2.hpp"
 #include "raster/supervisely_raster.hpp"
@@ -87,6 +88,7 @@ unsigned char new_class_map[] = {
 
 int main(int argc, char* argv[]) {
 	std::cout << "Vectorization and splitting tool for the KappaZeta Cloudmask project." << std::endl;
+	std::cout << " Version: " << CM_CONVERTER_VERSION_STR << std::endl;
 	std::cout << "Running with the following dependencies:" << std::endl
 		<< " " << nlohmann::json::meta()["name"] << " " << nlohmann::json::meta()["version"]["string"] << std::endl
 		<< " OpenJPEG " << opj_version() << std::endl
@@ -94,12 +96,13 @@ int main(int argc, char* argv[]) {
 		<< std::endl;
 
 	if (argc < 2) {
-		std::cerr << "Usage: cvat-vsm [-d S2_PATH] [-D CVAT_PATH] [-r CVAT_XML -n NETCDF] [-R SUPERVISELY_DIR -t TILENAME -n NETCDF] [-S TILESIZE [-s SHRINK]]" << std::endl
+		std::cerr << "Usage: cvat-vsm [-d S2_PATH] [-D CVAT_PATH] [-r CVAT_XML -n NETCDF] [-b BANDS] [-R SUPERVISELY_DIR -t TILENAME -n NETCDF] [-S TILESIZE [-s SHRINK]]" << std::endl
 			<< "\twhere S2_PATH points to the .SAFE directory of an ESA S2 L2A or L1C product." << std::endl
 			<< "\tCVAT_PATH points to the .CVAT directory (pre-processed ESA S2 product)." << std::endl
 			<< "\tCVAT_XML points to a CVAT annotations.xml file." << std::endl
 			<< "\tSUPERVISELY_DIR points to a directory with the Supervise.ly annotations files." << std::endl
 			<< "\tNETCDF points to a NetCDF file to be updated with the rasterized annotations." << std::endl
+			<< "\tBANDS is a comma-separated list of bands to process. If omitted, all bands are processed." << std::endl
 			<< "\tTILENAME is the name of the tile to pick from the Supervise.ly directory." << std::endl
 			<< "\tTILESIZE is the number of pixels per the edge of a square subtile (default: 512)." << std::endl
 			<< "\tSHRINK is the factor by which to downscale from the 10 x 10 m^2 S2 bands (default: -1 (original size))." << std::endl;
@@ -110,6 +113,7 @@ int main(int argc, char* argv[]) {
 	Magick::InitializeMagick(*argv);
 
 	std::string arg_path_s2_dir, arg_path_cvat_dir, arg_path_rasterize, arg_path_nc, arg_path_supervisely, arg_tilename;
+	std::string arg_bands;
 	unsigned int tilesize = 512;
 	int downscale = -1;
 	for (int i=0; i<argc; i++) {
@@ -119,6 +123,8 @@ int main(int argc, char* argv[]) {
 			arg_path_cvat_dir.assign(argv[i + 1]);
 		else if (!strncmp(argv[i], "-r", 2))
 			arg_path_rasterize.assign(argv[i + 1]);
+		else if (!strncmp(argv[i], "-b", 2))
+			arg_bands.assign(argv[i + 1]);
 		else if (!strncmp(argv[i], "-R", 2))
 			arg_path_supervisely.assign(argv[i + 1]);
 		else if (!strncmp(argv[i], "-n", 2))
@@ -136,11 +142,22 @@ int main(int argc, char* argv[]) {
 		ImageOperator img_op;
 		std::filesystem::path path_dir_in(arg_path_s2_dir);
 		std::filesystem::path path_dir_out(path_dir_in.parent_path().string() + "/" + path_dir_in.stem().string() + ".CVAT");
+		std::vector<std::string> bands;
+
+		// All bands, by default.
+		if (arg_bands.empty()) {
+			bands = std::vector<std::string>(
+				&ESA_S2_Image_Operator::data_type_name[0],
+				&ESA_S2_Image_Operator::data_type_name[ESA_S2_Image_Operator::DT_COUNT]
+			);
+		} else {
+			bands = split_str(arg_bands, ',');
+		}
 
 		img.set_tile_size(tilesize);
 		img.set_scl_class_map(new_class_map);
 		img.set_downscale_factor(downscale);
-		img.process(path_dir_in, path_dir_out, img_op);
+		img.process(path_dir_in, path_dir_out, img_op, bands);
 	} else if (arg_path_cvat_dir.length() > 0) {
 		std::cout << arg_path_cvat_dir << std::endl;
 

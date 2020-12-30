@@ -1,4 +1,4 @@
-// Utilities for operating with text
+// Version macros
 //
 // Copyright 2020 KappaZeta Ltd.
 //
@@ -16,16 +16,7 @@
 
 #pragma once
 
-#include <iostream>
-#include <vector>
+#define CM_CONVERTER_VERSION_STR	"0.1.1"
 
-
-bool startswith(std::string const &text, std::string const &beginning);
-
-bool endswith(std::string const &text, std::string const &ending);
-
-std::string tolower(std::string const &text);
-
-std::string toupper(std::string const &text);
-
-std::vector<std::string> split_str(std::string const &text, char delim);
+// Changelog
+//  0.1.1	First release with a version number.

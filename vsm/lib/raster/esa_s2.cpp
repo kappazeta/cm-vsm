@@ -68,8 +68,18 @@ void ESA_S2_Image::set_downscale_factor(int f) {
 		f_downscale = f;
 }
 
-bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op) {
+bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op, std::vector<std::string> bands) {
 	ESA_S2_Image_Operator::data_resolution_t data_resolution;
+	std::vector<bool> b(ESA_S2_Image_Operator::DT_COUNT, false);
+
+	// Build a vector of booleans to indicate the bands to be processed.
+	for (std::vector<std::string>::iterator it = bands.begin(); it != bands.end(); it++) {
+		for (int i=0; i<ESA_S2_Image_Operator::DT_COUNT; i++) {
+			if (*it == ESA_S2_Image_Operator::data_type_name[i]) {
+				b[i] = true;
+			}
+		}
+	}
 
 	for (const auto &granule_entry: std::filesystem::directory_iterator(path_dir_in.string() + "/GRANULE/")) {
 		data_resolution = ESA_S2_Image_Operator::DR_10M;
@@ -77,19 +87,19 @@ bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::
 		if (std::filesystem::is_directory(granule_entry.path().string() + "/IMG_DATA/R10m/")) {
 			for (const auto &r10m_entry: std::filesystem::directory_iterator(granule_entry.path().string() + "/IMG_DATA/R10m/")) {
 				//! \todo Map these
-				if (endswith(r10m_entry.path().string(), "_TCI_10m.jp2")) {
+				if (endswith(r10m_entry.path().string(), "_TCI_10m.jp2") && b[ESA_S2_Image_Operator::DT_TCI]) {
 					splitJP2(r10m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_TCI, data_resolution);
-				} else if (endswith(r10m_entry.path().string(), "_AOT_10m.jp2")) {
+				} else if (endswith(r10m_entry.path().string(), "_AOT_10m.jp2") && b[ESA_S2_Image_Operator::DT_AOT]) {
 					splitJP2(r10m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_AOT, data_resolution);
-				} else if (endswith(r10m_entry.path().string(), "_WVP_10m.jp2")) {
+				} else if (endswith(r10m_entry.path().string(), "_WVP_10m.jp2") && b[ESA_S2_Image_Operator::DT_WVP]) {
 					splitJP2(r10m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_WVP, data_resolution);
-				} else if (endswith(r10m_entry.path().string(), "_B02_10m.jp2")) {
+				} else if (endswith(r10m_entry.path().string(), "_B02_10m.jp2") && b[ESA_S2_Image_Operator::DT_B02]) {
 					splitJP2(r10m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B02, data_resolution);
-				} else if (endswith(r10m_entry.path().string(), "_B03_10m.jp2")) {
+				} else if (endswith(r10m_entry.path().string(), "_B03_10m.jp2") && b[ESA_S2_Image_Operator::DT_B03]) {
 					splitJP2(r10m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B03, data_resolution);
-				} else if (endswith(r10m_entry.path().string(), "_B04_10m.jp2")) {
+				} else if (endswith(r10m_entry.path().string(), "_B04_10m.jp2") && b[ESA_S2_Image_Operator::DT_B04]) {
 					splitJP2(r10m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B04, data_resolution);
-				} else if (endswith(r10m_entry.path().string(), "_B08_10m.jp2")) {
+				} else if (endswith(r10m_entry.path().string(), "_B08_10m.jp2") && b[ESA_S2_Image_Operator::DT_B08]) {
 					splitJP2(r10m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B08, data_resolution);
 				}
 			}
@@ -97,15 +107,15 @@ bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::
 		// Files within an L1C product with a 10 m resolution.
 		for (const auto &r10m_entry: std::filesystem::directory_iterator(granule_entry.path().string() + "/IMG_DATA/")) {
 			//! \todo Map these
-			if (endswith(r10m_entry.path().string(), "_TCI.jp2")) {
+			if (endswith(r10m_entry.path().string(), "_TCI.jp2") && b[ESA_S2_Image_Operator::DT_TCI]) {
 				splitJP2(r10m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_TCI, data_resolution);
-			} else if (endswith(r10m_entry.path().string(), "_B02.jp2")) {
+			} else if (endswith(r10m_entry.path().string(), "_B02.jp2") && b[ESA_S2_Image_Operator::DT_B02]) {
 				splitJP2(r10m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B02, data_resolution);
-			} else if (endswith(r10m_entry.path().string(), "_B03.jp2")) {
+			} else if (endswith(r10m_entry.path().string(), "_B03.jp2") && b[ESA_S2_Image_Operator::DT_B03]) {
 				splitJP2(r10m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B03, data_resolution);
-			} else if (endswith(r10m_entry.path().string(), "_B04.jp2")) {
+			} else if (endswith(r10m_entry.path().string(), "_B04.jp2") && b[ESA_S2_Image_Operator::DT_B04]) {
 				splitJP2(r10m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B04, data_resolution);
-			} else if (endswith(r10m_entry.path().string(), "_B08.jp2")) {
+			} else if (endswith(r10m_entry.path().string(), "_B08.jp2") && b[ESA_S2_Image_Operator::DT_B08]) {
 				splitJP2(r10m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B08, data_resolution);
 			}
 		}
@@ -114,46 +124,46 @@ bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::
 		// Files within an L2A product with a 20 m resolution.
 		if (std::filesystem::is_directory(granule_entry.path().string() + "/IMG_DATA/R20m/")) {
 			for (const auto &r20m_entry: std::filesystem::directory_iterator(granule_entry.path().string() + "/IMG_DATA/R20m/")) {
-				if (endswith(r20m_entry.path().string(), "_SCL_20m.jp2")) {
+				if (endswith(r20m_entry.path().string(), "_SCL_20m.jp2") && b[ESA_S2_Image_Operator::DT_SCL]) {
 					splitJP2(r20m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_SCL, data_resolution);
-				} else if (endswith(r20m_entry.path().string(), "_B05_20m.jp2")) {
+				} else if (endswith(r20m_entry.path().string(), "_B05_20m.jp2") && b[ESA_S2_Image_Operator::DT_B05]) {
 					splitJP2(r20m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B05, data_resolution);
-				} else if (endswith(r20m_entry.path().string(), "_B06_20m.jp2")) {
+				} else if (endswith(r20m_entry.path().string(), "_B06_20m.jp2") && b[ESA_S2_Image_Operator::DT_B06]) {
 					splitJP2(r20m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B06, data_resolution);
-				} else if (endswith(r20m_entry.path().string(), "_B8A_20m.jp2")) {
+				} else if (endswith(r20m_entry.path().string(), "_B8A_20m.jp2") && b[ESA_S2_Image_Operator::DT_B8A]) {
 					splitJP2(r20m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B8A, data_resolution);
-				} else if (endswith(r20m_entry.path().string(), "_B11_20m.jp2")) {
+				} else if (endswith(r20m_entry.path().string(), "_B11_20m.jp2") && b[ESA_S2_Image_Operator::DT_B11]) {
 					splitJP2(r20m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B11, data_resolution);
-				} else if (endswith(r20m_entry.path().string(), "_B12_20m.jp2")) {
+				} else if (endswith(r20m_entry.path().string(), "_B12_20m.jp2") && b[ESA_S2_Image_Operator::DT_B12]) {
 					splitJP2(r20m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B12, data_resolution);
 				}
 			}
 		}
 		// Files within an L1C product with a 20 m resolution.
 		for (const auto &r20m_entry: std::filesystem::directory_iterator(granule_entry.path().string() + "/IMG_DATA/")) {
-			if (endswith(r20m_entry.path().string(), "_B05.jp2")) {
+			if (endswith(r20m_entry.path().string(), "_B05.jp2") && b[ESA_S2_Image_Operator::DT_B05]) {
 				splitJP2(r20m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B05, data_resolution);
-			} else if (endswith(r20m_entry.path().string(), "_B06.jp2")) {
+			} else if (endswith(r20m_entry.path().string(), "_B06.jp2") && b[ESA_S2_Image_Operator::DT_B06]) {
 				splitJP2(r20m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B06, data_resolution);
-			} else if (endswith(r20m_entry.path().string(), "_B8A.jp2")) {
+			} else if (endswith(r20m_entry.path().string(), "_B8A.jp2") && b[ESA_S2_Image_Operator::DT_B8A]) {
 				splitJP2(r20m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B8A, data_resolution);
-			} else if (endswith(r20m_entry.path().string(), "_B11.jp2")) {
+			} else if (endswith(r20m_entry.path().string(), "_B11.jp2") && b[ESA_S2_Image_Operator::DT_B11]) {
 				splitJP2(r20m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B11, data_resolution);
-			} else if (endswith(r20m_entry.path().string(), "_B12.jp2")) {
+			} else if (endswith(r20m_entry.path().string(), "_B12.jp2") && b[ESA_S2_Image_Operator::DT_B12]) {
 				splitJP2(r20m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B12, data_resolution);
 			}
 		}
 		// Split Sen2cor cloudmask probabilities.
 		for (const auto &r20m_entry: std::filesystem::directory_iterator(granule_entry.path().string() + "/QI_DATA")) {
-			if (endswith(r20m_entry.path().string(), "MSK_CLDPRB_20m.jp2")) {
+			if (endswith(r20m_entry.path().string(), "MSK_CLDPRB_20m.jp2") && b[ESA_S2_Image_Operator::DT_S2CC]) {
 				splitJP2(r20m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_S2CC, data_resolution);
-			} else if (endswith(r20m_entry.path().string(), "MSK_SNWPRB_20m.jp2")) {
+			} else if (endswith(r20m_entry.path().string(), "MSK_SNWPRB_20m.jp2") && b[ESA_S2_Image_Operator::DT_S2CS]) {
 				splitJP2(r20m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_S2CS, data_resolution);
 			}
 		}
 		// Fmask4 classification map within an L1C product, with a 20 m resolution.
 		for (const auto &fmask_entry: std::filesystem::directory_iterator(granule_entry.path().string() + "/FMASK_DATA/")) {
-			if (endswith(fmask_entry.path().string(), "_Fmask4.tif")) {
+			if (endswith(fmask_entry.path().string(), "_Fmask4.tif") && b[ESA_S2_Image_Operator::DT_FMC]) {
 				splitTIF(fmask_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_FMC, data_resolution);
 			}
 		}
@@ -162,18 +172,18 @@ bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::
 		// Files within an L2A product with a 60 m resolution.
 		if (std::filesystem::is_directory(granule_entry.path().string() + "/IMG_DATA/R60m/")) {
 			for (const auto &r60m_entry: std::filesystem::directory_iterator(granule_entry.path().string() + "/IMG_DATA/R60m/")) {
-				if (endswith(r60m_entry.path().string(), "_B01_60m.jp2")) {
+				if (endswith(r60m_entry.path().string(), "_B01_60m.jp2") && b[ESA_S2_Image_Operator::DT_B01]) {
 					splitJP2(r60m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B01, data_resolution);
-				} else if (endswith(r60m_entry.path().string(), "_B09_60m.jp2")) {
+				} else if (endswith(r60m_entry.path().string(), "_B09_60m.jp2") && b[ESA_S2_Image_Operator::DT_B09]) {
 					splitJP2(r60m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B09, data_resolution);
 				}
 			}
 		}
 		// Files within an L1C product with a 60 m resolution.
 		for (const auto &r60m_entry: std::filesystem::directory_iterator(granule_entry.path().string() + "/IMG_DATA/")) {
-			if (endswith(r60m_entry.path().string(), "_B01.jp2")) {
+			if (endswith(r60m_entry.path().string(), "_B01.jp2") && b[ESA_S2_Image_Operator::DT_B01]) {
 				splitJP2(r60m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B01, data_resolution);
-			} else if (endswith(r60m_entry.path().string(), "_B09.jp2")) {
+			} else if (endswith(r60m_entry.path().string(), "_B09.jp2") && b[ESA_S2_Image_Operator::DT_B09]) {
 				splitJP2(r60m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B09, data_resolution);
 			}
 		}
@@ -183,7 +193,7 @@ bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::
 	if (std::filesystem::is_directory(path_dir_in.string() + "/ref_dataset/Classification/")) {
 		for (const auto &classification_entry: std::filesystem::directory_iterator(path_dir_in.string() + "/ref_dataset/Classification/")) {
 			data_resolution = ESA_S2_Image_Operator::DR_60M;
-			if (endswith(classification_entry.path().string(), "classification_map.tif")) {
+			if (endswith(classification_entry.path().string(), "classification_map.tif") && b[ESA_S2_Image_Operator::DT_BHC]) {
 				splitTIF(classification_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_BHC, data_resolution);
 			}
 		}

@@ -15,6 +15,7 @@
 // limitations under the License.
 
 #include "util/text.hpp"
+#include <sstream>
 #include <algorithm>
 
 
@@ -49,6 +50,19 @@ std::string toupper(std::string const &text) {
 	//  https://stackoverflow.com/a/313990/1692112
 	std::string result(text);
 	std::transform(result.begin(), result.end(), result.begin(), [](unsigned char c){ return std::toupper(c); });
+	return result;
+}
+
+std::vector<std::string> split_str(std::string const &text, char delim) {
+	// https://stackoverflow.com/a/10861816/1692112
+	std::stringstream ss(text);
+	std::vector<std::string> result;
+
+	while(ss.good()) {
+		std::string substring;
+		std::getline(ss, substring, delim);
+		result.push_back(substring);
+	}
 	return result;
 }
 
