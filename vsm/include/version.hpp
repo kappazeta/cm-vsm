@@ -16,8 +16,9 @@
 
 #pragma once
 
-#define CM_CONVERTER_VERSION_STR	"0.1.2"
+#define CM_CONVERTER_VERSION_STR	"0.1.3"
 
 // Changelog
+//  0.1.3	Fmask, S2Cloudless subdirs now optional.
 //  0.1.2	Support for Sinergise S2Cloudless masks.
 //  0.1.1	First release with a version number.
