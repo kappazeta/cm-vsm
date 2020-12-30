@@ -31,4 +31,3 @@ class TIF_Image: public RasterImage {
 		bool load_subset(const std::filesystem::path &path, int da_x0, int da_y0, int da_x1, int da_y1);
 };
 
-

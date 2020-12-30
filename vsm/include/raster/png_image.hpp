@@ -1,4 +1,4 @@
-// Version macros
+// Tiled loading of a PNG image
 //
 // Copyright 2020 KappaZeta Ltd.
 //
@@ -16,8 +16,18 @@
 
 #pragma once
 
-#define CM_CONVERTER_VERSION_STR	"0.1.2"
+#include "raster/raster_image.hpp"
 
-// Changelog
-//  0.1.2	Support for Sinergise S2Cloudless masks.
-//  0.1.1	First release with a version number.
+#include <filesystem>
+
+
+class PNG_Image: public RasterImage {
+	public:
+		PNG_Image();
+		~PNG_Image();
+
+		bool load_header(const std::filesystem::path &path);
+
+		bool load_subset(const std::filesystem::path &path, int da_x0, int da_y0, int da_x1, int da_y1);
+};
+
