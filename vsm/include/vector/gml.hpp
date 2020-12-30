@@ -46,7 +46,7 @@ public:
 	void set_meta_info(const std::string &task_name, const std::string &owner_username, const std::string &owner_email);
 	void set_multiplier(float f);
 
-	bool convert(const std::string &path_in, const std::string &path_out, const std::string &format);
+	bool convert(const std::string &path_in, const std::string &path_out);
 
 	void parse_polygon(const std::string &content, std::vector<FVertex> *coordinates);
 

@@ -132,7 +132,7 @@ bool SuperviselyRasterizer::rasterize() {
 	std::sort(polygons.begin(), polygons.end());
 
 	double color;
-	for (int i=0; i<polygons.size(); i++) {
+	for (size_t i=0; i<polygons.size(); i++) {
 		color = polygons[i].label_index / 255.0;
 
 		if (polygons[i].exterior.size() > 2) {

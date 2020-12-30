@@ -192,7 +192,6 @@ bool CVATRasterizer::convert(const std::filesystem::path &path_in, const std::fi
 		XML_SetCharacterDataHandler(p, tag_data_handler);
 		XML_SetElementHandler(p, tag_start_handler, tag_end_handler);
 
-		bool header_written = false;
 		int len = 0;
 		int done = 0;
 		while (!done) {
@@ -233,7 +232,7 @@ bool CVATRasterizer::rasterize() {
 	std::sort(polygons.begin(), polygons.end());
 
 	double color;
-	for (int i=0; i<polygons.size(); i++) {
+	for (size_t i=0; i<polygons.size(); i++) {
 		color = polygons[i].label_index / 255.0;
 
 		drawlist.push_back(Magick::DrawableStrokeAntialias(false));

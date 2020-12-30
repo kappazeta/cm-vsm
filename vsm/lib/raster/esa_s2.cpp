@@ -216,6 +216,8 @@ bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::
 			}
 		}
 	}
+
+	return true;
 }
 
 bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op, ESA_S2_Image_Operator::data_type_t data_type, ESA_S2_Image_Operator::data_resolution_t data_resolution) {

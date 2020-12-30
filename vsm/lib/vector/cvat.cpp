@@ -53,7 +53,7 @@ std::string CVATXML::cvat_header(const std::vector<std::string> &classes) {
 		<< "      <z_order>False</z_order>\n"
 		<< "      <labels>\n";
 
-	for (int i=0; i<classes.size(); i++) {
+	for (size_t i=0; i<classes.size(); i++) {
 		ss << "        <label>\n"
 			<< "          <name>" << classes[i] << "</name>\n"
 			<< "          <attributes></attributes>\n"
@@ -76,7 +76,7 @@ std::string CVATXML::cvat_header(const std::vector<std::string> &classes) {
 	return ss.str();
 }
 
-std::string CVATXML::cvat_polygon(int class_index, const std::vector<FVertex> &coordinates) {
+std::string CVATXML::cvat_polygon(unsigned int class_index, const std::vector<FVertex> &coordinates) {
 	std::ostringstream ss;
 
 	if (class_index >= classes.size())
@@ -93,7 +93,7 @@ std::string CVATXML::cvat_polygon(int class_index, const std::vector<FVertex> &c
 	ss << "    <polygon label=\"" << classes[class_index] << "\" occluded=\"0\" points=\"";
 	ss << std::fixed << std::setprecision(2);
 
-	for (int i=0; i<coordinates.size(); i++) {
+	for (size_t i=0; i<coordinates.size(); i++) {
 		ss << coordinates[i].x << "," << coordinates[i].y;
 		if (i < coordinates.size() - 1)
 			ss << ";";

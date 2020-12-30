@@ -30,7 +30,7 @@ public:
 	CVATPolygon();
 	~CVATPolygon();
 
-	typedef enum class_value_t {
+	enum class_value_t {
 		CV_UNDEFINED = 0,	///< Exclude pixel from training, priority 0.
 		CV_CLEAR = 1,	///< Clear pixel, priority -4.
 		CV_CLOUD_SHADOW = 2,	///< Cloud shadow pixel, priority -3.

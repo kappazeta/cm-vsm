@@ -22,7 +22,7 @@
 
 class ESA_S2_Image_Operator {
 public:
-	typedef enum data_type_t {
+	enum data_type_t {
 		DT_TCI,	///< True Color Image (8 bit RGB), 10 m
 		DT_SCL,	///< Sen2Cor Scene Classification Image (8 bit), 20 m
 		DT_AOT,	///< Aerosol Optical Thickness map (16 bit), 10 m
@@ -50,7 +50,7 @@ public:
 		DT_COUNT
 	};
 
-	typedef enum data_resolution_t {
+	enum data_resolution_t {
 		DR_UNKNOWN,
 		DR_10M,
 		DR_20M,
@@ -64,7 +64,7 @@ public:
 	static const unsigned char fmc_scl_value_map[6];
 	static const unsigned char ss2c_scl_value_map[3];
 
-	virtual bool operator()(const std::filesystem::path &path, data_type_t type) { return false; }
+	virtual bool operator()(const std::filesystem::path &path, data_type_t type) { (void) path; (void) type; return false; }
 };
 
 

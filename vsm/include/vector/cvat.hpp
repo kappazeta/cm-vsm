@@ -38,7 +38,7 @@ public:
 	int w, h;
 
 	std::string cvat_header(const std::vector<std::string> &classes);
-	std::string cvat_polygon(int class_index, const std::vector<FVertex> &coordinates);
+	std::string cvat_polygon(unsigned int class_index, const std::vector<FVertex> &coordinates);
 	std::string cvat_footer();
 
 	bool validate();

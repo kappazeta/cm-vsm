@@ -25,14 +25,17 @@ JP2_Image::JP2_Image() {}
 JP2_Image::~JP2_Image() {}
 
 void JP2_Image::error_callback(const char *msg, void *client_data) {
+	(void) client_data;
 	std::cerr << "ERROR: OpenJPEG: " << msg;
 }
 
 void JP2_Image::warning_callback(const char *msg, void *client_data) {
+	(void) client_data;
 	std::cout << "WARN: OpenJPEG: " << msg;
 }
 
 void JP2_Image::info_callback(const char *msg, void *client_data) {
+	(void) client_data;
 	std::cout << "INFO: OpenJPEG: " << msg;
 }
 
@@ -192,7 +195,6 @@ bool JP2_Image::load_subset(const std::filesystem::path &path, int da_x0, int da
 		subset->depth((int) main_depth);
 		subset->endian(Magick::LSBEndian);
 
-		OPJ_BYTE l_val = 0;
 		OPJ_BOOL l_continue = OPJ_TRUE;
 		while (l_continue) {
 			// Read tile header.
@@ -227,7 +229,6 @@ bool JP2_Image::load_subset(const std::filesystem::path &path, int da_x0, int da
 
 				unsigned int l_ctile_width = l_ctile_x1 - l_ctile_x0;
 				unsigned int l_ctile_height = l_ctile_y1 - l_ctile_y0;
-				unsigned int l_ctile_size = l_ctile_width * l_ctile_height;
 				unsigned int l_ctile_size_b = l_ctile_width * l_ctile_height * main_depth / 8;
 
 				Magick::Image img;

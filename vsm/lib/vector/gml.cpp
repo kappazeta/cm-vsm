@@ -127,7 +127,7 @@ void XMLCALL GMLConverter::tag_end_handler(void *user_data, const XML_Char *el) 
 	p_inst->last_tag.assign("");
 }
 
-bool GMLConverter::convert(const std::string &path_in, const std::string &path_out, const std::string &format) {
+bool GMLConverter::convert(const std::string &path_in, const std::string &path_out) {
 	XML_Parser p = nullptr;
 	bool retval = true;
 	const int buffer_size = 100 * 1024;

@@ -63,7 +63,7 @@ public:
 			gc.set_multiplier(2);
 
 			std::string path_xml = path.parent_path().string() + "/" + path.stem().string() + ".xml";
-			gc.convert(path_gml, path_xml, "CVAT");
+			gc.convert(path_gml, path_xml);
 		}
 
 		return true;

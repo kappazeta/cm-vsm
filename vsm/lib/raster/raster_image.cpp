@@ -79,7 +79,7 @@ RasterBufferRGB<T>::~RasterBufferRGB() {
 	delete [] b;
 }
 
-RasterImage::RasterImage(): main_depth(0), main_num_components(0), subset(nullptr), deflate_level(9) {}
+RasterImage::RasterImage(): subset(nullptr), main_depth(0), main_num_components(0), deflate_level(9) {}
 RasterImage::~RasterImage() {
 	clear();
 }
@@ -248,7 +248,7 @@ int RasterImage::add_layer_to_netcdf(int ncid, const std::filesystem::path &path
 }
 
 bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::string &name_in_netcdf) {
-	int ncid = 0, varid = 0;
+	int ncid = 0;
 	int dimids[2] = {0, 0};
 	int retval;
 

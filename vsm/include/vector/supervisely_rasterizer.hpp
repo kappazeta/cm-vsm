@@ -30,7 +30,7 @@ public:
 	SuperviselyPolygon();
 	~SuperviselyPolygon();
 
-	typedef enum class_value_t {
+	enum class_value_t {
 		SVLY_UNDEFINED = 0,	///< Exclude pixel from training, priority 0.
 		SVLY_CLEAR = 1,	///< Clear pixel, priority -4.
 		SVLY_CLOUD_SHADOW = 2,	///< Cloud shadow pixel, priority -3.
