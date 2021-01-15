@@ -20,7 +20,7 @@
 
 
 const int CVATPolygon::class_priority[CVATPolygon::CV_COUNT] = {
-	0, -4, -3, -2, -1
+	0, -5, -4, -3, -2, -1
 };
 
 CVATPolygon::CVATPolygon(): z_order(0), occluded(0), label_index(0) {}

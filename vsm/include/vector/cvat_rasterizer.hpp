@@ -32,12 +32,13 @@ public:
 
 	enum class_value_t {
 		CV_UNDEFINED = 0,	///< Exclude pixel from training, priority 0.
-		CV_CLEAR = 1,	///< Clear pixel, priority -4.
-		CV_CLOUD_SHADOW = 2,	///< Cloud shadow pixel, priority -3.
-		CV_SEMI_TRANSPARENT_CLOUD = 3,	///< Cirrus pixel, priority -2.
-		CV_CLOUD = 4,	///< Cumulus pixel, priority -1.
+		CV_CLEAR = 1,	///< Clear pixel, priority -5.
+		CV_CLOUD_SHADOW = 2,	///< Cloud shadow pixel, priority -4.
+		CV_SEMI_TRANSPARENT_CLOUD = 3,	///< Cirrus pixel, priority -3.
+		CV_CLOUD = 4,	///< Cumulus pixel, priority -2.
+		CV_INVALID = 5,	///< Invalid pixel, priority -1.
 
-		CV_COUNT = 5,	///< Number of classes.
+		CV_COUNT = 6,	///< Number of classes.
 		CV_BACKGROUND = 1	///< Default background class (clear, in this case).
 	};
 
