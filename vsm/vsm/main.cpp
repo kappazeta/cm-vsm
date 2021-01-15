@@ -18,6 +18,7 @@
 #include "raster/esa_s2.hpp"
 #include "raster/esa_s2_scl_jp2.hpp"
 #include "raster/supervisely_raster.hpp"
+#include "raster/segmentsai_raster.hpp"
 #include "vector/gml.hpp"
 #include "vector/cvat_rasterizer.hpp"
 #include "vector/supervisely_rasterizer.hpp"
@@ -96,11 +97,13 @@ int main(int argc, char* argv[]) {
 		<< std::endl;
 
 	if (argc < 2) {
-		std::cerr << "Usage: cvat-vsm [-d S2_PATH] [-D CVAT_PATH] [-r CVAT_XML -n NETCDF] [-b BANDS] [-R SUPERVISELY_DIR -t TILENAME -n NETCDF] [-S TILESIZE [-s SHRINK]]" << std::endl
+		std::cerr << "Usage: cvat-vsm [-d S2_PATH] [-D CVAT_PATH] [-r CVAT_XML -n NETCDF] [-b BANDS] [-R SUPERVISELY_DIR -t TILENAME -n NETCDF] [-A CVAT_SAI_PATH] [-S TILESIZE [-s SHRINK]]" << std::endl
 			<< "\twhere S2_PATH points to the .SAFE directory of an ESA S2 L2A or L1C product." << std::endl
 			<< "\tCVAT_PATH points to the .CVAT directory (pre-processed ESA S2 product)." << std::endl
 			<< "\tCVAT_XML points to a CVAT annotations.xml file." << std::endl
+			<< "\tCVAT_SAI_PATH points to the .CVAT directory with Segments.AI segmentation masks stored in subtiles." << std::endl
 			<< "\tSUPERVISELY_DIR points to a directory with the Supervise.ly annotations files." << std::endl
+			<< "\tSEGMENTSAI_DIR points to a directory with the Segments.AI annotations files." << std::endl
 			<< "\tNETCDF points to a NetCDF file to be updated with the rasterized annotations." << std::endl
 			<< "\tBANDS is a comma-separated list of bands to process. If omitted, all bands are processed." << std::endl
 			<< "\tTILENAME is the name of the tile to pick from the Supervise.ly directory." << std::endl
@@ -112,7 +115,7 @@ int main(int argc, char* argv[]) {
 	//! \note Magick relies on jasper for JP2 files, and jasper is not able to open the ESA S2 JP2 images.
 	Magick::InitializeMagick(*argv);
 
-	std::string arg_path_s2_dir, arg_path_cvat_dir, arg_path_rasterize, arg_path_nc, arg_path_supervisely, arg_tilename;
+	std::string arg_path_s2_dir, arg_path_cvat_dir, arg_path_rasterize, arg_path_nc, arg_path_cvat_sai_dir, arg_path_supervisely, arg_tilename;
 	std::string arg_bands;
 	unsigned int tilesize = 512;
 	int downscale = -1;
@@ -129,6 +132,8 @@ int main(int argc, char* argv[]) {
 			arg_path_supervisely.assign(argv[i + 1]);
 		else if (!strncmp(argv[i], "-n", 2))
 			arg_path_nc.assign(argv[i + 1]);
+		else if (!strncmp(argv[i], "-A", 2))
+			arg_path_cvat_sai_dir.assign(argv[i + 1]);
 		else if (!strncmp(argv[i], "-S", 2))
 			tilesize = atoi(argv[i + 1]);
 		else if (!strncmp(argv[i], "-s", 2))
@@ -196,6 +201,17 @@ int main(int argc, char* argv[]) {
 			std::filesystem::path path_out_png(path_in.parent_path().string() + "/supervisely_vector_" + path_in.stem().string() + ".png");
 
 			r.convert(path_in, arg_tilename, path_out_nc, path_out_png);
+		} else {
+			std::cerr << "Directory " << path_in << " does not exist." << std::endl;
+			return 1;
+		}
+	} else if (arg_path_cvat_sai_dir.length() > 0) {
+		SegmentsAIRaster r;
+
+		std::filesystem::path path_in(arg_path_cvat_sai_dir);
+
+		if (std::filesystem::is_directory(path_in)) {
+			r.convert(path_in);
 		} else {
 			std::cerr << "Directory " << path_in << " does not exist." << std::endl;
 			return 1;
