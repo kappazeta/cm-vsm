@@ -27,7 +27,7 @@ class Uploader(Logger):
     def __init__(self, product_reader, data_dir):
         super(Uploader, self).__init__(data_dir)
         self.product_reader = product_reader
-        self.max_n_threads = 10
+        self.max_n_threads = 1
         self.host = "hpc_cloudmask@rocket.hpc.ut.ee"
         self.remote_data_dir = "bands"
 
