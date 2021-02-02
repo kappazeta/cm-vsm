@@ -27,7 +27,7 @@ from logger import Logger
 class Downloader(Logger):
     def __init__(self, product_reader, data_dir):
         super(Downloader, self).__init__(data_dir)
-        self.n_threads = 4
+        self.n_threads = 10
         self.product_reader = product_reader
         self.s3_bucket_name = "EODATA"
         self.disk_quota_str = "200G"
@@ -101,7 +101,7 @@ class Downloader(Logger):
 
         scihub_url = "https://scihub.copernicus.eu/dhus/search?q="
         peps_url = "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?identifier="
-        esa_url = "http://185.178.85.174/S2_L2A_results/"
+        esa_url = "http://185.178.86.228/sen2cor_10_12_2020/"
 
         # In case of ctrl+c, control_queue will become empty
         while (not control_queue.empty()) and (not jobs_queue.empty()):
@@ -127,7 +127,7 @@ class Downloader(Logger):
                                .format(product, error_code, error_msg))
 
     def unpack(self, data_dir, product):
-        command = "unzip -qf -d {dir} {dir}/{prod}.zip".format(dir=data_dir, prod=product)
+        command = "unzip -q -d {dir} {dir}/{prod}.zip".format(dir=data_dir, prod=product)
         self.info("Unpacking product as " + command)
         error_code, error_msg = utilities.execute(command)
         if error_code != 0:
