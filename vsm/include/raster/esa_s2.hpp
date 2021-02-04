@@ -47,6 +47,7 @@ public:
 		DT_SS2C,	///< Sinergise's S2Cloudless classification map (8 bit), 60 m
 		DT_SS2CC,	///< Sinergise's S2Cloudless cloud probabilities (8 bit), 60 m
 		DT_BHC,	///< Baetens & Hagolle classification map, 60 m
+		DT_FMSC,	///< Francis & Mrziglod & Sidiropoulos classification map, 20 m
 		DT_COUNT
 	};
 
@@ -63,6 +64,7 @@ public:
 	static const unsigned char bhc_scl_value_map[9];
 	static const unsigned char fmc_scl_value_map[6];
 	static const unsigned char ss2c_scl_value_map[3];
+	static const unsigned char fmsc_scl_value_map[4];
 
 	virtual bool operator()(const std::filesystem::path &path, data_type_t type) { (void) path; (void) type; return false; }
 };

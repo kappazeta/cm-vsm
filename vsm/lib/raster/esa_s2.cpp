@@ -25,7 +25,7 @@
 
 const std::string ESA_S2_Image_Operator::data_type_name[ESA_S2_Image_Operator::DT_COUNT] = {
 	"TCI", "SCL", "AOT", "B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B8A", "B09", "B10", "B11", "B12",	"WVP",
-	"GML", "S2CC", "S2CS", "FMC", "SS2C", "SS2CC", "BHC"
+	"GML", "S2CC", "S2CS", "FMC", "SS2C", "SS2CC", "BHC", "FMSC"
 };
 
 //! Map BHC classes to SCL classes.
@@ -55,6 +55,14 @@ const unsigned char ESA_S2_Image_Operator::fmc_scl_value_map[6] = {
 const unsigned char ESA_S2_Image_Operator::ss2c_scl_value_map[3] = {
 	4,  // 0  CLEAR                    -> VEGETATION
 	9,  // 1  CLOUD                    -> CLOUD_HIGH_PROBABILITY
+	0   // 2 - 255                     -> NO_DATA
+};
+
+//! Map FMSC classes to SCL classes.
+const unsigned char ESA_S2_Image_Operator::fmsc_scl_value_map[4] = {
+	4,  // 0  CLEAR                    -> VEGETATION
+	9,  // 1  CLOUD                    -> CLOUD_HIGH_PROBABILITY
+	3,  // 2  CLOUD_SHADOWS            -> CLOUD_SHADOWS
 	0   // 2 - 255                     -> NO_DATA
 };
 
@@ -217,6 +225,15 @@ bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::
 			data_resolution = ESA_S2_Image_Operator::DR_60M;
 			if (endswith(classification_entry.path().string(), "classification_map.tif") && b[ESA_S2_Image_Operator::DT_BHC]) {
 				splitTIF(classification_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_BHC, data_resolution);
+			}
+		}
+	}
+	// Split Francis & Mrziglod & Sidiropoulos classification maps with a 20 m resolution.
+	if (std::filesystem::is_directory(path_dir_in.string() + "/ref_dataset_mrziglod20/")) {
+		for (const auto &classification_entry: std::filesystem::directory_iterator(path_dir_in.string() + "/ref_dataset_mrziglod20/")) {
+			data_resolution = ESA_S2_Image_Operator::DR_20M;
+			if (endswith(classification_entry.path().string(), "classification_map.png") && b[ESA_S2_Image_Operator::DT_FMSC]) {
+				splitPNG(classification_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_FMSC, data_resolution);
 			}
 		}
 	}
@@ -391,11 +408,14 @@ bool ESA_S2_Image::splitPNG(const std::filesystem::path &path_in, const std::fil
 		for (xi=xi0, xf=xi*tile_size_div; xf<(float)w; xf+=tile_size_div,xi++) {
 			img_src.load_subset(path_in, (int) xf, (int) yf, (int) (xf + tile_size_div), (int) (yf + tile_size_div));
 
-			// Remap pixel values from SS2C into SCL and then from SCL into the desired classes.
+			// Remap pixel values from SS2C or FMSC into SCL and then from SCL into the desired classes.
 			// This helps to ensure that there's only a single place in code which is responsible for the mapping
 			// and that the mapping is configurable.
 			if (data_type == ESA_S2_Image_Operator::DT_SS2C) {
 				img_src.remap_values(ESA_S2_Image_Operator::ss2c_scl_value_map, sizeof(ESA_S2_Image_Operator::ss2c_scl_value_map));
+				tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
+			} else if (data_type == ESA_S2_Image_Operator::DT_FMSC) {
+				img_src.remap_values(ESA_S2_Image_Operator::fmsc_scl_value_map, sizeof(ESA_S2_Image_Operator::fmsc_scl_value_map));
 				tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
 			}
 			if (tmp_data_type == ESA_S2_Image_Operator::DT_SCL) {
