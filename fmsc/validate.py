@@ -1,4 +1,4 @@
-#!/bin(python3
+#!/bin/python3
 
 # Script to check the sizes of TCI PNG in subtile directories.
 # Outputs a table of Sentinel-2 product name, mean file size in KiB, standard deviation in KiB.

@@ -1,4 +1,4 @@
-#!/bin(python3
+#!/bin/python3
 
 # Script to run cvat_vsm on a directory of Sentinel-2 products.
 #

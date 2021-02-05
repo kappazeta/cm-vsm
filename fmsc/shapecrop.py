@@ -1,4 +1,4 @@
-#!/bin(python3
+#!/bin/python3
 
 # Sentinel-2 product preprocessor for the reference dataset by Francis, Mrziglod, Sidiropoulos et al.
 # https://zenodo.org/record/4172871#.X6popcgzZaR
