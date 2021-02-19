@@ -304,12 +304,11 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 
 		Magick::PixelPacket *src_px = subset->getPixels(0, 0, w, h);
 		float src_val;
+		unsigned int yw, fyw;
 
 		// Store content.
 		if (c == 1) {
 			if (main_depth > 8) {
-				unsigned int yw, fyw;
-
 				RasterBufferPan<float> dst_px(size);
 
 				for (unsigned int y=0; y<h; y++) {
@@ -320,11 +319,8 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 						dst_px.v[fyw + x] = src_val;
 					}
 				}
-
 				add_layer_to_netcdf(ncid, path, name_in_netcdf, w, h, dimids, nd, (const void *) dst_px.v);
 			} else {
-				unsigned int yw, fyw;
-
 				RasterBufferPan<unsigned char> dst_px(size);
 
 				for (unsigned int y=0; y<h; y++) {
@@ -335,12 +331,11 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 						dst_px.v[fyw + x] = (int) (src_val * 255);
 					}
 				}
-
 				add_layer_to_netcdf(ncid, path, name_in_netcdf, w, h, dimids, nd, (const void *) dst_px.v);
 			}
-		} else if (c == 3) {
-			unsigned int yw, fyw;
 
+
+		} else if (c == 3) {
 			RasterBufferRGB<unsigned char> dst_px(size);
 
 			for (unsigned int y=0; y<h; y++) {

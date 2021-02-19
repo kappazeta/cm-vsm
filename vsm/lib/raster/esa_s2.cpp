@@ -267,7 +267,8 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 	int xi0 = 0, yi0 = 0;
 	for (yi=yi0, yf=yi*tile_size_div; yf<(float)h; yf+=tile_size_div,yi++) {
 		for (xi=xi0, xf=xi*tile_size_div; xf<(float)w; xf+=tile_size_div,xi++) {
-			img_src.load_subset(path_in, (int) xf, (int) yf, (int) (xf + tile_size_div), (int) (yf + tile_size_div));
+			// Round-down the x0, y0 coordinates and round-up the x1, y1 coordinates..
+			img_src.load_subset(path_in, (int) xf, (int) yf, (int) (xf + tile_size_div + 0.5f), (int) (yf + tile_size_div + 0.5f));
 
 			// Remap pixel values for SCL.
 			if (data_type == ESA_S2_Image_Operator::DT_SCL) {
@@ -332,7 +333,8 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 	int xi0 = 0, yi0 = 0;
 	for (yi=yi0, yf=yi*tile_size_div; yf<(float)h; yf+=tile_size_div,yi++) {
 		for (xi=xi0, xf=xi*tile_size_div; xf<(float)w; xf+=tile_size_div,xi++) {
-			img_src.load_subset(path_in, (int) xf, (int) yf, (int) (xf + tile_size_div), (int) (yf + tile_size_div));
+			// Round-down the x0, y0 coordinates and round-up the x1, y1 coordinates..
+			img_src.load_subset(path_in, (int) xf, (int) yf, (int) (xf + tile_size_div + 0.5f), (int) (yf + tile_size_div + 0.5f));
 
 			// Remap pixel values from BHC or FMC into SCL and then from SCL into the desired classes.
 			// This helps to ensure that there's only a single place in code which is responsible for the mapping
@@ -406,7 +408,8 @@ bool ESA_S2_Image::splitPNG(const std::filesystem::path &path_in, const std::fil
 	int xi0 = 0, yi0 = 0;
 	for (yi=yi0, yf=yi*tile_size_div; yf<(float)h; yf+=tile_size_div,yi++) {
 		for (xi=xi0, xf=xi*tile_size_div; xf<(float)w; xf+=tile_size_div,xi++) {
-			img_src.load_subset(path_in, (int) xf, (int) yf, (int) (xf + tile_size_div), (int) (yf + tile_size_div));
+			// Round-down the x0, y0 coordinates and round-up the x1, y1 coordinates..
+			img_src.load_subset(path_in, (int) xf, (int) yf, (int) (xf + tile_size_div + 0.5f), (int) (yf + tile_size_div + 0.5f));
 
 			// Remap pixel values from SS2C or FMSC into SCL and then from SCL into the desired classes.
 			// This helps to ensure that there's only a single place in code which is responsible for the mapping
