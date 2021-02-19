@@ -85,6 +85,8 @@ bool CVATPolygon::set_label(const std::string &label) {
 		label_index = CV_SEMI_TRANSPARENT_CLOUD;
 	else if (label == "CLOUD_SHADOW")
 		label_index = CV_CLOUD_SHADOW;
+	else if (label == "MISSING")
+		label_index = CV_INVALID;
 	return true;
 }
 
