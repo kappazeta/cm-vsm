@@ -1,0 +1,13 @@
+name: cm-fmsc
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.5
+  - numpy
+  - imageio
+  - fiona
+  - pip
+  - conda-forge::psycopg2
+  - conda-forge::gdal<3.0.0
+  - conda-forge::libgdal
