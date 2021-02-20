@@ -27,7 +27,7 @@ class ProductTiler(Logger):
         super(ProductTiler, self).__init__(data_dir)
         self.n_threads = 10
         self.product_reader = product_reader
-        self.cvat_command = "../vsm/build/bin/cvat_vsm -S 3072 -s 6 -d "
+        self.cvat_command = "../vsm/build/bin/cvat_vsm -d "
 
     def start(self):
         product_titles = self.product_reader.get_products()
