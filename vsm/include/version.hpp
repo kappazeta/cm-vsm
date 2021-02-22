@@ -16,9 +16,10 @@
 
 #pragma once
 
-#define CM_CONVERTER_VERSION_STR	"0.1.5"
+#define CM_CONVERTER_VERSION_STR	"0.1.6"
 
 // Changelog
+//  0.1.6   Ensure square subtiles for 60m bands (need to re-generate NetCDF).
 //  0.1.5   Fix dimensions for 60m bands (need to re-generate NetCDF).
 //  0.1.4   Support for Francis & Mrziglod & Sidiropoulos classification masks.
 //  0.1.3	Fmask, S2Cloudless subdirs now optional.

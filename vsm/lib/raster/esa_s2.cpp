@@ -21,6 +21,7 @@
 #include "raster/png_image.hpp"
 
 #include "util/text.hpp"
+#include <math.h>
 
 
 const std::string ESA_S2_Image_Operator::data_type_name[ESA_S2_Image_Operator::DT_COUNT] = {
@@ -263,12 +264,37 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 
 	// Subset the image, and store the subsets in a dedicated directory.
 	int xi, yi;
-	float xf, yf;
 	int xi0 = 0, yi0 = 0;
-	for (yi=yi0, yf=yi*tile_size_div; yf<(float)h; yf+=tile_size_div,yi++) {
-		for (xi=xi0, xf=xi*tile_size_div; xf<(float)w; xf+=tile_size_div,xi++) {
-			// Round-down the x0, y0 coordinates and round-up the x1, y1 coordinates..
-			img_src.load_subset(path_in, (int) xf, (int) yf, (int) (xf + tile_size_div + 0.5f), (int) (yf + tile_size_div + 0.5f));
+
+	unsigned int tile_size_src = ceil(tile_size_div);
+	// NOTE:: Assume square images and square tiles.
+	int num_tiles = ceil(w / tile_size_div);
+	int tx0, ty0, tx1, ty1;
+	int sx0, sy0, sx1, sy1;
+
+	// Iterate over tiles in the output raster.
+	for (yi=xi0; yi<num_tiles; yi++) {
+		for (xi=yi0; xi<num_tiles; xi++) {
+			// Coordinates in the target image
+			tx0 = xi * tile_size;
+			ty0 = yi * tile_size;
+			tx1 = tx0 + tile_size;
+			ty1 = ty0 + tile_size;
+			// Coordinates in the source image (possibly with different dimensions).
+			sx0 = floor(tile_size_div * xi);
+			sy0 = floor(tile_size_div * yi);
+			sx1 = ceil(sx0 + tile_size_div);
+			sy1 = ceil(sy0 + tile_size_div);
+
+			// It's possible that due to rounding errors, the tile would no longer be square.
+			// For this case, we'll crop the additional row / column of pixels to square the tile once again.
+			if (sx1 - sx0 > sy1 - sy0)
+				sx1 = sx0 + sy1 - sy0;
+			else if (sy1 - sy0 > sx1 - sx0)
+				sy1 = sy0 + sx1 - sx0;
+
+			// Load the source image.
+			img_src.load_subset(path_in, sx0, sy0, sx1, sy1);
 
 			// Remap pixel values for SCL.
 			if (data_type == ESA_S2_Image_Operator::DT_SCL) {
@@ -281,6 +307,10 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 				img_src.scale_to((unsigned int) (tile_size / f_downscale), false);
 			}
 
+			if (img_src.subset->rows() != tile_size || img_src.subset->columns() != tile_size) {
+				std::cout << "Invalid geometry " << img_src.subset->rows() << "x" << img_src.subset->columns() << " for subtile " << xi << ", " << yi << std::endl;
+			}
+
 			std::ostringstream ss_path_out, ss_path_out_png, ss_path_out_nc;
 
 			ss_path_out << path_dir_out.string() << "/tile_" << xi << "_" << yi << "/";
@@ -288,7 +318,7 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 			std::filesystem::create_directories(ss_path_out.str());
 
 			ss_path_out_nc << ss_path_out.str() << "bands.nc";
-			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << (int) xf << "_" << (int) yf << ".png";
+			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << tx0 << "_" << ty0 << ".png";
 
 			// Save PNG.
 			img_src.save(ss_path_out_png.str());
@@ -329,12 +359,37 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 
 	// Subset the image, and store the subsets in a dedicated directory.
 	int xi, yi;
-	float xf, yf;
 	int xi0 = 0, yi0 = 0;
-	for (yi=yi0, yf=yi*tile_size_div; yf<(float)h; yf+=tile_size_div,yi++) {
-		for (xi=xi0, xf=xi*tile_size_div; xf<(float)w; xf+=tile_size_div,xi++) {
-			// Round-down the x0, y0 coordinates and round-up the x1, y1 coordinates..
-			img_src.load_subset(path_in, (int) xf, (int) yf, (int) (xf + tile_size_div + 0.5f), (int) (yf + tile_size_div + 0.5f));
+
+	unsigned int tile_size_src = ceil(tile_size_div);
+	// NOTE:: Assume square images and square tiles.
+	int num_tiles = ceil(w / tile_size_div);
+	int tx0, ty0, tx1, ty1;
+	int sx0, sy0, sx1, sy1;
+
+	// Iterate over tiles in the output raster.
+	for (yi=xi0; yi<num_tiles; yi++) {
+		for (xi=yi0; xi<num_tiles; xi++) {
+			// Coordinates in the target image
+			tx0 = xi * tile_size;
+			ty0 = yi * tile_size;
+			tx1 = tx0 + tile_size;
+			ty1 = ty0 + tile_size;
+			// Coordinates in the source image (possibly with different dimensions).
+			sx0 = floor(tile_size_div * xi);
+			sy0 = floor(tile_size_div * yi);
+			sx1 = ceil(sx0 + tile_size_div);
+			sy1 = ceil(sy0 + tile_size_div);
+
+			// It's possible that due to rounding errors, the tile would no longer be square.
+			// For this case, we'll crop the additional row / column of pixels to square the tile once again.
+			if (sx1 - sx0 > sy1 - sy0)
+				sx1 = sx0 + sy1 - sy0;
+			else if (sy1 - sy0 > sx1 - sx0)
+				sy1 = sy0 + sx1 - sx0;
+
+			// Load the source image.
+			img_src.load_subset(path_in, sx0, sy0, sx1, sy1);
 
 			// Remap pixel values from BHC or FMC into SCL and then from SCL into the desired classes.
 			// This helps to ensure that there's only a single place in code which is responsible for the mapping
@@ -356,6 +411,10 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 				img_src.scale_to((unsigned int) (tile_size / f_downscale), false);
 			}
 
+			if (img_src.subset->rows() != tile_size || img_src.subset->columns() != tile_size) {
+				std::cout << "Invalid geometry " << img_src.subset->rows() << "x" << img_src.subset->columns() << " for subtile " << xi << ", " << yi << std::endl;
+			}
+
 			std::ostringstream ss_path_out, ss_path_out_png, ss_path_out_nc;
 
 			ss_path_out << path_dir_out.string() << "/tile_" << xi << "_" << yi << "/";
@@ -363,7 +422,7 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 			std::filesystem::create_directories(ss_path_out.str());
 
 			ss_path_out_nc << ss_path_out.str() << "bands.nc";
-			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << (int) xf << "_" << (int) yf << ".png";
+			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << tx0 << "_" << ty0 << ".png";
 
 			// Save PNG.
 			img_src.save(ss_path_out_png.str());
@@ -404,12 +463,37 @@ bool ESA_S2_Image::splitPNG(const std::filesystem::path &path_in, const std::fil
 
 	// Subset the image, and store the subsets in a dedicated directory.
 	int xi, yi;
-	float xf, yf;
 	int xi0 = 0, yi0 = 0;
-	for (yi=yi0, yf=yi*tile_size_div; yf<(float)h; yf+=tile_size_div,yi++) {
-		for (xi=xi0, xf=xi*tile_size_div; xf<(float)w; xf+=tile_size_div,xi++) {
-			// Round-down the x0, y0 coordinates and round-up the x1, y1 coordinates..
-			img_src.load_subset(path_in, (int) xf, (int) yf, (int) (xf + tile_size_div + 0.5f), (int) (yf + tile_size_div + 0.5f));
+
+	unsigned int tile_size_src = ceil(tile_size_div);
+	// NOTE:: Assume square images and square tiles.
+	int num_tiles = ceil(w / tile_size_div);
+	int tx0, ty0, tx1, ty1;
+	int sx0, sy0, sx1, sy1;
+
+	// Iterate over tiles in the output raster.
+	for (yi=xi0; yi<num_tiles; yi++) {
+		for (xi=yi0; xi<num_tiles; xi++) {
+			// Coordinates in the target image
+			tx0 = xi * tile_size;
+			ty0 = yi * tile_size;
+			tx1 = tx0 + tile_size;
+			ty1 = ty0 + tile_size;
+			// Coordinates in the source image (possibly with different dimensions).
+			sx0 = floor(tile_size_div * xi);
+			sy0 = floor(tile_size_div * yi);
+			sx1 = ceil(sx0 + tile_size_div);
+			sy1 = ceil(sy0 + tile_size_div);
+
+			// It's possible that due to rounding errors, the tile would no longer be square.
+			// For this case, we'll crop the additional row / column of pixels to square the tile once again.
+			if (sx1 - sx0 > sy1 - sy0)
+				sx1 = sx0 + sy1 - sy0;
+			else if (sy1 - sy0 > sx1 - sx0)
+				sy1 = sy0 + sx1 - sx0;
+
+			// Load the source image.
+			img_src.load_subset(path_in, sx0, sy0, sx1, sy1);
 
 			// Remap pixel values from SS2C or FMSC into SCL and then from SCL into the desired classes.
 			// This helps to ensure that there's only a single place in code which is responsible for the mapping
@@ -431,6 +515,10 @@ bool ESA_S2_Image::splitPNG(const std::filesystem::path &path_in, const std::fil
 				img_src.scale_to((unsigned int) (tile_size / f_downscale), false);
 			}
 
+			if (img_src.subset->rows() != tile_size || img_src.subset->columns() != tile_size) {
+				std::cout << "Invalid geometry " << img_src.subset->rows() << "x" << img_src.subset->columns() << " for subtile " << xi << ", " << yi << std::endl;
+			}
+
 			std::ostringstream ss_path_out, ss_path_out_png, ss_path_out_nc;
 
 			ss_path_out << path_dir_out.string() << "/tile_" << xi << "_" << yi << "/";
@@ -438,7 +526,7 @@ bool ESA_S2_Image::splitPNG(const std::filesystem::path &path_in, const std::fil
 			std::filesystem::create_directories(ss_path_out.str());
 
 			ss_path_out_nc << ss_path_out.str() << "bands.nc";
-			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << (int) xf << "_" << (int) yf << ".png";
+			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << tx0 << "_" << ty0 << ".png";
 
 			// Save PNG.
 			img_src.save(ss_path_out_png.str());

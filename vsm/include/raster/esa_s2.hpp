@@ -75,7 +75,7 @@ class ESA_S2_Image {
 		ESA_S2_Image();
 		~ESA_S2_Image();
 
-		int tile_size;
+		unsigned int tile_size;
 
 		void set_tile_size(int tile_size);
 
