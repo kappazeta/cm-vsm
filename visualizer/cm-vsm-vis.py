@@ -154,8 +154,8 @@ def main():
 
     # Draw subtile names on the image.
     draw = ImageDraw.Draw(image)
-    for x in range(vis.max_tile_x):
-        for y in range(vis.max_tile_y):
+    for x in range(vis.max_tile_x + 1):
+        for y in range(vis.max_tile_y + 1):
             text = "tile_{}_{}".format(x, y)
             draw.text((x * vis.tile_w, y * vis.tile_h), text, 255)
 
