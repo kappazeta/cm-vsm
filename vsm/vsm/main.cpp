@@ -103,7 +103,6 @@ int main(int argc, char* argv[]) {
 			<< "\tCVAT_XML points to a CVAT annotations.xml file." << std::endl
 			<< "\tCVAT_SAI_PATH points to the .CVAT directory with Segments.AI segmentation masks stored in subtiles." << std::endl
 			<< "\tSUPERVISELY_DIR points to a directory with the Supervise.ly annotations files." << std::endl
-			<< "\tSEGMENTSAI_DIR points to a directory with the Segments.AI annotations files." << std::endl
 			<< "\tNETCDF points to a NetCDF file to be updated with the rasterized annotations." << std::endl
 			<< "\tBANDS is a comma-separated list of bands to process. If omitted, all bands are processed." << std::endl
 			<< "\tTILENAME is the name of the tile to pick from the Supervise.ly directory." << std::endl
