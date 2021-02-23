@@ -1,0 +1,10 @@
+name: cm-vsm-vis
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.5
+  - pip
+  - numpy
+  - pillow
+  - netcdf4
