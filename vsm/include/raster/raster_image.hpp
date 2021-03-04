@@ -101,6 +101,8 @@ class RasterImage {
 		bool add_to_netcdf(const std::filesystem::path &path, const std::string &name_in_netcdf);
 		void clear();
 
+		std::string product_name;
+		std::string resampling_filter_name;
 		Magick::Image *subset;
 
 		Magick::Geometry main_geometry;
@@ -110,11 +112,15 @@ class RasterImage {
 
 		unsigned int set_deflate_level(unsigned int level);
 
-		bool scale_f(float f, bool point_filter);
-		bool scale_to(unsigned int size, bool point_filter);
+		Magick::FilterTypes set_resampling_filter(const std::string &filter_name);
+		bool scale_f(float f);
+		bool scale_to(unsigned int size);
 		void remap_values(const unsigned char *values, unsigned char max_value);
 
 	private:
+		Magick::FilterTypes resampling_filter;
+		float scaling_factor;
+
 		int add_layer_to_netcdf(int ncid, const std::filesystem::path &path, const std::string &name_in_netcdf, unsigned int w, unsigned int h, const int *dimids, unsigned char nd, const void *src_px);
 };
 

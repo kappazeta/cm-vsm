@@ -85,6 +85,14 @@ void ESA_S2_Image::set_downscale_factor(int f) {
 		f_downscale = f;
 }
 
+std::string ESA_S2_Image::get_product_name_from_path(const std::filesystem::path &path) {
+	for (auto it = path.begin(); it != path.end(); ++it) {
+		if (endswith(*it, ".SAFE"))
+			return *it;
+	}
+	return "";
+}
+
 bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op, std::vector<std::string> bands) {
 	ESA_S2_Image_Operator::data_resolution_t data_resolution;
 	std::vector<bool> b(ESA_S2_Image_Operator::DT_COUNT, false);
@@ -254,6 +262,9 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 
 	float tile_size_div = tile_size / div_f;
 
+	// Assign product name from the input path.
+	img_src.product_name = get_product_name_from_path(path_in);
+
 	// Get image dimensions.
 	retval &= img_src.load_header(path_in);
 
@@ -301,10 +312,12 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 				if (scl_value_map != nullptr)
 					img_src.remap_values(scl_value_map, max_scl_value);
 				// Scale SCL with point filter.
-				img_src.scale_to((unsigned int) (tile_size / f_downscale), true);
+				img_src.set_resampling_filter("point");
+				img_src.scale_to((unsigned int) (tile_size / f_downscale));
 			} else {
 				// Scale other images with sinc filter.
-				img_src.scale_to((unsigned int) (tile_size / f_downscale), false);
+				img_src.set_resampling_filter("sinc");
+				img_src.scale_to((unsigned int) (tile_size / f_downscale));
 			}
 
 			if (img_src.subset->rows() != tile_size || img_src.subset->columns() != tile_size) {
@@ -405,10 +418,12 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 				if (scl_value_map != nullptr)
 					img_src.remap_values(scl_value_map, max_scl_value);
 				// Scale with point filter.
-				img_src.scale_to((unsigned int) (tile_size / f_downscale), true);
+				img_src.set_resampling_filter("point");
+				img_src.scale_to((unsigned int) (tile_size / f_downscale));
 			} else {
 				// Scale other images with sinc filter.
-				img_src.scale_to((unsigned int) (tile_size / f_downscale), false);
+				img_src.set_resampling_filter("sinc");
+				img_src.scale_to((unsigned int) (tile_size / f_downscale));
 			}
 
 			if (img_src.subset->rows() != tile_size || img_src.subset->columns() != tile_size) {
@@ -509,10 +524,12 @@ bool ESA_S2_Image::splitPNG(const std::filesystem::path &path_in, const std::fil
 				if (scl_value_map != nullptr)
 					img_src.remap_values(scl_value_map, max_scl_value);
 				// Scale with point filter.
-				img_src.scale_to((unsigned int) (tile_size / f_downscale), true);
+				img_src.set_resampling_filter("point");
+				img_src.scale_to((unsigned int) (tile_size / f_downscale));
 			} else {
 				// Scale other images with sinc filter.
-				img_src.scale_to((unsigned int) (tile_size / f_downscale), false);
+				img_src.set_resampling_filter("sinc");
+				img_src.scale_to((unsigned int) (tile_size / f_downscale));
 			}
 
 			if (img_src.subset->rows() != tile_size || img_src.subset->columns() != tile_size) {

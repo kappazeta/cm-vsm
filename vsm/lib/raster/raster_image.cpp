@@ -15,7 +15,10 @@
 // limitations under the License.
 
 #include "raster/raster_image.hpp"
+#include "util/datetime.hpp"
+#include "version.hpp"
 #include <climits>
+#include <cstring>
 
 PixelRGB8::PixelRGB8(unsigned char _r, unsigned char _g, unsigned char _b):
 	r(_r), g(_g), b(_b) {}
@@ -79,7 +82,9 @@ RasterBufferRGB<T>::~RasterBufferRGB() {
 	delete [] b;
 }
 
-RasterImage::RasterImage(): subset(nullptr), main_depth(0), main_num_components(0), deflate_level(9) {}
+RasterImage::RasterImage(): subset(nullptr), main_depth(0), main_num_components(0), deflate_level(9), scaling_factor(1.0f) {
+	set_resampling_filter("");
+}
 RasterImage::~RasterImage() {
 	clear();
 }
@@ -92,11 +97,30 @@ unsigned int RasterImage::set_deflate_level(unsigned int level) {
 	return deflate_level;
 }
 
+Magick::FilterTypes RasterImage::set_resampling_filter(const std::string &filter_name) {
+	//! \todo Support other filters
+	resampling_filter_name = filter_name;
+	if (filter_name == "point") {
+		resampling_filter = Magick::PointFilter;
+	} else if (filter_name == "box") {
+		resampling_filter = Magick::BoxFilter;
+	} else if (filter_name == "cubic") {
+		resampling_filter = Magick::CubicFilter;
+	} else if (filter_name == "sinc") {
+		resampling_filter = Magick::SincFilter;
+	} else {
+		resampling_filter = Magick::UndefinedFilter;
+		resampling_filter_name = "undefined";
+	}
+	return resampling_filter;
+}
+
 void RasterImage::clear() {
 	if (subset != nullptr) {
 		delete subset;
 		subset = nullptr;
 	}
+	set_resampling_filter("");
 }
 
 std::ostream& operator<<(std::ostream &out, const RasterImage& img) {
@@ -139,36 +163,34 @@ bool RasterImage::save(const std::filesystem::path &path) {
 	return false;
 }
 
-bool RasterImage::scale_f(float f, bool point_filter) {
+bool RasterImage::scale_f(float f) {
 	if (subset != nullptr) {
 		// No scaling needed?
 		if (f >= 0.999f && f <= 1.001f)
 			return true;
 
+		scaling_factor = f;
+
 		Magick::Geometry geom_orig = subset->size();
 		Magick::Geometry geom_new(geom_orig.width() * f, geom_orig.height() * f);
-		if (point_filter)
-			subset->filterType(Magick::PointFilter);
-		else
-			subset->filterType(Magick::SincFilter);
+		subset->filterType(resampling_filter);
 		subset->resize(geom_new);
 		return true;
 	}
 	return false;
 }
 
-bool RasterImage::scale_to(unsigned int size, bool point_filter) {
+bool RasterImage::scale_to(unsigned int size) {
 	if (subset != nullptr) {
 		Magick::Geometry geom_orig = subset->size();
 
 		if (geom_orig.width() == size && geom_orig.height() == size)
 			return true;
 
+		scaling_factor = ((float) size) / ((float) geom_orig.width());
+
 		Magick::Geometry geom_new(size, size);
-		if (point_filter)
-			subset->filterType(Magick::PointFilter);
-		else
-			subset->filterType(Magick::SincFilter);
+		subset->filterType(resampling_filter);
 		subset->resize(geom_new);
 		return true;
 	}
@@ -244,6 +266,20 @@ int RasterImage::add_layer_to_netcdf(int ncid, const std::filesystem::path &path
 			throw NCException(ss.str(), path, retval);
 		}
 	}
+
+	// Variable attribute for scaling_factor.
+	if ((retval = nc_put_att(ncid, varid, "scaling_factor", NC_FLOAT, 1, &scaling_factor)))
+		throw NCException("failed to put attribute scaling_factor to " + name_in_netcdf, path, retval);
+
+	// Variable attribute for resampling method.
+	if ((retval = nc_put_att_text(ncid, varid, "resampling_filter", resampling_filter_name.size(), resampling_filter_name.c_str())))
+		throw NCException("failed to put attribute resampling_filter to " + name_in_netcdf, path, retval);
+
+	// Variable attribute for last modified date-time.
+	std::string last_modified_str = datetime_now_str();
+	if ((retval = nc_put_att_text(ncid, varid, "last_modified", last_modified_str.size(), last_modified_str.c_str())))
+		throw NCException("failed to put attribute last_modified to " + name_in_netcdf, path, retval);
+
 	return varid;
 }
 
@@ -277,6 +313,12 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 		} else {
 			if ((retval = nc_create(path.string().c_str(), NC_NOCLOBBER | NC_NETCDF4, &ncid)))
 				throw NCException("failed to create", path, retval);
+			// Global attribute for version number.
+			if ((retval = nc_put_att_text(ncid, NC_GLOBAL, "version", strlen(CM_CONVERTER_VERSION_STR), CM_CONVERTER_VERSION_STR)))
+				throw NCException("failed to put global attribute version", path, retval);
+			// Global attribute for product name.
+			if ((retval = nc_put_att_text(ncid, NC_GLOBAL, "product_name", product_name.size(), product_name.c_str())))
+				throw NCException("failed to put global attribute product_name", path, retval);
 		}
 
 		// Define dimensions.

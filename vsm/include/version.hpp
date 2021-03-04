@@ -16,12 +16,14 @@
 
 #pragma once
 
-#define CM_CONVERTER_VERSION_STR	"0.1.6"
+#define CM_CONVERTER_NAME_STR		"cvat-vsm"
+#define CM_CONVERTER_VERSION_STR	"0.1.7"
 
 // Changelog
+//  0.1.7   Store metadata (version, product_name, last_modified, resampling_filter) in NetCDF files.
 //  0.1.6   Ensure square subtiles for 60m bands (need to re-generate NetCDF).
 //  0.1.5   Fix dimensions for 60m bands (need to re-generate NetCDF).
 //  0.1.4   Support for Francis & Mrziglod & Sidiropoulos classification masks.
-//  0.1.3	Fmask, S2Cloudless subdirs now optional.
-//  0.1.2	Support for Sinergise S2Cloudless masks.
-//  0.1.1	First release with a version number.
+//  0.1.3   Fmask, S2Cloudless subdirs now optional.
+//  0.1.2   Support for Sinergise S2Cloudless masks.
+//  0.1.1   First release with a version number.
