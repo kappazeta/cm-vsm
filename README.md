@@ -77,6 +77,16 @@ To debug the project set a breakpoint, press `ctrl+shift+p` in Visual Studio Cod
 >CMake: Debug
 ```
 
+To avoid #include errors caused by IntelliSense, press `ctrl+shift+p` in Visual Studio Code and run:
+```
+C/C++: Edit configurations (UI)
+```
+In the configuration window specify an additional include path:
+```
+/usr/include/GraphicsMagick
+```
+and select C++17 as a C++ standart down to the bottom.
+
 ## Usage
 With the `-d` option, `cvat-vsm` can be used to subtile a Sentinel-2 L2A raster image, for example:
 
