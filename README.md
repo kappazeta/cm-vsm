@@ -61,18 +61,18 @@ Using terminal navigate to `~/cm-vsm/vsm/build` and run:
 cget install
 ```
 
-To configure the project press `ctrl+shift+p` in Visual Studi Code and run:
+To configure the project press `ctrl+shift+p` in Visual Studio Code and run:
 ```
 >CMake: Configure
 ```
 If CMake cannot find `CMakeLists.txt`, navigate to it manually or reopen vsm folder as a project.
 
-To build the project press `ctrl+shift+p` in Visual Studi Code and run:
+To build the project press `ctrl+shift+p` in Visual Studio Code and run:
 ```
 >CMake: Build
 ```
 
-To debug the project set a breakpoint, press `ctrl+shift+p` in Visual Studi Code and run:
+To debug the project set a breakpoint, press `ctrl+shift+p` in Visual Studio Code and run:
 ```
 >CMake: Debug
 ```
