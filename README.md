@@ -61,23 +61,23 @@ Using terminal navigate to `~/cm-vsm/vsm/build` and run:
 cget install
 ```
 
-To configure the project press `ctrl+shift+p` in Visual Studio Code and run:
+To configure the project press `Ctrl + Shift + P` in Visual Studio Code and run:
 ```
 >CMake: Configure
 ```
 If CMake cannot find `CMakeLists.txt`, navigate to it manually or reopen vsm folder as a project.
 
-To build the project press `ctrl+shift+p` in Visual Studio Code and run:
+To build the project press `Ctrl + Shift + P` in Visual Studio Code and run:
 ```
 >CMake: Build
 ```
 
-To debug the project set a breakpoint, press `ctrl+shift+p` in Visual Studio Code and run:
+To debug the project set a breakpoint, press `Ctrl + Shift + P` in Visual Studio Code and run:
 ```
 >CMake: Debug
 ```
 
-To avoid #include errors caused by IntelliSense, press `ctrl+shift+p` in Visual Studio Code and run:
+To avoid #include errors caused by IntelliSense, press `Ctrl + Shift + P` in Visual Studio Code and run:
 ```
 C/C++: Edit configurations (UI)
 ```
@@ -85,7 +85,7 @@ In the configuration window specify an additional include path:
 ```
 /usr/include/GraphicsMagick
 ```
-and select C++17 as a C++ standart down to the bottom.
+and select C++17 as a C++ standard down to the bottom.
 
 ## Usage
 With the `-d` option, `cvat-vsm` can be used to subtile a Sentinel-2 L2A raster image, for example:
