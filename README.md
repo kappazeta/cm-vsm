@@ -111,6 +111,7 @@ The following bands / layers are supported:
 
 | No. | Name  | Ground resolution | Bit-depth | Format    | Description                                                |
 | --- | ----- | ----------------- | --------- | --------- | ---------------------------------------------------------- |
+|     | Label |              10 m |         8 |      Mask | Segmentation mask from one of the supported labeling tools |
 |   1 |   TCI |              10 m |         8 |       RGB | True Color Image                                           |
 |   2 |   SCL |              20 m |         8 |      Mask | Sen2Cor Scene Classification Image                         |
 |   3 |   AOT |              10 m |        16 | Grayscale | Aerosol Optical Thickness map                              |
