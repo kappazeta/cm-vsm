@@ -81,6 +81,8 @@ class ESA_S2_Image {
 
 		void set_downscale_factor(int f);
 
+		void set_deflate_factor(int d);
+
 		void set_scl_class_map(unsigned char *class_map);
 
 		static std::string get_product_name_from_path(const std::filesystem::path &path);
@@ -96,5 +98,6 @@ class ESA_S2_Image {
 		unsigned char max_scl_value;
 
 		int f_downscale;
+		int deflate_factor;
 };
 

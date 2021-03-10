@@ -85,6 +85,10 @@ void ESA_S2_Image::set_downscale_factor(int f) {
 		f_downscale = f;
 }
 
+void ESA_S2_Image::set_deflate_factor(int d) {
+	deflate_factor = d;
+}
+
 std::string ESA_S2_Image::get_product_name_from_path(const std::filesystem::path &path) {
 	for (auto it = path.begin(); it != path.end(); ++it) {
 		if (endswith(*it, ".SAFE"))
@@ -262,6 +266,8 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 
 	float tile_size_div = tile_size / div_f;
 
+	img_src.set_deflate_level(deflate_factor);
+
 	// Assign product name from the input path.
 	img_src.product_name = get_product_name_from_path(path_in);
 
@@ -361,6 +367,8 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 		div_f = 6.0f;
 
 	float tile_size_div = tile_size / div_f;
+
+	img_src.set_deflate_level(deflate_factor);
 
 	// Get image dimensions.
 	retval &= img_src.load_header(path_in);
@@ -467,6 +475,8 @@ bool ESA_S2_Image::splitPNG(const std::filesystem::path &path_in, const std::fil
 		div_f = 6.0f;
 
 	float tile_size_div = tile_size / div_f;
+
+	img_src.set_deflate_level(deflate_factor);
 
 	// Get image dimensions.
 	retval &= img_src.load_header(path_in);
