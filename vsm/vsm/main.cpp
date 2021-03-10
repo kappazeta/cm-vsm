@@ -140,7 +140,7 @@ int main(int argc, char* argv[]) {
 		else if (!strncmp(argv[i], "-s", 2))
 			downscale = atoi(argv[i + 1]);
 		else if (!strncmp(argv[i], "-t", 2))
-			arg_tilename.assign(argv[i + 1])
+			arg_tilename.assign(argv[i + 1]);
 		else if (!strncmp(argv[i], "-f", 2))
 			arg_deflatelevel.assign(argv[i + 1]);
 	}
