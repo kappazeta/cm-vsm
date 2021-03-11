@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
 
 	if (argc < 2) {
 		std::cerr << "Usage: " << CM_CONVERTER_NAME_STR
-			<< " [-d S2_PATH] [-D CVAT_PATH] [-r CVAT_XML -n NETCDF] [-b BANDS] [-R SUPERVISELY_DIR -t TILENAME -n NETCDF] [-A CVAT_SAI_PATH] [-S TILESIZE [-s SHRINK]]" << std::endl
+			<< " [-d S2_PATH] [-D CVAT_PATH] [-r CVAT_XML -n NETCDF] [-b BANDS] [-R SUPERVISELY_DIR -t TILENAME -n NETCDF] [-A CVAT_SAI_PATH] [-S TILESIZE [-s SHRINK]] [-f DEFLATE_LEVEL]" << std::endl
 			<< "\twhere S2_PATH points to the .SAFE directory of an ESA S2 L2A or L1C product." << std::endl
 			<< "\tCVAT_PATH points to the .CVAT directory (pre-processed ESA S2 product)." << std::endl
 			<< "\tCVAT_XML points to a CVAT annotations.xml file." << std::endl
@@ -108,7 +108,8 @@ int main(int argc, char* argv[]) {
 			<< "\tBANDS is a comma-separated list of bands to process. If omitted, all bands are processed." << std::endl
 			<< "\tTILENAME is the name of the tile to pick from the Supervise.ly directory." << std::endl
 			<< "\tTILESIZE is the number of pixels per the edge of a square subtile (default: 512)." << std::endl
-			<< "\tSHRINK is the factor by which to downscale from the 10 x 10 m^2 S2 bands (default: -1 (original size))." << std::endl;
+			<< "\tSHRINK is the factor by which to downscale from the 10 x 10 m^2 S2 bands (default: -1 (original size))." << std::endl
+			<< "\tDEFLATE_LEVEL is the compression factor for NETCDF (between 0 and 9, where 9 is the highest level of compression)." << std::endl;
 		return 1;
 	}
 
@@ -119,6 +120,7 @@ int main(int argc, char* argv[]) {
 	std::string arg_bands;
 	unsigned int tilesize = 512;
 	int downscale = -1;
+	int deflatelevel = 9;
 	for (int i=0; i<argc; i++) {
 		if (!strncmp(argv[i], "-d", 2))
 			arg_path_s2_dir.assign(argv[i + 1]);
@@ -135,11 +137,13 @@ int main(int argc, char* argv[]) {
 		else if (!strncmp(argv[i], "-A", 2))
 			arg_path_cvat_sai_dir.assign(argv[i + 1]);
 		else if (!strncmp(argv[i], "-S", 2))
-			tilesize = atoi(argv[i + 1]);
+			tilesize = std::atoi(argv[i + 1]);
 		else if (!strncmp(argv[i], "-s", 2))
-			downscale = atoi(argv[i + 1]);
+			downscale = std::atoi(argv[i + 1]);
 		else if (!strncmp(argv[i], "-t", 2))
 			arg_tilename.assign(argv[i + 1]);
+		else if (!strncmp(argv[i], "-f", 2))
+			deflatelevel = std::atoi(argv[i + 1]);
 	}
 
 	if (arg_path_s2_dir.length() > 0) {
@@ -162,6 +166,7 @@ int main(int argc, char* argv[]) {
 		img.set_tile_size(tilesize);
 		img.set_scl_class_map(new_class_map);
 		img.set_downscale_factor(downscale);
+		img.set_deflate_factor(deflatelevel);
 		img.process(path_dir_in, path_dir_out, img_op, bands);
 	} else if (arg_path_cvat_dir.length() > 0) {
 		std::cout << arg_path_cvat_dir << std::endl;
@@ -175,6 +180,8 @@ int main(int argc, char* argv[]) {
 
 		std::filesystem::path path_in(arg_path_rasterize);
 		std::filesystem::path path_out_nc(arg_path_nc);
+
+		rasterizer.image.set_deflate_level(deflatelevel);
 
 		if (!std::filesystem::exists(path_in)) {
 			std::cerr << "ERROR: Vector annotations file " << path_in << " does not exist." << std::endl;
@@ -197,6 +204,8 @@ int main(int argc, char* argv[]) {
 		std::filesystem::path path_in(arg_path_supervisely);
 		std::filesystem::path path_out_nc(arg_path_nc);
 
+		r.image.set_deflate_level(deflatelevel);
+
 		if (std::filesystem::is_directory(path_in)) {
 			std::filesystem::path path_out_png(path_in.parent_path().string() + "/supervisely_vector_" + path_in.stem().string() + ".png");
 
@@ -209,6 +218,8 @@ int main(int argc, char* argv[]) {
 		SegmentsAIRaster r;
 
 		std::filesystem::path path_in(arg_path_cvat_sai_dir);
+
+		r.set_deflate_level(deflatelevel);
 
 		if (std::filesystem::is_directory(path_in)) {
 			r.convert(path_in);
