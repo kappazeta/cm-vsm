@@ -78,7 +78,8 @@ class CMVSMVis(object):
         if v_min == v_max:
             band_data.fill(v_min)
         else:
-            band_data = 255 * (band_data - v_min) / (v_max - v_min)
+            if band_data.dtype != "uint8":
+                band_data = 255 * (band_data - v_min) / (v_max - v_min)
         root.close()
         # Flip the rows, to have subtile contents upright.
         return np.flip(band_data.astype(np.uint8), 0)
