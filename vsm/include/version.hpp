@@ -16,10 +16,11 @@
 
 #pragma once
 
-#define CM_CONVERTER_NAME_STR		"cvat-vsm"
-#define CM_CONVERTER_VERSION_STR	"0.1.10"
+#define CM_CONVERTER_NAME_STR		"cm-vsm"
+#define CM_CONVERTER_VERSION_STR	"0.1.11"
 
 // Changelog
+//  0.1.11  Configurable overlap between sub-tiles. Renamed from cvat-vsm to cm-vsm.
 //  0.1.10  Configurable resampling method for ESA S2 rasters.
 //  0.1.9   Configurable deflate level for label data conversion.
 //  0.1.8   Configurable deflate level for NetCDF was added.

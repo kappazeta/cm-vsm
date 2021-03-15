@@ -1,6 +1,6 @@
 # ESA S2 product converter for cloud mask labeling and processing
 #
-# Copyright 2020 KappaZeta Ltd.
+# Copyright 2021 KappaZeta Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ include(${VSM_ROOT}/cmake/modules/common.cmake)
 # check_out_of_source()
 
 # Initialize the project
-project(CVAT_VSM)
+project(CM_VSM)
 set(VSM_VERSION "0.3")
 vsm_common_init()
 

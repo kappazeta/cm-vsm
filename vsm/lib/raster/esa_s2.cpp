@@ -1,6 +1,6 @@
 // Processing of ESA S2 L2A products
 //
-// Copyright 2020 KappaZeta Ltd.
+// Copyright 2021 KappaZeta Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ const unsigned char ESA_S2_Image_Operator::fmsc_scl_value_map[4] = {
 	0   // 2 - 255                     -> NO_DATA
 };
 
-ESA_S2_Image::ESA_S2_Image(): tile_size(512), scl_value_map(nullptr), max_scl_value(12), f_downscale(1) {}
+ESA_S2_Image::ESA_S2_Image(): tile_size(512), scl_value_map(nullptr), max_scl_value(12), f_downscale(1), f_overlap(0.0f) {}
 ESA_S2_Image::~ESA_S2_Image() {}
 
 void ESA_S2_Image::set_tile_size(int tile_size) {
@@ -87,6 +87,15 @@ void ESA_S2_Image::set_downscale_factor(int f) {
 
 void ESA_S2_Image::set_deflate_factor(int d) {
 	deflate_factor = d;
+}
+
+void ESA_S2_Image::set_overlap_factor(float f) {
+	if (f <= 0.0f)
+		f_overlap = 0.0f;
+	else if (f >= 0.5)
+		f_overlap = 0.5f;
+	else
+		f_overlap = f;
 }
 
 void ESA_S2_Image::set_resampling_method(const std::string &m) {
@@ -258,6 +267,8 @@ bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::
 	return true;
 }
 
+//! \todo Generalize the splitting logic, to deduplicate code.
+
 bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op, ESA_S2_Image_Operator::data_type_t data_type, ESA_S2_Image_Operator::data_resolution_t data_resolution) {
 	ESA_S2_Band_JP2_Image img_src;
 	bool retval = true;
@@ -268,10 +279,13 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 	else if (data_resolution == ESA_S2_Image_Operator::DR_60M)
 		div_f = 6.0f;
 
-	float tile_size_div = tile_size / div_f;
+	// With increased overlap, the effective subtile size is reduced.
+	float tile_size_div = (tile_size - tile_size * f_overlap) / div_f;
 
 	img_src.set_deflate_level(deflate_factor);
 
+	// Propagate overlap factor for NetCDF metadata.
+	img_src.f_overlap = f_overlap;
 	// Assign product name from the input path.
 	img_src.product_name = get_product_name_from_path(path_in);
 
@@ -313,6 +327,10 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 				sx1 = sx0 + sy1 - sy0;
 			else if (sy1 - sy0 > sx1 - sx0)
 				sy1 = sy0 + sx1 - sx0;
+
+			// Account for overlap.
+			sx1 += tile_size * f_overlap / div_f;
+			sy1 += tile_size * f_overlap / div_f;
 
 			// Load the source image.
 			img_src.load_subset(path_in, sx0, sy0, sx1, sy1);
@@ -370,9 +388,12 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 	else if (data_resolution == ESA_S2_Image_Operator::DR_60M)
 		div_f = 6.0f;
 
-	float tile_size_div = tile_size / div_f;
+	float tile_size_div = (tile_size - tile_size * f_overlap) / div_f;
 
 	img_src.set_deflate_level(deflate_factor);
+
+	// Propagate overlap factor for NetCDF metadata.
+	img_src.f_overlap = f_overlap;
 
 	// Get image dimensions.
 	retval &= img_src.load_header(path_in);
@@ -412,6 +433,10 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 				sx1 = sx0 + sy1 - sy0;
 			else if (sy1 - sy0 > sx1 - sx0)
 				sy1 = sy0 + sx1 - sx0;
+
+			// Account for overlap.
+			sx1 += tile_size * f_overlap / div_f;
+			sy1 += tile_size * f_overlap / div_f;
 
 			// Load the source image.
 			img_src.load_subset(path_in, sx0, sy0, sx1, sy1);
@@ -478,7 +503,10 @@ bool ESA_S2_Image::splitPNG(const std::filesystem::path &path_in, const std::fil
 	else if (data_resolution == ESA_S2_Image_Operator::DR_60M)
 		div_f = 6.0f;
 
-	float tile_size_div = tile_size / div_f;
+	float tile_size_div = (tile_size - tile_size * f_overlap) / div_f;
+
+	// Propagate overlap factor for NetCDF metadata.
+	img_src.f_overlap = f_overlap;
 
 	img_src.set_deflate_level(deflate_factor);
 
@@ -520,6 +548,10 @@ bool ESA_S2_Image::splitPNG(const std::filesystem::path &path_in, const std::fil
 				sx1 = sx0 + sy1 - sy0;
 			else if (sy1 - sy0 > sx1 - sx0)
 				sy1 = sy0 + sx1 - sx0;
+
+			// Account for overlap.
+			sx1 += tile_size * f_overlap / div_f;
+			sy1 += tile_size * f_overlap / div_f;
 
 			// Load the source image.
 			img_src.load_subset(path_in, sx0, sy0, sx1, sy1);
