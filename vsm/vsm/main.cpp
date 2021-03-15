@@ -110,7 +110,7 @@ int main(int argc, char* argv[]) {
 			<< "\tTILESIZE is the number of pixels per the edge of a square subtile (default: 512)." << std::endl
 			<< "\tSHRINK is the factor by which to downscale from the 10 x 10 m^2 S2 bands (default: -1 (original size))." << std::endl
 			<< "\tDEFLATE_LEVEL is the compression factor for NETCDF (between 0 and 9, where 9 is the highest level of compression)." << std::endl
-			<< "\tRESAMPLING_METHOD defines a preferred way for resampling (box, cubic or sinc)." << std::endl;
+			<< "\tRESAMPLING_METHOD defines a preferred way for resampling (point, box, cubic or sinc)." << std::endl;
 		return 1;
 	}
 
