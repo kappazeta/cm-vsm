@@ -1,6 +1,6 @@
 // Processing of ESA S2 L2A products
 //
-// Copyright 2020 KappaZeta Ltd.
+// Copyright 2021 KappaZeta Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -60,12 +60,18 @@ public:
 		DR_COUNT
 	};
 
-	static const std::string data_type_name[DT_COUNT];
-	static const unsigned char bhc_scl_value_map[9];
-	static const unsigned char fmc_scl_value_map[6];
-	static const unsigned char ss2c_scl_value_map[3];
-	static const unsigned char fmsc_scl_value_map[4];
+	static const std::string data_type_name[DT_COUNT];	///< List of supported band names.
+	static const unsigned char bhc_scl_value_map[9]; ///< Baetens & Hagolle to Sen2Cor classification map.
+	static const unsigned char fmc_scl_value_map[6];	///< FMask to Sen2Cor classification map.
+	static const unsigned char ss2c_scl_value_map[3];	///< Sinergise S2Cloudless to Sen2Cor classification map.
+	static const unsigned char fmsc_scl_value_map[4];	///< Francis & Mrziglod & Sidiropoulos to Sen2Cor classification map.
 
+	/**
+	 * Callback for potential post-processing on the sub-tiles.
+	 * @param path Path to the sub-tile file.
+	 * @param type File type.
+	 * @return True on success, false to abort sub-tile processing.
+	 */
 	virtual bool operator()(const std::filesystem::path &path, data_type_t type) { (void) path; (void) type; return false; }
 };
 
@@ -75,32 +81,91 @@ class ESA_S2_Image {
 		ESA_S2_Image();
 		~ESA_S2_Image();
 
-		unsigned int tile_size;
-
+		/**
+		 * Set sub-tile size in pixels.
+		 */
 		void set_tile_size(int tile_size);
 
+		/**
+		 * Set down-scaling factor for subsampling the image.
+		 * Useful for sub-splitting an image with 10 m resolution to match other images with 60 m resolution (f = 6).
+		 */
 		void set_downscale_factor(int f);
 
+		/**
+		 * Set deflate factor [0, 9].
+		 */
 		void set_deflate_factor(int d);
 
+		/**
+		 * Set overlap factor [0.0f, 0.5f].
+		 */
 		void set_overlap_factor(float f);
 
+		/**
+		 * Set class map for remapping from Sen2Cor classifications.
+		 * @param class_map Pointer to unsigned char array of 13 class indices, with the last index for unmatched classes.
+		 */
 		void set_scl_class_map(unsigned char *class_map);
 
+		/**
+		 * Extract S2 product name from file path.
+		 * @return Product name as a string.
+		 */
 		static std::string get_product_name_from_path(const std::filesystem::path &path);
 
+		/**
+		 * Process a Sentinel-2 L1C or L2A image.
+		 * @param path_dir_in Path to the .SAFE directory.
+		 * @param path_dir_out Path to the output directory.
+		 * @param op Operator for class remapping and any other post-processing.
+		 * @param bands List of band names (ESA_S2_Image_Operator::data_type_name) to process.
+		 * @return True on success, false on failure.
+		 */
 		bool process(const std::filesystem::path &path_dir_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op, std::vector<std::string> bands);
 
-		bool splitJP2(const std::filesystem::path &path_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op, ESA_S2_Image_Operator::data_type_t data_type, ESA_S2_Image_Operator::data_resolution_t data_resolution);
-		bool splitTIF(const std::filesystem::path &path_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op, ESA_S2_Image_Operator::data_type_t data_type, ESA_S2_Image_Operator::data_resolution_t data_resolution);
-		bool splitPNG(const std::filesystem::path &path_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op, ESA_S2_Image_Operator::data_type_t data_type, ESA_S2_Image_Operator::data_resolution_t data_resolution);
-
 	protected:
-		unsigned char *scl_value_map;
-		unsigned char max_scl_value;
+		unsigned int tile_size;	///< Sub-tile size, in pixels.
 
-		int f_downscale;
-		int deflate_factor;
-		float f_overlap;
+		unsigned char *scl_value_map;	///< Pointer to class map from Sen2Cor into a custom classification scheme.
+		unsigned char max_scl_value;	///< Maximum allowed index for the class map (12 for Sen2Cor).
+
+		int f_downscale;	///< Factor for down-scaling (subsampling) the image.
+		int deflate_factor;	///< Deflate factor for NetCDF storage.
+
+		float f_overlap;	///< Overlap between sub-tiles.
+
+		/**
+		 * Split a JP2 file into sub-tiles.
+		 * @param path_in Path to the JP2 file.
+		 * @param path_dir_out Path to the output directory to store the sub-tiles.
+		 * @param op Operator for class remapping and any other post-processing.
+		 * @param data_type Band type.
+		 * @param data_resolution Band resolution.
+		 * @return True on success, false on failure.
+		 */
+		bool splitJP2(const std::filesystem::path &path_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op, ESA_S2_Image_Operator::data_type_t data_type, ESA_S2_Image_Operator::data_resolution_t data_resolution);
+
+		/**
+		 * Split a TIFF file into sub-tiles.
+		 * @param path_in Path to the TIFF file.
+		 * @param path_dir_out Path to the output directory to store the sub-tiles.
+		 * @param op Operator for class remapping and any other post-processing.
+		 * @param data_type Band type.
+		 * @param data_resolution Band resolution.
+		 * @return True on success, false on failure.
+		 */
+		bool splitTIF(const std::filesystem::path &path_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op, ESA_S2_Image_Operator::data_type_t data_type, ESA_S2_Image_Operator::data_resolution_t data_resolution);
+
+		/**
+		 * Split a PNG file into sub-tiles.
+		 * @param path_in Path to the TIFF file.
+		 * @param path_dir_out Path to the output directory to store the sub-tiles.
+		 * @param op Operator for class remapping and any other post-processing.
+		 * @param data_type Band type.
+		 * @param data_resolution Band resolution.
+		 * @return True on success, false on failure.
+		 */
+		bool splitPNG(const std::filesystem::path &path_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op, ESA_S2_Image_Operator::data_type_t data_type, ESA_S2_Image_Operator::data_resolution_t data_resolution);
 };
 
