@@ -17,9 +17,10 @@
 #pragma once
 
 #define CM_CONVERTER_NAME_STR		"cvat-vsm"
-#define CM_CONVERTER_VERSION_STR	"0.1.9"
+#define CM_CONVERTER_VERSION_STR	"0.1.11"
 
 // Changelog
+//  0.1.11  Configurable overlap between sub-tiles.
 //  0.1.9   Configurable deflate level for label data conversion.
 //  0.1.8   Configurable deflate level for NetCDF was added.
 //  0.1.7   Store metadata (version, product_name, last_modified, resampling_filter) in NetCDF files.

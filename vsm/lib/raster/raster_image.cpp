@@ -82,7 +82,7 @@ RasterBufferRGB<T>::~RasterBufferRGB() {
 	delete [] b;
 }
 
-RasterImage::RasterImage(): subset(nullptr), main_depth(0), main_num_components(0), deflate_level(9), scaling_factor(1.0f) {
+RasterImage::RasterImage(): subset(nullptr), main_depth(0), main_num_components(0), deflate_level(9), scaling_factor(1.0f), f_overlap(0.0f) {
 	set_resampling_filter("");
 }
 RasterImage::~RasterImage() {
@@ -319,6 +319,9 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 			// Global attribute for product name.
 			if ((retval = nc_put_att_text(ncid, NC_GLOBAL, "product_name", product_name.size(), product_name.c_str())))
 				throw NCException("failed to put global attribute product_name", path, retval);
+			// Global attribute for overlap.
+			if ((retval = nc_put_att(ncid, NC_GLOBAL, "overlap", NC_FLOAT, 1, &f_overlap)))
+				throw NCException("failed to put global attribute overlap", path, retval);
 		}
 
 		// Define dimensions.

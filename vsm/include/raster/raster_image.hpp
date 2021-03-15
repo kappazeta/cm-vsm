@@ -109,6 +109,7 @@ class RasterImage {
 		unsigned char main_depth;
 		unsigned char main_num_components;
 		unsigned int deflate_level;
+		float f_overlap;
 
 		unsigned int set_deflate_level(unsigned int level);
 
