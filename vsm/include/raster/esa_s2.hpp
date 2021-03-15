@@ -103,6 +103,11 @@ class ESA_S2_Image {
 		void set_overlap_factor(float f);
 
 		/**
+		 * Set resampling method for all bands except classification masks to one of the following: "sinc", "cubic", "box", "point".
+		 */
+		void set_resampling_method(const std::string &m);
+
+		/**
 		 * Set class map for remapping from Sen2Cor classifications.
 		 * @param class_map Pointer to unsigned char array of 13 class indices, with the last index for unmatched classes.
 		 */
@@ -134,6 +139,8 @@ class ESA_S2_Image {
 		int deflate_factor;	///< Deflate factor for NetCDF storage.
 
 		float f_overlap;	///< Overlap between sub-tiles.
+		
+		std::string resampling_method_name;	///< Name of the resampling method used for all bands except classification masks.
 
 		/**
 		 * Split a JP2 file into sub-tiles.

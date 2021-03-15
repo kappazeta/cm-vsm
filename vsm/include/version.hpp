@@ -21,6 +21,7 @@
 
 // Changelog
 //  0.1.11  Configurable overlap between sub-tiles.
+//  0.1.10  Configurable resampling method for ESA S2 rasters.
 //  0.1.9   Configurable deflate level for label data conversion.
 //  0.1.8   Configurable deflate level for NetCDF was added.
 //  0.1.7   Store metadata (version, product_name, last_modified, resampling_filter) in NetCDF files.

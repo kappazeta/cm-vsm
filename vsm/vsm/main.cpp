@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
 
 	if (argc < 2) {
 		std::cerr << "Usage: " << CM_CONVERTER_NAME_STR
-			<< " [-d S2_PATH] [-D CVAT_PATH] [-r CVAT_XML -n NETCDF] [-b BANDS] [-R SUPERVISELY_DIR -t TILENAME -n NETCDF] [-A CVAT_SAI_PATH] [-S TILESIZE [-s SHRINK]] [-f DEFLATE_LEVEL] [-o OVERLAP]" << std::endl
+			<< " [-d S2_PATH] [-D CVAT_PATH] [-r CVAT_XML -n NETCDF] [-b BANDS] [-R SUPERVISELY_DIR -t TILENAME -n NETCDF] [-A CVAT_SAI_PATH] [-S TILESIZE [-s SHRINK]] [-f DEFLATE_LEVEL] [-m RESAMPLING_METHOD] [-o OVERLAP]" << std::endl
 			<< "\twhere S2_PATH points to the .SAFE directory of an ESA S2 L2A or L1C product." << std::endl
 			<< "\tCVAT_PATH points to the .CVAT directory (pre-processed ESA S2 product)." << std::endl
 			<< "\tCVAT_XML points to a CVAT annotations.xml file." << std::endl
@@ -110,6 +110,7 @@ int main(int argc, char* argv[]) {
 			<< "\tTILESIZE is the number of pixels per the edge of a square subtile (default: 512)." << std::endl
 			<< "\tSHRINK is the factor by which to downscale from the 10 x 10 m^2 S2 bands (default: -1 (original size))." << std::endl
 			<< "\tDEFLATE_LEVEL is the compression factor for NETCDF (between 0 and 9, where 9 is the highest level of compression)." << std::endl
+			<< "\tRESAMPLING_METHOD defines a preferred way for resampling (point, box, cubic or sinc)." << std::endl
 			<< "\tOVERLAP Overlap between sub-tiles (between 0 and 0.5)." << std::endl;
 		return 1;
 	}
@@ -118,7 +119,7 @@ int main(int argc, char* argv[]) {
 	Magick::InitializeMagick(*argv);
 
 	std::string arg_path_s2_dir, arg_path_cvat_dir, arg_path_rasterize, arg_path_nc, arg_path_cvat_sai_dir, arg_path_supervisely, arg_tilename;
-	std::string arg_bands;
+	std::string arg_bands, arg_resampling_method;
 	unsigned int tilesize = 512;
 	int downscale = -1;
 	int deflatelevel = 9;
@@ -146,6 +147,8 @@ int main(int argc, char* argv[]) {
 			arg_tilename.assign(argv[i + 1]);
 		else if (!strncmp(argv[i], "-f", 2))
 			deflatelevel = std::atoi(argv[i + 1]);
+		else if (!strncmp(argv[i], "-m", 2))
+			arg_resampling_method.assign(argv[i + 1]);
 		else if (!strncmp(argv[i], "-o", 2))
 			overlap = std::atof(argv[i + 1]);
 	}
@@ -172,6 +175,7 @@ int main(int argc, char* argv[]) {
 		img.set_downscale_factor(downscale);
 		img.set_deflate_factor(deflatelevel);
 		img.set_overlap_factor(overlap);
+		img.set_resampling_method(arg_resampling_method);
 
 		img.process(path_dir_in, path_dir_out, img_op, bands);
 	} else if (arg_path_cvat_dir.length() > 0) {
