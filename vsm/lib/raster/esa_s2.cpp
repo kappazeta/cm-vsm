@@ -89,6 +89,10 @@ void ESA_S2_Image::set_deflate_factor(int d) {
 	deflate_factor = d;
 }
 
+void ESA_S2_Image::set_resampling_method(const std::string &m) {
+	resampling_method_name = m;
+}
+
 std::string ESA_S2_Image::get_product_name_from_path(const std::filesystem::path &path) {
 	for (auto it = path.begin(); it != path.end(); ++it) {
 		if (endswith(*it, ".SAFE"))
@@ -322,7 +326,7 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 				img_src.scale_to((unsigned int) (tile_size / f_downscale));
 			} else {
 				// Scale other images with sinc filter.
-				img_src.set_resampling_filter("sinc");
+				img_src.set_resampling_filter(resampling_method_name);
 				img_src.scale_to((unsigned int) (tile_size / f_downscale));
 			}
 
@@ -430,7 +434,7 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 				img_src.scale_to((unsigned int) (tile_size / f_downscale));
 			} else {
 				// Scale other images with sinc filter.
-				img_src.set_resampling_filter("sinc");
+				img_src.set_resampling_filter(resampling_method_name);
 				img_src.scale_to((unsigned int) (tile_size / f_downscale));
 			}
 
@@ -538,7 +542,7 @@ bool ESA_S2_Image::splitPNG(const std::filesystem::path &path_in, const std::fil
 				img_src.scale_to((unsigned int) (tile_size / f_downscale));
 			} else {
 				// Scale other images with sinc filter.
-				img_src.set_resampling_filter("sinc");
+				img_src.set_resampling_filter(resampling_method_name);
 				img_src.scale_to((unsigned int) (tile_size / f_downscale));
 			}
 

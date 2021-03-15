@@ -83,6 +83,8 @@ class ESA_S2_Image {
 
 		void set_deflate_factor(int d);
 
+		void set_resampling_method(const std::string &m);
+
 		void set_scl_class_map(unsigned char *class_map);
 
 		static std::string get_product_name_from_path(const std::filesystem::path &path);
@@ -99,5 +101,6 @@ class ESA_S2_Image {
 
 		int f_downscale;
 		int deflate_factor;
+		std::string resampling_method_name;
 };
 
