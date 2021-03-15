@@ -1,6 +1,6 @@
 // Version macros
 //
-// Copyright 2020 KappaZeta Ltd.
+// Copyright 2021 KappaZeta Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,9 +17,10 @@
 #pragma once
 
 #define CM_CONVERTER_NAME_STR		"cvat-vsm"
-#define CM_CONVERTER_VERSION_STR	"0.1.9"
+#define CM_CONVERTER_VERSION_STR	"0.1.10"
 
 // Changelog
+//  0.1.10  Configurable resampling method for ESA S2 rasters.
 //  0.1.9   Configurable deflate level for label data conversion.
 //  0.1.8   Configurable deflate level for NetCDF was added.
 //  0.1.7   Store metadata (version, product_name, last_modified, resampling_filter) in NetCDF files.
