@@ -161,6 +161,16 @@ bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::
 				splitJP2(r10m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B08, data_resolution);
 			}
 		}
+		// Sinergise's S2Cloudless classification map within an L1C product, with a 10 m resolution.
+		if (std::filesystem::is_directory(granule_entry.path().string() + "/S2CLOUDLESS_DATA/R10m/")) {
+			for (const auto &fmask_entry: std::filesystem::directory_iterator(granule_entry.path().string() + "/S2CLOUDLESS_DATA/R10m/")) {
+				if (endswith(fmask_entry.path().string(), "_prediction.png") && b[ESA_S2_Image_Operator::DT_SS2C]) {
+					splitPNG(fmask_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_SS2C, data_resolution);
+				} else if (endswith(fmask_entry.path().string(), "_probability.png") && b[ESA_S2_Image_Operator::DT_SS2CC]) {
+					splitPNG(fmask_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_SS2CC, data_resolution);
+				}
+			}
+		}
 
 		data_resolution = ESA_S2_Image_Operator::DR_20M;
 		// Files within an L2A product with a 20 m resolution.
@@ -211,6 +221,16 @@ bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::
 				}
 			}
 		}
+		// Sinergise's S2Cloudless classification map within an L1C product, with a 20 m resolution.
+		if (std::filesystem::is_directory(granule_entry.path().string() + "/S2CLOUDLESS_DATA/R20m/")) {
+			for (const auto &fmask_entry: std::filesystem::directory_iterator(granule_entry.path().string() + "/S2CLOUDLESS_DATA/R20m/")) {
+				if (endswith(fmask_entry.path().string(), "_prediction.png") && b[ESA_S2_Image_Operator::DT_SS2C]) {
+					splitPNG(fmask_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_SS2C, data_resolution);
+				} else if (endswith(fmask_entry.path().string(), "_probability.png") && b[ESA_S2_Image_Operator::DT_SS2CC]) {
+					splitPNG(fmask_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_SS2CC, data_resolution);
+				}
+			}
+		}
 
 		data_resolution = ESA_S2_Image_Operator::DR_60M;
 		// Files within an L2A product with a 60 m resolution.
@@ -234,8 +254,8 @@ bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::
 			}
 		}
 		// Sinergise's S2Cloudless classification map within an L1C product, with a 60 m resolution.
-		if (std::filesystem::is_directory(granule_entry.path().string() + "/S2CLOUDLESS_DATA/")) {
-			for (const auto &fmask_entry: std::filesystem::directory_iterator(granule_entry.path().string() + "/S2CLOUDLESS_DATA/")) {
+		if (std::filesystem::is_directory(granule_entry.path().string() + "/S2CLOUDLESS_DATA/R60m/")) {
+			for (const auto &fmask_entry: std::filesystem::directory_iterator(granule_entry.path().string() + "/S2CLOUDLESS_DATA/R60m/")) {
 				if (endswith(fmask_entry.path().string(), "_prediction.png") && b[ESA_S2_Image_Operator::DT_SS2C]) {
 					splitPNG(fmask_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_SS2C, data_resolution);
 				} else if (endswith(fmask_entry.path().string(), "_probability.png") && b[ESA_S2_Image_Operator::DT_SS2CC]) {

@@ -17,9 +17,10 @@
 #pragma once
 
 #define CM_CONVERTER_NAME_STR		"cm-vsm"
-#define CM_CONVERTER_VERSION_STR	"0.1.11"
+#define CM_CONVERTER_VERSION_STR	"0.1.12"
 
 // Changelog
+//  0.1.12  Support for S2Cloudless with 10m, 20m or 60m resolution.
 //  0.1.11  Configurable overlap between sub-tiles. Renamed from cvat-vsm to cm-vsm.
 //  0.1.10  Configurable resampling method for ESA S2 rasters.
 //  0.1.9   Configurable deflate level for label data conversion.
