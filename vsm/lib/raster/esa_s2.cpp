@@ -378,9 +378,9 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 
 			std::filesystem::create_directories(ss_path_out.str());
 
-			ss_path_out_nc << ss_path_out.str() << "bands.nc";
-			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << tx0 << "_" << ty0 << ".png";
-
+			ss_path_out_nc << ss_path_out.str() << path_in.stem().string().substr(0, path_in.stem().string().find_last_of("_")) << "_tile_" << xi << "_" << yi << ".nc";
+			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_"<< "tile_" << xi << "_" << yi << ".png";
+			
 			// Save PNG.
 			img_src.save(ss_path_out_png.str());
 			// Add to NetCDF.
@@ -493,8 +493,8 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 
 			std::filesystem::create_directories(ss_path_out.str());
 
-			ss_path_out_nc << ss_path_out.str() << "bands.nc";
-			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << tx0 << "_" << ty0 << ".png";
+			ss_path_out_nc << ss_path_out.str() << path_in.stem().string().substr(0, path_in.stem().string().find_last_of("_")) << "_tile_" << xi << "_" << yi << ".nc";
+			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_"<< "tile_" << xi << "_" << yi << ".png";
 
 			// Save PNG.
 			img_src.save(ss_path_out_png.str());
@@ -608,8 +608,8 @@ bool ESA_S2_Image::splitPNG(const std::filesystem::path &path_in, const std::fil
 
 			std::filesystem::create_directories(ss_path_out.str());
 
-			ss_path_out_nc << ss_path_out.str() << "bands.nc";
-			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << tx0 << "_" << ty0 << ".png";
+			ss_path_out_nc << ss_path_out.str() << path_in.stem().string().substr(0, path_in.stem().string().find_last_of("_")) << "_tile_" << xi << "_" << yi << ".nc";
+			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_"<< "tile_" << xi << "_" << yi << ".png";
 
 			// Save PNG.
 			img_src.save(ss_path_out_png.str());
