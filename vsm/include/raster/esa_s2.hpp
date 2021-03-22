@@ -108,11 +108,6 @@ class ESA_S2_Image {
 		void set_resampling_method(const std::string &m);
 
 		/**
-		 * Gets index, first date and bands for files' names.
-		 */
-		std::string index_date_band_extractor(const std::filesystem::path &path);
-
-		/**
 		 * Set class map for remapping from Sen2Cor classifications.
 		 * @param class_map Pointer to unsigned char array of 13 class indices, with the last index for unmatched classes.
 		 */

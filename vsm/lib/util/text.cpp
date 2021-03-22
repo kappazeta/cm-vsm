@@ -15,6 +15,7 @@
 // limitations under the License.
 
 #include "util/text.hpp"
+#include <filesystem>
 #include <sstream>
 #include <algorithm>
 
@@ -66,3 +67,6 @@ std::vector<std::string> split_str(std::string const &text, char delim) {
 	return result;
 }
 
+std::string extract_index_date_band(const std::filesystem::path &path) {
+	return path.stem().string().substr(0, path.stem().string().find_last_of("_"));
+}

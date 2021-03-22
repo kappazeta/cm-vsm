@@ -17,6 +17,7 @@
 #pragma once
 
 #include <iostream>
+#include <filesystem>
 #include <vector>
 
 
@@ -29,3 +30,8 @@ std::string tolower(std::string const &text);
 std::string toupper(std::string const &text);
 
 std::vector<std::string> split_str(std::string const &text, char delim);
+
+/**
+* Gets index, first date and bands for files' names.
+*/
+std::string extract_index_date_band(const std::filesystem::path &path);

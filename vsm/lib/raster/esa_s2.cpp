@@ -102,10 +102,6 @@ void ESA_S2_Image::set_resampling_method(const std::string &m) {
 	resampling_method_name = m;
 }
 
-std::string ESA_S2_Image::index_date_band_extractor(const std::filesystem::path &path) {
-	return path.stem().string().substr(0, path.stem().string().find_last_of("_"));
-}
-
 std::string ESA_S2_Image::get_product_name_from_path(const std::filesystem::path &path) {
 	for (auto it = path.begin(); it != path.end(); ++it) {
 		if (endswith(*it, ".SAFE"))
@@ -382,7 +378,7 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 
 			std::filesystem::create_directories(ss_path_out.str());
 
-			ss_path_out_nc << ss_path_out.str() << index_date_band_extractor(path_in) << "_tile_" << xi << "_" << yi << ".nc";
+			ss_path_out_nc << ss_path_out.str() << extract_index_date_band(path_in) << "_tile_" << xi << "_" << yi << ".nc";
 			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile_" << xi << "_" << yi << ".png";
 			
 			// Save PNG.
@@ -497,7 +493,7 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 
 			std::filesystem::create_directories(ss_path_out.str());
 
-			ss_path_out_nc << ss_path_out.str() << index_date_band_extractor(path_in) << "_tile_" << xi << "_" << yi << ".nc";
+			ss_path_out_nc << ss_path_out.str() << extract_index_date_band(path_in) << "_tile_" << xi << "_" << yi << ".nc";
 			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile_" << xi << "_" << yi << ".png";
 
 			// Save PNG.
@@ -612,7 +608,7 @@ bool ESA_S2_Image::splitPNG(const std::filesystem::path &path_in, const std::fil
 
 			std::filesystem::create_directories(ss_path_out.str());
 
-			ss_path_out_nc << ss_path_out.str() << index_date_band_extractor(path_in) << "_tile_" << xi << "_" << yi << ".nc";
+			ss_path_out_nc << ss_path_out.str() << extract_index_date_band(path_in) << "_tile_" << xi << "_" << yi << ".nc";
 			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile_" << xi << "_" << yi << ".png";
 
 			// Save PNG.
