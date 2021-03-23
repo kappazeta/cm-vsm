@@ -69,36 +69,38 @@ std::vector<std::string> split_str(std::string const &text, char delim) {
 }
 
 std::string extract_index_date(const std::filesystem::path &path) {
+	// Path example: "/home/user/Documents/work/S2A_MSIL1C_20170815T102021_N0205_R065_T32TMR_20200905T100047.SAFE/GRANULE/L1C_T32TMR_A011216_20170815T102513/IMG_DATA/T32TMR_20170815T102021_B03.jp2"
 	return path.stem().string().substr(0, path.stem().string().find_last_of("_"));
 }
 
 std::string extract_tile_id(const std::filesystem::path &path) {
+	// Path example: "/home/user/Documents/work/S2A_MSIL2A_20200529T094041_N0214_R036_T35VLF_20200529T120441.CVAT/tile_256_3584"
 	std::string tile_id_result;
-    std::string path_string = path.string(); 
-    std::regex regexp("tile_(\\d*)_(\\d*)"); //Expression extracts ...tile_xi_yi... from path
-    std::smatch matches; 
+	std::string path_string = path.string();
+	std::regex regexp("tile_(\\d+)_(\\d+)"); // Expression extracts tile_xi_yi from the path
+	std::smatch matches;
 	
 	std::regex_search(path_string, matches, regexp); 
 
-	if (matches.size() != 0)
-	{
-		tile_id_result+= matches.str(0);
+	if (matches.size() != 0) {
+		tile_id_result += matches.str(0); // Takes the whole match
 	}
 
 	return tile_id_result;
 }
 
 std::string extract_index_firstdate(const std::filesystem::path &path) {
+	// Path example: "S2A_MSIL2A_20200529T094041_N0214_R036_T35VLF_20200529T120441"
 	std::string index_firstdate_result;
-    std::string path_string = path.string(); 
-    std::regex regexp("(\\d*T\\d*_).*?(T\\d.*_)"); //Expression extracts ...index_firstdate_... from a full path
-    std::smatch matches; 
+	std::string path_string = path.string(); 
+	std::regex regexp("(\\d+T\\d+)_.*?(T[\\dA-Z]+)_"); // Expression extracts ...index_firstdate_... from a full path
+	std::smatch matches;
 	
 	std::regex_search(path_string, matches, regexp);
-	if (matches.size() == 3)
-	{
-		index_firstdate_result+= matches.str(2);
-		index_firstdate_result+= matches.str(1);
+	if (matches.size() == 3) {
+		index_firstdate_result += matches.str(2); // Takes the second group (index)
+		index_firstdate_result += "_";
+		index_firstdate_result += matches.str(1); // Takes the first group (first date)
 	}
 
 	return index_firstdate_result;

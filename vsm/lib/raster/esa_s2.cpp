@@ -380,7 +380,7 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 
 			ss_path_out_nc << ss_path_out.str() << extract_index_date(path_in) << "_tile_" << xi << "_" << yi << ".nc";
 			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile_" << xi << "_" << yi << ".png";
-			
+
 			// Save PNG.
 			img_src.save(ss_path_out_png.str());
 			// Add to NetCDF.
