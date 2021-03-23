@@ -18,6 +18,7 @@
 #include <filesystem>
 #include <sstream>
 #include <algorithm>
+#include <regex>
 
 
 bool startswith(std::string const &text, std::string const &beginning) {
@@ -67,6 +68,38 @@ std::vector<std::string> split_str(std::string const &text, char delim) {
 	return result;
 }
 
-std::string extract_index_date_band(const std::filesystem::path &path) {
+std::string extract_index_date(const std::filesystem::path &path) {
 	return path.stem().string().substr(0, path.stem().string().find_last_of("_"));
+}
+
+std::string extract_tile_id(const std::filesystem::path &path) {
+	std::string tile_id_result;
+    std::string path_string = path.string(); 
+    std::regex regexp("tile_(\\d*)_(\\d*)"); //Expression extracts ...tile_xi_yi... from path
+    std::smatch matches; 
+	
+	std::regex_search(path_string, matches, regexp); 
+
+	if (matches.size() != 0)
+	{
+		tile_id_result+= matches.str(0);
+	}
+
+	return tile_id_result;
+}
+
+std::string extract_index_firstdate(const std::filesystem::path &path) {
+	std::string index_firstdate_result;
+    std::string path_string = path.string(); 
+    std::regex regexp("(\\d*T\\d*_).*?(T\\d.*_)"); //Expression extracts ...index_firstdate_... from a full path
+    std::smatch matches; 
+	
+	std::regex_search(path_string, matches, regexp);
+	if (matches.size() == 3)
+	{
+		index_firstdate_result+= matches.str(2);
+		index_firstdate_result+= matches.str(1);
+	}
+
+	return index_firstdate_result;
 }

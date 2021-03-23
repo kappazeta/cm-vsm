@@ -378,7 +378,7 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 
 			std::filesystem::create_directories(ss_path_out.str());
 
-			ss_path_out_nc << ss_path_out.str() << extract_index_date_band(path_in) << "_tile_" << xi << "_" << yi << ".nc";
+			ss_path_out_nc << ss_path_out.str() << extract_index_date(path_in) << "_tile_" << xi << "_" << yi << ".nc";
 			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile_" << xi << "_" << yi << ".png";
 			
 			// Save PNG.
@@ -493,7 +493,7 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 
 			std::filesystem::create_directories(ss_path_out.str());
 
-			ss_path_out_nc << ss_path_out.str() << extract_index_date_band(path_in) << "_tile_" << xi << "_" << yi << ".nc";
+			ss_path_out_nc << ss_path_out.str() << extract_index_date(path_in) << "_tile_" << xi << "_" << yi << ".nc";
 			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile_" << xi << "_" << yi << ".png";
 
 			// Save PNG.
@@ -608,7 +608,7 @@ bool ESA_S2_Image::splitPNG(const std::filesystem::path &path_in, const std::fil
 
 			std::filesystem::create_directories(ss_path_out.str());
 
-			ss_path_out_nc << ss_path_out.str() << extract_index_date_band(path_in) << "_tile_" << xi << "_" << yi << ".nc";
+			ss_path_out_nc << ss_path_out.str() << extract_index_date(path_in) << "_tile_" << xi << "_" << yi << ".nc";
 			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile_" << xi << "_" << yi << ".png";
 
 			// Save PNG.
