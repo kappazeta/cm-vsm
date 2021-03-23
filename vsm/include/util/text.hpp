@@ -17,8 +17,9 @@
 #pragma once
 
 #include <iostream>
+#include <filesystem>
 #include <vector>
-
+#include <regex>
 
 bool startswith(std::string const &text, std::string const &beginning);
 
@@ -29,3 +30,18 @@ std::string tolower(std::string const &text);
 std::string toupper(std::string const &text);
 
 std::vector<std::string> split_str(std::string const &text, char delim);
+
+/**
+* Gets index and first date for .nc names.
+*/
+std::string extract_index_date(const std::filesystem::path &path);
+
+/**
+* Gets tile ids from its folder name. (segments.ai)
+*/
+std::string extract_tile_id(const std::filesystem::path &path);
+
+/**
+* Gets index and first date from folder name. (segments.ai)
+*/
+std::string extract_index_firstdate(const std::filesystem::path &path);
