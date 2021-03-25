@@ -73,7 +73,7 @@ std::string extract_index_date(const std::filesystem::path &path) {
 	// Path example: "/home/user/Documents/data/cloudmask/S2A_MSIL2A_20200509T094041_N0214_R036_T35VME_20200509T111504.SAFE/GRANULE/L2A_T35VME_A025487_20200509T094035/IMG_DATA/R20m/T35VME_20200509T094041_AOT_20m.jp2"
 	std::string index_firstdate_result;
 	std::string path_string = path.stem().string(); 
-	std::regex regexp("(T\\d+[A-Z]+).(\\d+T\\d+)"); // Expression extracts ...index_firstdate... from a full path file name
+	std::regex regexp("(T\\d+[A-Z]+)_(\\d+T\\d+)"); // Expression extracts ...index_firstdate... from a full path file name
 	std::smatch matches;
 	
 	std::regex_search(path_string, matches, regexp);
