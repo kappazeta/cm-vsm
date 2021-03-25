@@ -17,9 +17,10 @@
 #pragma once
 
 #define CM_CONVERTER_NAME_STR		"cm-vsm"
-#define CM_CONVERTER_VERSION_STR	"0.1.13"
+#define CM_CONVERTER_VERSION_STR	"0.1.14"
 
 // Changelog
+//  0.1.14  Fixed name for bands file from L2A rasters.
 //  0.1.13  Shortened product name and tile indexes in NetCDF files' names.
 //  0.1.12  Support for S2Cloudless with 10m, 20m or 60m resolution.
 //  0.1.11  Configurable overlap between sub-tiles. Renamed from cvat-vsm to cm-vsm.
