@@ -71,16 +71,18 @@ std::vector<std::string> split_str(std::string const &text, char delim) {
 std::string extract_index_date(const std::filesystem::path &path) {
 	// Path example: "/home/user/Documents/work/S2A_MSIL1C_20170815T102021_N0205_R065_T32TMR_20200905T100047.SAFE/GRANULE/L1C_T32TMR_A011216_20170815T102513/IMG_DATA/T32TMR_20170815T102021_B03.jp2"
 	// Path example: "/home/user/Documents/work/S2A_MSIL2A_20200509T094041_N0214_R036_T35VME_20200509T111504.SAFE/GRANULE/L2A_T35VME_A025487_20200509T094035/IMG_DATA/R20m/T35VME_20200509T094041_AOT_20m.jp2"
+	// Path example: "/home/toshaklg/Downloads/S2B_MSIL1C_20200401T093029_N0209_R136_T34UFA_20200401T113334.SAFE/GRANULE/L1C_T34UFA_A016035_20200401T093114/S2CLOUDLESS_DATA/s2cloudless_probability.png"
+	// Path example: "/home/toshaklg/Documents/work/S2B_MSIL1C_20200401T093029_N0209_R136_T34UFA_20200401T113334.SAFE/GRANULE/L1C_T34UFA_A016035_20200401T093114/FMASK_DATA/L1C_T34UFA_A016035_20200401T093114_Fmask4.tif"
 	std::string index_firstdate_result;
-	std::string path_string = path.stem().string(); 
-	std::regex regexp("(T\\d+[A-Z]+)_(\\d+T\\d+)"); // Expression extracts ...index_firstdate... from a full path file name
+	std::string path_string = path.string(); 
+	std::regex regexp("(\\d+T\\d+)_.*?(T[\\dA-Z]+)_"); // Expression extracts ...index_firstdate... from a full path file name
 	std::smatch matches;
 	
 	std::regex_search(path_string, matches, regexp);
 	if (matches.size() == 3) {
-		index_firstdate_result += matches.str(1); // Takes the first group (first date)
-		index_firstdate_result += "_";
 		index_firstdate_result += matches.str(2); // Takes the second group (index)
+		index_firstdate_result += "_";
+		index_firstdate_result += matches.str(1); // Takes the first group (first date)
 	}
 
 	return index_firstdate_result;
@@ -100,21 +102,4 @@ std::string extract_tile_id(const std::filesystem::path &path) {
 	}
 
 	return tile_id_result;
-}
-
-std::string extract_index_firstdate(const std::filesystem::path &path) {
-	// Path example: "S2A_MSIL2A_20200529T094041_N0214_R036_T35VLF_20200529T120441"
-	std::string index_firstdate_result;
-	std::string path_string = path.string(); 
-	std::regex regexp("(\\d+T\\d+)_.*?(T[\\dA-Z]+)_"); // Expression extracts ...index_firstdate... from a segments.ai file name
-	std::smatch matches;
-	
-	std::regex_search(path_string, matches, regexp);
-	if (matches.size() == 3) {
-		index_firstdate_result += matches.str(2); // Takes the second group (index)
-		index_firstdate_result += "_";
-		index_firstdate_result += matches.str(1); // Takes the first group (first date)
-	}
-
-	return index_firstdate_result;
 }
