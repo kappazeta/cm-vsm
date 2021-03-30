@@ -97,7 +97,7 @@ bool SegmentsAIRaster::convert(const std::filesystem::path &path_dir) {
 	for (const auto &tile_entry: std::filesystem::directory_iterator(path_dir.string())) {
 		path_mask = tile_entry.path().string() + "/segments_ai_classification_mask.png";
 		path_classes = tile_entry.path().string() + "/segments_ai_classes.json";
-		path_nc = tile_entry.path().string() + "/" + extract_index_firstdate(path_dir.stem()) + "_" + extract_tile_id(tile_entry.path().string()) + ".nc";
+		path_nc = tile_entry.path().string() + "/" + extract_index_date(path_dir) + "_" + extract_tile_id(tile_entry.path().string()) + ".nc";
 
 		if (std::filesystem::exists(path_mask) && std::filesystem::exists(path_classes)) {
 			retval &= load(path_mask, path_classes);

@@ -40,8 +40,3 @@ std::string extract_index_date(const std::filesystem::path &path);
 * Gets tile ids from its folder name. (segments.ai)
 */
 std::string extract_tile_id(const std::filesystem::path &path);
-
-/**
-* Gets index and first date from folder name. (segments.ai)
-*/
-std::string extract_index_firstdate(const std::filesystem::path &path);
