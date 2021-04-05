@@ -157,6 +157,10 @@ int main(int argc, char* argv[]) {
 		ESA_S2_Image img;
 		ImageOperator img_op;
 		std::filesystem::path path_dir_in(arg_path_s2_dir);
+		if (!path_dir_in.is_absolute())
+		{
+			path_dir_in = std::filesystem::absolute(arg_path_s2_dir);
+		}
 		std::filesystem::path path_dir_out(path_dir_in.parent_path().string() + "/" + path_dir_in.stem().string() + ".CVAT");
 		std::vector<std::string> bands;
 
