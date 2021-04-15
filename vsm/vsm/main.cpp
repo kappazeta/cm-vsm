@@ -157,6 +157,9 @@ int main(int argc, char* argv[]) {
 		ESA_S2_Image img;
 		ImageOperator img_op;
 		std::filesystem::path path_dir_in(arg_path_s2_dir);
+		if (!path_dir_in.is_absolute()) {
+			path_dir_in = std::filesystem::absolute(arg_path_s2_dir);
+		}
 		std::filesystem::path path_dir_out(path_dir_in.parent_path().string() + "/" + path_dir_in.stem().string() + ".CVAT");
 		std::vector<std::string> bands;
 
@@ -189,7 +192,13 @@ int main(int argc, char* argv[]) {
 		CVATRasterizer rasterizer;
 
 		std::filesystem::path path_in(arg_path_rasterize);
+		if (!path_in.is_absolute()) {
+			path_in = std::filesystem::absolute(arg_path_rasterize);
+		}
 		std::filesystem::path path_out_nc(arg_path_nc);
+		if (!path_out_nc.is_absolute()) {
+			path_out_nc = std::filesystem::absolute(arg_path_nc);
+		}
 
 		rasterizer.image.set_deflate_level(deflatelevel);
 
@@ -212,7 +221,13 @@ int main(int argc, char* argv[]) {
 		SuperviselyRasterizer r;
 
 		std::filesystem::path path_in(arg_path_supervisely);
+		if (!path_in.is_absolute()) {
+			path_in = std::filesystem::absolute(arg_path_supervisely);
+		}
 		std::filesystem::path path_out_nc(arg_path_nc);
+		if (!path_out_nc.is_absolute()) {
+			path_out_nc = std::filesystem::absolute(arg_path_nc);
+		}
 
 		r.image.set_deflate_level(deflatelevel);
 
@@ -228,6 +243,9 @@ int main(int argc, char* argv[]) {
 		SegmentsAIRaster r;
 
 		std::filesystem::path path_in(arg_path_cvat_sai_dir);
+		if (!path_in.is_absolute()) {
+			path_in = std::filesystem::absolute(arg_path_cvat_sai_dir);
+		}
 
 		r.set_deflate_level(deflatelevel);
 

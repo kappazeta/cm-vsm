@@ -17,9 +17,10 @@
 #pragma once
 
 #define CM_CONVERTER_NAME_STR		"cm-vsm"
-#define CM_CONVERTER_VERSION_STR	"0.1.15"
+#define CM_CONVERTER_VERSION_STR	"0.1.16"
 
 // Changelog
+//  0.1.16  Relative path support for command-line parameters.
 //  0.1.15  Bands.nc filename was fixed for -d argument and unnecessary functions have been removed.
 //  0.1.14  Fixed name for bands file from L2A rasters.
 //  0.1.13  Shortened product name and tile indexes in NetCDF files' names.
