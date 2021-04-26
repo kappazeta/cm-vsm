@@ -18,6 +18,7 @@
 #include "raster/esa_s2_scl_jp2.hpp"
 #include "raster/esa_s2_band_jp2.hpp"
 #include "raster/bhc_tif.hpp"
+#include "raster/cnes_maja_clm_tif.hpp"
 #include "raster/png_image.hpp"
 
 #include "util/text.hpp"
@@ -26,7 +27,7 @@
 
 const std::string ESA_S2_Image_Operator::data_type_name[ESA_S2_Image_Operator::DT_COUNT] = {
 	"TCI", "SCL", "AOT", "B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B8A", "B09", "B10", "B11", "B12",	"WVP",
-	"GML", "S2CC", "S2CS", "FMC", "SS2C", "SS2CC", "BHC", "FMSC"
+	"GML", "S2CC", "S2CS", "FMC", "SS2C", "SS2CC", "MAJAC", "BHC", "FMSC"
 };
 
 //! Map BHC classes to SCL classes.
@@ -123,6 +124,8 @@ bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::
 		}
 	}
 
+	// TODO:: Generalize the following.
+
 	for (const auto &granule_entry: std::filesystem::directory_iterator(path_dir_in.string() + "/GRANULE/")) {
 		data_resolution = ESA_S2_Image_Operator::DR_10M;
 		// Files within an L2A product with a 10 m resolution.
@@ -168,6 +171,14 @@ bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::
 					splitPNG(s2c_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_SS2C, data_resolution);
 				} else if (endswith(s2c_entry.path().string(), "_probability.png") && b[ESA_S2_Image_Operator::DT_SS2CC]) {
 					splitPNG(s2c_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_SS2CC, data_resolution);
+				}
+			}
+		}
+		// CNES MAJA classification map within an L1C / L2A product, with a 10 m resolution.
+		if (std::filesystem::is_directory(granule_entry.path().string() + "/MAJA_DATA/")) {
+			for (const auto &majac_entry: std::filesystem::directory_iterator(granule_entry.path().string() + "/MAJA_DATA/")) {
+				if (endswith(majac_entry.path().string(), "_CLM_R1.tif") && b[ESA_S2_Image_Operator::DT_MAJAC]) {
+					splitTIF(majac_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_MAJAC, data_resolution);
 				}
 			}
 		}
@@ -228,6 +239,14 @@ bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::
 					splitPNG(s2c_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_SS2C, data_resolution);
 				} else if (endswith(s2c_entry.path().string(), "_probability.png") && b[ESA_S2_Image_Operator::DT_SS2CC]) {
 					splitPNG(s2c_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_SS2CC, data_resolution);
+				}
+			}
+		}
+		// CNES MAJA classification map within an L1C / L2A product, with a 20 m resolution.
+		if (std::filesystem::is_directory(granule_entry.path().string() + "/MAJA_DATA/")) {
+			for (const auto &majac_entry: std::filesystem::directory_iterator(granule_entry.path().string() + "/MAJA_DATA/")) {
+				if (endswith(majac_entry.path().string(), "_CLM_R2.tif") && b[ESA_S2_Image_Operator::DT_MAJAC]) {
+					splitTIF(majac_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_MAJAC, data_resolution);
 				}
 			}
 		}
@@ -313,7 +332,6 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 	retval &= img_src.load_header(path_in);
 
 	int w = img_src.main_geometry.width();
-	int h = img_src.main_geometry.height();
 
 	std::cout << "Processing " << path_in << std::endl;
 
@@ -321,20 +339,13 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 	int xi, yi;
 	int xi0 = 0, yi0 = 0;
 
-	unsigned int tile_size_src = ceil(tile_size_div);
 	// NOTE:: Assume square images and square tiles.
 	int num_tiles = ceil(w / tile_size_div);
-	int tx0, ty0, tx1, ty1;
 	int sx0, sy0, sx1, sy1;
 
 	// Iterate over tiles in the output raster.
 	for (yi=xi0; yi<num_tiles; yi++) {
 		for (xi=yi0; xi<num_tiles; xi++) {
-			// Coordinates in the target image
-			tx0 = xi * tile_size;
-			ty0 = yi * tile_size;
-			tx1 = tx0 + tile_size;
-			ty1 = ty0 + tile_size;
 			// Coordinates in the source image (possibly with different dimensions).
 			sx0 = floor(tile_size_div * xi);
 			sy0 = floor(tile_size_div * yi);
@@ -399,7 +410,7 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 
 bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op, ESA_S2_Image_Operator::data_type_t data_type, ESA_S2_Image_Operator::data_resolution_t data_resolution) {
 	ESA_S2_Image_Operator::data_type_t tmp_data_type = data_type;
-	BHC_TIF_Image img_src;
+	TIF_Image img_src;
 	bool retval = true;
 
 	float div_f = 1.0f;
@@ -419,7 +430,6 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 	retval &= img_src.load_header(path_in);
 
 	int w = img_src.main_geometry.width();
-	int h = img_src.main_geometry.height();
 
 	std::cout << "Processing " << path_in << std::endl;
 
@@ -427,20 +437,13 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 	int xi, yi;
 	int xi0 = 0, yi0 = 0;
 
-	unsigned int tile_size_src = ceil(tile_size_div);
 	// NOTE:: Assume square images and square tiles.
 	int num_tiles = ceil(w / tile_size_div);
-	int tx0, ty0, tx1, ty1;
 	int sx0, sy0, sx1, sy1;
 
 	// Iterate over tiles in the output raster.
 	for (yi=xi0; yi<num_tiles; yi++) {
 		for (xi=yi0; xi<num_tiles; xi++) {
-			// Coordinates in the target image
-			tx0 = xi * tile_size;
-			ty0 = yi * tile_size;
-			tx1 = tx0 + tile_size;
-			ty1 = ty0 + tile_size;
 			// Coordinates in the source image (possibly with different dimensions).
 			sx0 = floor(tile_size_div * xi);
 			sy0 = floor(tile_size_div * yi);
@@ -461,7 +464,7 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 			// Load the source image.
 			img_src.load_subset(path_in, sx0, sy0, sx1, sy1);
 
-			// Remap pixel values from BHC or FMC into SCL and then from SCL into the desired classes.
+			// Remap pixel values from BHC, FMC or MAJAC into SCL and then from SCL into the desired classes.
 			// This helps to ensure that there's only a single place in code which is responsible for the mapping
 			// and that the mapping is configurable.
 			if (data_type == ESA_S2_Image_Operator::DT_BHC) {
@@ -469,6 +472,9 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 				tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
 			} else if (data_type == ESA_S2_Image_Operator::DT_FMC) {
 				img_src.remap_values(ESA_S2_Image_Operator::fmc_scl_value_map, sizeof(ESA_S2_Image_Operator::fmc_scl_value_map));
+				tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
+			} else if (data_type == ESA_S2_Image_Operator::DT_MAJAC) {
+				CNES_MAJA_CLM_TIF::remap_majac_values(&img_src);
 				tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
 			}
 			if (tmp_data_type == ESA_S2_Image_Operator::DT_SCL) {
@@ -534,7 +540,6 @@ bool ESA_S2_Image::splitPNG(const std::filesystem::path &path_in, const std::fil
 	retval &= img_src.load_header(path_in);
 
 	int w = img_src.main_geometry.width();
-	int h = img_src.main_geometry.height();
 
 	std::cout << "Processing " << path_in << std::endl;
 
@@ -542,20 +547,13 @@ bool ESA_S2_Image::splitPNG(const std::filesystem::path &path_in, const std::fil
 	int xi, yi;
 	int xi0 = 0, yi0 = 0;
 
-	unsigned int tile_size_src = ceil(tile_size_div);
 	// NOTE:: Assume square images and square tiles.
 	int num_tiles = ceil(w / tile_size_div);
-	int tx0, ty0, tx1, ty1;
 	int sx0, sy0, sx1, sy1;
 
 	// Iterate over tiles in the output raster.
 	for (yi=xi0; yi<num_tiles; yi++) {
 		for (xi=yi0; xi<num_tiles; xi++) {
-			// Coordinates in the target image
-			tx0 = xi * tile_size;
-			ty0 = yi * tile_size;
-			tx1 = tx0 + tile_size;
-			ty1 = ty0 + tile_size;
 			// Coordinates in the source image (possibly with different dimensions).
 			sx0 = floor(tile_size_div * xi);
 			sy0 = floor(tile_size_div * yi);

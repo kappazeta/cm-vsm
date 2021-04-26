@@ -46,6 +46,7 @@ public:
 		DT_FMC,	///< Fmask classification map, 20 m
 		DT_SS2C,	///< Sinergise's S2Cloudless classification map (8 bit), 60 m
 		DT_SS2CC,	///< Sinergise's S2Cloudless cloud probabilities (8 bit), 60 m
+		DT_MAJAC,	///< MAJA classification map (8 bit), 10 m
 		DT_BHC,	///< Baetens & Hagolle classification map, 60 m
 		DT_FMSC,	///< Francis & Mrziglod & Sidiropoulos classification map, 20 m
 		DT_COUNT

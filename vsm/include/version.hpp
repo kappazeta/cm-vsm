@@ -17,9 +17,10 @@
 #pragma once
 
 #define CM_CONVERTER_NAME_STR		"cm-vsm"
-#define CM_CONVERTER_VERSION_STR	"0.1.16"
+#define CM_CONVERTER_VERSION_STR	"0.1.17"
 
 // Changelog
+//  0.1.17  Support for CNES MAJA cloud mask.
 //  0.1.16  Relative path support for command-line parameters.
 //  0.1.15  Bands.nc filename was fixed for -d argument and unnecessary functions have been removed.
 //  0.1.14  Fixed name for bands file from L2A rasters.

@@ -82,7 +82,7 @@ RasterBufferRGB<T>::~RasterBufferRGB() {
 	delete [] b;
 }
 
-RasterImage::RasterImage(): subset(nullptr), main_depth(0), main_num_components(0), deflate_level(9), scaling_factor(1.0f), f_overlap(0.0f) {
+RasterImage::RasterImage(): subset(nullptr), main_depth(0), main_num_components(0), f_overlap(0.0f), deflate_level(9), scaling_factor(1.0f) {
 	set_resampling_filter("");
 }
 RasterImage::~RasterImage() {
