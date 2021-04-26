@@ -57,7 +57,7 @@ class CMVSMVis(object):
         :param fpath: NetCDF filepath.
         :return: x, y
         """
-        m = re.match(r".*tile_(\d+)_(\d+)/bands.nc", fpath)
+        m = re.match(r".*tile_(\d+)_(\d+)/(\w+).nc", fpath)
         if m:
             x, y = int(m.group(1)), int(m.group(2))
             return x, y
@@ -114,15 +114,16 @@ class CMVSMVis(object):
 
         # Map reduced product names to shapefile paths.
         for root, dirs, files in os.walk(dpath):
-            nc_path = os.path.join(root, "bands.nc")
-            if os.path.exists(nc_path):
-                fpaths.append(nc_path)
+            for f in files:
+                if f.endswith(".nc"):
+                    nc_path = os.path.join(root, f)
+                    fpaths.append(nc_path)
 
-                x, y = self.get_coords_from_fpath(nc_path)
-                if x > self.max_tile_x:
-                    self.max_tile_x = x
-                if y > self.max_tile_y:
-                    self.max_tile_y = y
+                    x, y = self.get_coords_from_fpath(nc_path)
+                    if x > self.max_tile_x:
+                        self.max_tile_x = x
+                    if y > self.max_tile_y:
+                        self.max_tile_y = y
 
         # Initialize the image.
         if len(fpaths) > 0:
