@@ -100,10 +100,10 @@ The results would be stored in another directory with a suffix `.CVAT` instead o
 
 A CVAT annotations XML file could be rasterized with the `-r` option.
 This is to be performed after the successful subtiling of the raster image.
-Rasterization of a labelled subtile 1024, 4864, for example:
+Rasterization of a labelled subtile 2, 3, for example:
 
 ```
-./vsm/build/bin/cvat_vsm -r /your/data/path/S2A_MSIL2A_20200529T094041_N0214_R036_T35VLF_20200529T120441.CVAT/tile_1024_4864/annotations.xml -n /your/data/path/S2A_MSIL2A_20200529T094041_N0214_R036_T35VLF_20200529T120441.CVAT/tile_1024_4864/bands.nc
+./vsm/build/bin/cvat_vsm -r /your/data/path/S2A_MSIL2A_20200529T094041_N0214_R036_T35VLF_20200529T120441.CVAT/tile_2_3/annotations.xml -n /your/data/path/S2A_MSIL2A_20200529T094041_N0214_R036_T35VLF_20200529T120441.CVAT/tile_2_3/T35VLF_tile_2_3.nc
 ```
 
 ## Supported bands
@@ -135,5 +135,6 @@ The following bands / layers are supported:
 |  21 |   FMC |              20 m |         8 |      Mask | Fmask classification map                                   |
 |  22 |  SS2C |              60 m |         8 |      Mask | Sinergise S2Cloudless classification map                   |
 |  23 | SS2CC |              60 m |         8 |      Mask | Sinergise S2Cloudless cloud probabilities                  |
-|  24 |   BHC |              60 m |         8 |      Mask | Baetens & Hagolle classification map                       |
-|  25 |  FMSC |              20 m |         8 |      Mask | Francis, Mrziglod, and Sidiropoulos classification map     |
+|  24 | MAJAC |              10 m |         8 |      Mask | CNES MAJA cloud classification map                         |
+|  25 |   BHC |              60 m |         8 |      Mask | Baetens & Hagolle classification map                       |
+|  26 |  FMSC |              20 m |         8 |      Mask | Francis, Mrziglod, and Sidiropoulos classification map     |
