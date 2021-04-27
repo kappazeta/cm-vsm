@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import os
+import time
 import shutil
 from pathlib import Path
 from multiprocessing import Process, Queue
@@ -27,7 +28,7 @@ from logger import Logger
 class Downloader(Logger):
     def __init__(self, product_reader, data_dir):
         super(Downloader, self).__init__(data_dir)
-        self.n_threads = 10
+        self.n_threads = 1
         self.product_reader = product_reader
         self.s3_bucket_name = "EODATA"
         self.disk_quota_str = "200G"
@@ -91,6 +92,11 @@ class Downloader(Logger):
                 self.info(str(error))
 
     def download_web(self, control_queue, jobs_queue):
+        """
+        To extract the product names from the scihub xmls, run
+          cd DATA_DIR/scihub
+          grep -h "<title>S2" *.xml | sed -e "s,<title>,," -e "s,</title>,," > products.dat
+        """
         scihub_dir = os.path.join(self.data_dir, "scihub")
         peps_dir = os.path.join(self.data_dir, "peps")
 
@@ -110,11 +116,13 @@ class Downloader(Logger):
             peps_path = os.path.join(peps_dir, product_title + ".xml")
 
             try:
-                # extended_product = product_title.replace("MSIL2A", "MSIL2*")
-                # self.download_xml(scihub_url, extended_product, scihub_path, login=True)
+                # Sample product: S2A_MSIL2A_20200502T095031_N0214_R079_T35VLF_20200502T112104
+                title = product_title.split('_')
+                extended_product = "{}_MSIL1C_{}_*_{}_{}_*".format(title[0], title[2], title[4], title[5])
+                self.download_xml(scihub_url, extended_product, scihub_path, login=True)
                 # self.download_xml(peps_url, product_title, peps_path, login=False)
-                self.download_zip(esa_url, product_title, self.data_dir)
-                self.unpack(self.data_dir, product_title)
+                # self.download_zip(esa_url, product_title, self.data_dir)
+                # self.unpack(self.data_dir, product_title)
             except RuntimeError as error:
                 self.info(str(error))
 
@@ -148,6 +156,8 @@ class Downloader(Logger):
         if error_code != 0:
             raise RuntimeError("Failed to download product {}. Error code: {}, error message:\n{}"
                                .format(product, error_code, error_msg))
+        if login:
+            time.sleep(1.5)  # scihub does not allow too frequent queries; therefore wait a bit before a new query
 
     @staticmethod
     def download_product(s3_command, download_size, download_path, product_title):

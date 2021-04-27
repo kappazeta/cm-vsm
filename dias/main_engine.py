@@ -34,8 +34,8 @@ class MainEngine(Logger):
         uploader = Uploader(product_reader, self.data_dir)
 
         downloader.start()
-        product_tiler.start()
-        uploader.start()
+        # product_tiler.start()
+        # uploader.start()
 
 
 if __name__ == "__main__":
