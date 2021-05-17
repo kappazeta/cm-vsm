@@ -1,5 +1,5 @@
-# cvat-vsm
-A raster conversion and segmentation mask vectorization tool for CVAT.
+# cm-vsm
+A raster conversion and segmentation mask vectorization tool for KappaZeta cloudmask.
 
 ## Dependencies
 The following system dependencies are needed:
@@ -25,11 +25,14 @@ pip3 install cget
 Under CentOS-8, run
 
 ```
-sudo yum install cmake gcc gcc-c++ python3-pip openjpeg2-devel libpng-devel gdal gdal-devel expat-devel GraphicsMagick-c++-devel netcdf-devel
+sudo yum install cmake gcc gcc-c++ python3-pip openjpeg2-devel libpng-devel gdal gdal-devel expat-devel GraphicsMagick-c++-devel netcdf-devel libjpeg-turbo-devel jbigkit-libs jbigkit-devel m4
 ```
 
 
 ## Building
+
+Ensure that there is no active Conda environment (except `base`) while building cm-vsm.
+
 A release version of the tool can be built as follows:
 
 ```
