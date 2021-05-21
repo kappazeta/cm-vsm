@@ -72,8 +72,8 @@ public:
 };
 
 unsigned char new_class_map[] = {
-	0, // 0  NO_DATA                  -> UNCLASSIFIED
-	0, // 1  SATURATED_OR_DEFECTIVE   -> UNCLASSIFIED
+	5, // 0  NO_DATA                  -> UNCLASSIFIED
+	5, // 1  SATURATED_OR_DEFECTIVE   -> UNCLASSIFIED
 	1, // 2  DARK_AREA_PIXELS         -> CLEAR
 	2, // 3  CLOUD_SHADOWS            -> CLOUD_SHADOW
 	1, // 4  VEGETATION               -> CLEAR
@@ -84,7 +84,7 @@ unsigned char new_class_map[] = {
 	4, // 9  CLOUD_HIGH_PROBABILITY   -> CLOUD
 	3, // 10 THIN_CIRRUS              -> SEMI_TRANSPARENT_CLOUD
 	1, // 11 SNOW                     -> CLEAR
-	0  // 12 - 255                    -> UNCLASSIFIED
+	5  // 12 - 255                    -> UNCLASSIFIED
 };
 
 int main(int argc, char* argv[]) {
