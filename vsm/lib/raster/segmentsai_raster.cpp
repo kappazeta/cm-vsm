@@ -55,7 +55,7 @@ bool SegmentsAIRaster::load(const std::filesystem::path &mask_path, const std::f
 		else if (entry["category_name"] == "clear")
 			col = CVATPolygon::CV_CLEAR / 255.0f;
 		else if (entry["category_name"] == "semi_transparent_cloud")
-			col = CVATPolygon::CV_CLEAR / 255.0f;
+			col = CVATPolygon::CV_SEMI_TRANSPARENT_CLOUD / 255.0f;
 		else if (entry["category_name"] == "not_defined")
 			col = CVATPolygon::CV_UNDEFINED / 255.0f;
 		else if (entry["category_name"] == "invalid")

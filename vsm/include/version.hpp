@@ -17,9 +17,10 @@
 #pragma once
 
 #define CM_CONVERTER_NAME_STR		"cm-vsm"
-#define CM_CONVERTER_VERSION_STR	"0.1.18"
+#define CM_CONVERTER_VERSION_STR	"0.1.19"
 
 // Changelog
+//  0.1.19  Fix semi-transparent cloud class for Segments.AI labels.
 //  0.1.18  Separate NO_DATA, SATURATED_OR_DEFECTIVE and UNCLASSIFIED from SCL classification scheme.
 //  0.1.17  Support for CNES MAJA cloud mask.
 //  0.1.16  Relative path support for command-line parameters.
