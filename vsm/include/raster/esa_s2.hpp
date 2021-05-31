@@ -115,6 +115,12 @@ class ESA_S2_Image {
 		void set_scl_class_map(unsigned char *class_map);
 
 		/**
+		 * Enable / disable the storage of PNG files.
+		 * @param enabled True to store PNG files, False to skip them.
+		 */
+		void set_png_output(bool enabled);
+
+		/**
 		 * Extract S2 product name from file path.
 		 * @return Product name as a string.
 		 */
@@ -142,6 +148,8 @@ class ESA_S2_Image {
 		float f_overlap;	///< Overlap between sub-tiles.
 		
 		std::string resampling_method_name;	///< Name of the resampling method used for all bands except classification masks.
+
+		bool store_png;	///< Whether to store intermediate output in PNG files or not.
 
 		/**
 		 * Split a JP2 file into sub-tiles.

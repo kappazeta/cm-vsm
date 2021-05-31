@@ -17,9 +17,10 @@
 #pragma once
 
 #define CM_CONVERTER_NAME_STR		"cm-vsm"
-#define CM_CONVERTER_VERSION_STR	"0.1.19"
+#define CM_CONVERTER_VERSION_STR	"0.1.20"
 
 // Changelog
+//  0.1.20  CLI argument to disable PNG output.
 //  0.1.19  Fix semi-transparent cloud class for Segments.AI labels.
 //  0.1.18  Separate NO_DATA, SATURATED_OR_DEFECTIVE and UNCLASSIFIED from SCL classification scheme.
 //  0.1.17  Support for CNES MAJA cloud mask.

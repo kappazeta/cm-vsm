@@ -68,7 +68,7 @@ const unsigned char ESA_S2_Image_Operator::fmsc_scl_value_map[4] = {
 	0   // 2 - 255                     -> NO_DATA
 };
 
-ESA_S2_Image::ESA_S2_Image(): tile_size(512), scl_value_map(nullptr), max_scl_value(12), f_downscale(1), f_overlap(0.0f) {}
+ESA_S2_Image::ESA_S2_Image(): tile_size(512), scl_value_map(nullptr), max_scl_value(12), f_downscale(1), f_overlap(0.0f), store_png(true) {}
 ESA_S2_Image::~ESA_S2_Image() {}
 
 void ESA_S2_Image::set_tile_size(int tile_size) {
@@ -101,6 +101,10 @@ void ESA_S2_Image::set_overlap_factor(float f) {
 
 void ESA_S2_Image::set_resampling_method(const std::string &m) {
 	resampling_method_name = m;
+}
+
+void ESA_S2_Image::set_png_output(bool enabled) {
+	store_png = enabled;
 }
 
 std::string ESA_S2_Image::get_product_name_from_path(const std::filesystem::path &path) {
@@ -393,7 +397,8 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile" << "_" << xi << "_" << yi << ".png";
 
 			// Save PNG.
-			img_src.save(ss_path_out_png.str());
+			if (store_png)
+				img_src.save(ss_path_out_png.str());
 			// Add to NetCDF.
 			img_src.add_to_netcdf(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type]);
 
@@ -503,7 +508,8 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile" << "_" << xi << "_" << yi << ".png";
 
 			// Save PNG.
-			img_src.save(ss_path_out_png.str());
+			if (store_png)
+				img_src.save(ss_path_out_png.str());
 			// Add to NetCDF.
 			img_src.add_to_netcdf(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type]);
 
@@ -610,7 +616,8 @@ bool ESA_S2_Image::splitPNG(const std::filesystem::path &path_in, const std::fil
 			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile" << "_" << xi << "_" << yi << ".png";
 
 			// Save PNG.
-			img_src.save(ss_path_out_png.str());
+			if (store_png)
+				img_src.save(ss_path_out_png.str());
 			// Add to NetCDF.
 			img_src.add_to_netcdf(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type]);
 

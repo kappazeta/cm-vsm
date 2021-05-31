@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
 
 	if (argc < 2) {
 		std::cerr << "Usage: " << CM_CONVERTER_NAME_STR
-			<< " [-d S2_PATH] [-D CVAT_PATH] [-r CVAT_XML -n NETCDF] [-b BANDS] [-R SUPERVISELY_DIR -t TILENAME -n NETCDF] [-A CVAT_SAI_PATH] [-S TILESIZE [-s SHRINK]] [-f DEFLATE_LEVEL] [-m RESAMPLING_METHOD] [-o OVERLAP]" << std::endl
+			<< " [-d S2_PATH] [-D CVAT_PATH] [-r CVAT_XML -n NETCDF] [-b BANDS] [-R SUPERVISELY_DIR -t TILENAME -n NETCDF] [-A CVAT_SAI_PATH] [-S TILESIZE [-s SHRINK]] [-f DEFLATE_LEVEL] [-m RESAMPLING_METHOD] [-o OVERLAP] [--no-png]" << std::endl
 			<< "\twhere S2_PATH points to the .SAFE directory of an ESA S2 L2A or L1C product." << std::endl
 			<< "\tCVAT_PATH points to the .CVAT directory (pre-processed ESA S2 product)." << std::endl
 			<< "\tCVAT_XML points to a CVAT annotations.xml file." << std::endl
@@ -124,6 +124,7 @@ int main(int argc, char* argv[]) {
 	int downscale = -1;
 	int deflatelevel = 9;
 	float overlap = 0.0f;
+	bool output_png = true;
 	for (int i=0; i<argc; i++) {
 		if (!strncmp(argv[i], "-d", 2))
 			arg_path_s2_dir.assign(argv[i + 1]);
@@ -151,6 +152,8 @@ int main(int argc, char* argv[]) {
 			arg_resampling_method.assign(argv[i + 1]);
 		else if (!strncmp(argv[i], "-o", 2))
 			overlap = std::atof(argv[i + 1]);
+		else if (!strncmp(argv[i], "--no-png", 8))
+			output_png = false;
 	}
 
 	if (arg_path_s2_dir.length() > 0) {
@@ -179,6 +182,7 @@ int main(int argc, char* argv[]) {
 		img.set_deflate_factor(deflatelevel);
 		img.set_overlap_factor(overlap);
 		img.set_resampling_method(arg_resampling_method);
+		img.set_png_output(output_png);
 
 		img.process(path_dir_in, path_dir_out, img_op, bands);
 	} else if (arg_path_cvat_dir.length() > 0) {
