@@ -35,42 +35,6 @@
 #include <nlohmann/json.hpp>
 
 
-class ImageOperator: public ESA_S2_Image_Operator {
-public:
-	bool operator()(const std::filesystem::path &path, data_type_t type) {
-		int retval = 0;
-
-		if (type == DT_SCL) {
-			std::ostringstream cmd;
-			std::string path_gml = path.parent_path().string() + "/" + path.stem().string() + ".GML";
-			cmd << "gdal_polygonize.py -8 " << path.string() << " -f GML " << path_gml;
-
-			std::cout << cmd.str() << std::endl;
-			retval = system(cmd.str().c_str());
-			if (retval != 0)
-				return false;
-
-			GMLConverter gc;
-
-			std::vector<std::string> classes {
-				"UNCLASSIFIED",
-				"CLEAR",
-				"CLOUD_SHADOW",
-				"CLOUD",
-				"SEMI_TRANSPARENT_CLOUD"
-			};
-			std::vector<int> include_classes{1, 2, 3, 4};
-			gc.set_classes(classes, include_classes);
-			gc.set_multiplier(2);
-
-			std::string path_xml = path.parent_path().string() + "/" + path.stem().string() + ".xml";
-			gc.convert(path_gml, path_xml);
-		}
-
-		return true;
-	}
-};
-
 unsigned char new_class_map[] = {
 	5, // 0  NO_DATA                  -> UNCLASSIFIED
 	5, // 1  SATURATED_OR_DEFECTIVE   -> UNCLASSIFIED
@@ -98,7 +62,7 @@ int main(int argc, char* argv[]) {
 
 	if (argc < 2) {
 		std::cerr << "Usage: " << CM_CONVERTER_NAME_STR
-			<< " [-d S2_PATH] [-D CVAT_PATH] [-r CVAT_XML -n NETCDF] [-b BANDS] [-R SUPERVISELY_DIR -t TILENAME -n NETCDF] [-A CVAT_SAI_PATH] [-S TILESIZE [-s SHRINK]] [-f DEFLATE_LEVEL] [-m RESAMPLING_METHOD] [-o OVERLAP] [--no-png]" << std::endl
+			<< " [-d S2_PATH] [-D CVAT_PATH] [-r CVAT_XML -n NETCDF] [-b BANDS] [-R SUPERVISELY_DIR -t TILENAME -n NETCDF] [-A CVAT_SAI_PATH] [-S TILESIZE [-s SHRINK]] [-f DEFLATE_LEVEL] [-m RESAMPLING_METHOD] [-o OVERLAP] [--png] [--tiled]" << std::endl
 			<< "\twhere S2_PATH points to the .SAFE directory of an ESA S2 L2A or L1C product." << std::endl
 			<< "\tCVAT_PATH points to the .CVAT directory (pre-processed ESA S2 product)." << std::endl
 			<< "\tCVAT_XML points to a CVAT annotations.xml file." << std::endl
@@ -124,7 +88,8 @@ int main(int argc, char* argv[]) {
 	int downscale = -1;
 	int deflatelevel = 9;
 	float overlap = 0.0f;
-	bool output_png = true;
+	bool output_png = false;
+	bool tiled_input = false;
 	for (int i=0; i<argc; i++) {
 		if (!strncmp(argv[i], "-d", 2))
 			arg_path_s2_dir.assign(argv[i + 1]);
@@ -152,13 +117,15 @@ int main(int argc, char* argv[]) {
 			arg_resampling_method.assign(argv[i + 1]);
 		else if (!strncmp(argv[i], "-o", 2))
 			overlap = std::atof(argv[i + 1]);
-		else if (!strncmp(argv[i], "--no-png", 8))
-			output_png = false;
+		else if (!strncmp(argv[i], "--png", 5))
+			output_png = true;
+		else if (!strncmp(argv[i], "--tiled", 7))
+			tiled_input = true;
 	}
 
 	if (arg_path_s2_dir.length() > 0) {
 		ESA_S2_Image img;
-		ImageOperator img_op;
+		EmptyImageOperator img_op;
 		std::filesystem::path path_dir_in(arg_path_s2_dir);
 		if (!path_dir_in.is_absolute()) {
 			path_dir_in = std::filesystem::absolute(arg_path_s2_dir);
@@ -183,6 +150,7 @@ int main(int argc, char* argv[]) {
 		img.set_overlap_factor(overlap);
 		img.set_resampling_method(arg_resampling_method);
 		img.set_png_output(output_png);
+		img.set_tiled_input(tiled_input);
 
 		img.process(path_dir_in, path_dir_out, img_op, bands);
 	} else if (arg_path_cvat_dir.length() > 0) {

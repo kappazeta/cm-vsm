@@ -389,11 +389,11 @@ bool JP2_Image::load_whole(const std::filesystem::path &path) {
 			whole_image->depth((int) main_depth);
 			whole_image->endian(Magick::LSBEndian);
 
+			Magick::ColorGray col;
 			Magick::PixelPacket *px = whole_image->getPixels(0, 0, w, h);
 			for (unsigned long i=0; i<size; i++) {
-				r = l_image->comps[0].data[i] * f;
-
-				px[i] = Magick::ColorGray(r);
+				col.shade(l_image->comps[0].data[i] * f);
+				px[i] = col;
 			}
 		} else if (main_num_components == 3) {
 			whole_image = new Magick::Image(Magick::Geometry(w, h), Magick::ColorRGB(0, 0, 0));
@@ -402,13 +402,13 @@ bool JP2_Image::load_whole(const std::filesystem::path &path) {
 			whole_image->depth((int) main_depth);
 			whole_image->endian(Magick::LSBEndian);
 
+			Magick::ColorRGB col;
 			Magick::PixelPacket *px = whole_image->getPixels(0, 0, w, h);
 			for (unsigned long i=0; i<size; i++) {
-				r = l_image->comps[0].data[i] * f;
-				g = l_image->comps[1].data[i] * f;
-				b = l_image->comps[2].data[i] * f;
-
-				px[i] = Magick::ColorRGB(r, g, b);
+				col.red(l_image->comps[0].data[i] * f);
+				col.green(l_image->comps[1].data[i] * f);
+				col.blue(l_image->comps[2].data[i] * f);
+				px[i] = col;
 			}
 		}
 		whole_image->syncPixels();
@@ -435,14 +435,16 @@ bool JP2_Image::load_whole(const std::filesystem::path &path) {
 }
 
 bool JP2_Image::subset_whole(int da_x0, int da_y0, int da_x1, int da_y1) {
-	int da_x1_clamped = da_x1, da_y1_clamped = da_y1;
-	int w = da_x1 - da_x0;
-	int h = da_y1 - da_y0;
+	Magick::Geometry f_geom = whole_image->size();
+	unsigned long f_w = f_geom.width();
+	unsigned long w = da_x1 - da_x0;
+	unsigned long h = da_y1 - da_y0;
+	unsigned long w_clamped = w, h_clamped = h;
 
-	if (da_x1 > da_x0 + w)
-		da_x1_clamped = da_x0 + w;
-	if (da_y1 > da_y0 + h)
-		da_y1_clamped = da_y0 + h;
+	if (da_x0 + w >= f_geom.width())
+		w_clamped = f_geom.width() - da_x0;
+	if (da_y0 + h >= f_geom.height())
+		h_clamped = f_geom.height() - da_y0;
 
 	if (subset != nullptr)
 		clear();
@@ -459,7 +461,15 @@ bool JP2_Image::subset_whole(int da_x0, int da_y0, int da_x1, int da_y1) {
 	subset->endian(Magick::LSBEndian);
 
 	// Blit the tile on the subset image.
-	subset->composite(*whole_image, da_x0, da_y0, Magick::AtopCompositeOp);
+	const Magick::PixelPacket *px_src = whole_image->getConstPixels(da_x0, da_y0, w_clamped, h_clamped);
+	Magick::PixelPacket *px_dst = subset->getPixels(0, 0, w, h);
+
+	for (unsigned long y=0; y<h_clamped; y++) {
+		for (unsigned long x=0; x<w_clamped; x++) {
+			px_dst[x + y * w] = px_src[x + y * w_clamped];
+		}
+	}
+	subset->syncPixels();
 
 	return true;
 }
