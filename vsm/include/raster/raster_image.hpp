@@ -152,6 +152,12 @@ class RasterImage {
 		Magick::FilterTypes set_resampling_filter(const std::string &filter_name);
 
 		/**
+		 * Set the number of threads to parallelize to.
+		 * @param num_threads Number of threads (0 for default, negative to use all available threads).
+		 */
+		void set_num_threads(int num_threads);
+
+		/**
 		 * Scale the image by a factor.
 		 * @param f Factor to scale by
 		 * @return True on success, false on failure.
@@ -171,6 +177,9 @@ class RasterImage {
 		 * @param max_value Maximum pixel value supported by the values argument. Assumes that any pixel values exceeding this value is remapped to the last value in the values argument.
 		 */
 		void remap_values(const unsigned char *values, unsigned char max_value);
+
+	protected:
+		int num_threads;	///< Number of threads to parallelize to.
 
 	private:
 		Magick::FilterTypes resampling_filter;	///< Enum index of the resampling filter used.

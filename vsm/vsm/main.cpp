@@ -62,7 +62,7 @@ int main(int argc, char* argv[]) {
 
 	if (argc < 2) {
 		std::cerr << "Usage: " << CM_CONVERTER_NAME_STR
-			<< " [-d S2_PATH] [-D CVAT_PATH] [-r CVAT_XML -n NETCDF] [-b BANDS] [-R SUPERVISELY_DIR -t TILENAME -n NETCDF] [-A CVAT_SAI_PATH] [-S TILESIZE [-s SHRINK]] [-f DEFLATE_LEVEL] [-m RESAMPLING_METHOD] [-o OVERLAP] [--png] [--tiled]" << std::endl
+			<< " [-d S2_PATH] [-D CVAT_PATH] [-r CVAT_XML -n NETCDF] [-b BANDS] [-R SUPERVISELY_DIR -t TILENAME -n NETCDF] [-A CVAT_SAI_PATH] [-S TILESIZE [-s SHRINK]] [-f DEFLATE_LEVEL] [-m RESAMPLING_METHOD] [-o OVERLAP] [--png] [--tiled] [-j JOBS]" << std::endl
 			<< "\twhere S2_PATH points to the .SAFE directory of an ESA S2 L2A or L1C product." << std::endl
 			<< "\tCVAT_PATH points to the .CVAT directory (pre-processed ESA S2 product)." << std::endl
 			<< "\tCVAT_XML points to a CVAT annotations.xml file." << std::endl
@@ -75,7 +75,8 @@ int main(int argc, char* argv[]) {
 			<< "\tSHRINK is the factor by which to downscale from the 10 x 10 m^2 S2 bands (default: -1 (original size))." << std::endl
 			<< "\tDEFLATE_LEVEL is the compression factor for NETCDF (between 0 and 9, where 9 is the highest level of compression)." << std::endl
 			<< "\tRESAMPLING_METHOD defines a preferred way for resampling (point, box, cubic or sinc)." << std::endl
-			<< "\tOVERLAP Overlap between sub-tiles (between 0 and 0.5)." << std::endl;
+			<< "\tOVERLAP Overlap between sub-tiles (between 0 and 0.5)." << std::endl
+			<< "\tJOBS Number of threads to parallelize to (0 for default, negative to use all available threads)." << std::endl;
 		return 1;
 	}
 
@@ -90,6 +91,7 @@ int main(int argc, char* argv[]) {
 	float overlap = 0.0f;
 	bool output_png = false;
 	bool tiled_input = false;
+	int num_jobs = 0;
 	for (int i=0; i<argc; i++) {
 		if (!strncmp(argv[i], "-d", 2))
 			arg_path_s2_dir.assign(argv[i + 1]);
@@ -121,6 +123,8 @@ int main(int argc, char* argv[]) {
 			output_png = true;
 		else if (!strncmp(argv[i], "--tiled", 7))
 			tiled_input = true;
+		else if (!strncmp(argv[i], "-j", 2))
+			num_jobs = std::atoi(argv[i + 1]);
 	}
 
 	if (arg_path_s2_dir.length() > 0) {
@@ -151,6 +155,7 @@ int main(int argc, char* argv[]) {
 		img.set_resampling_method(arg_resampling_method);
 		img.set_png_output(output_png);
 		img.set_tiled_input(tiled_input);
+		img.set_num_threads(num_jobs);
 
 		img.process(path_dir_in, path_dir_out, img_op, bands);
 	} else if (arg_path_cvat_dir.length() > 0) {

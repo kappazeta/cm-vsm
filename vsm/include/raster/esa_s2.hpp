@@ -136,6 +136,12 @@ class ESA_S2_Image {
 		void set_tiled_input(bool enabled);
 
 		/**
+		 * Set the number of threads to parallelize to.
+		 * @param num_threads Number of threads (0 for default, negative to use all available threads).
+		 */
+		void set_num_threads(int num_threads);
+
+		/**
 		 * Extract S2 product name from file path.
 		 * @return Product name as a string.
 		 */
@@ -166,6 +172,7 @@ class ESA_S2_Image {
 
 		bool store_png;	///< Whether to store intermediate output in PNG files or not.
 		bool read_tiled;	///< Whether to read JP2 files in tiles, or to read full images into RAM.
+		int num_threads;	///< Number of threads to parallelize to.
 
 		/**
 		 * Split a JP2 file into sub-tiles.

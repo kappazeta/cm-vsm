@@ -78,8 +78,10 @@ bool JP2_Image::load_header(const std::filesystem::path &path) {
 			throw std::exception();
 		}
 
-		// Limit to a single thread (allows to parallelize over multiple JP2 files).
-		opj_codec_set_threads(l_codec, 1);
+		if (num_threads > 0)
+			opj_codec_set_threads(l_codec, num_threads);
+		else if (num_threads < 0)
+			opj_codec_set_threads(l_codec, opj_get_num_cpus());
 
 		// Read file header with image size, number of components, etc.
 		if (!opj_read_header(l_stream, l_codec, &l_image)) {
@@ -337,8 +339,10 @@ bool JP2_Image::load_whole(const std::filesystem::path &path) {
 			throw std::exception();
 		}
 
-		// Limit to a single thread (allows to parallelize over multiple JP2 files).
-		opj_codec_set_threads(l_codec, 1);
+		if (num_threads > 0)
+			opj_codec_set_threads(l_codec, num_threads);
+		else if (num_threads < 0)
+			opj_codec_set_threads(l_codec, opj_get_num_cpus());
 
 		// Read file header with image size, number of components, etc.
 		if (!opj_read_header(l_stream, l_codec, &l_image)) {
@@ -362,7 +366,7 @@ bool JP2_Image::load_whole(const std::filesystem::path &path) {
 		main_geometry.width(w);
 		main_geometry.height(h);
 
-		float r, g, b, f;
+		float f;
 		if (l_image->comps->prec <= 8) {
 			main_depth = 8;
 			f = 1 / 255.0f;
@@ -436,7 +440,6 @@ bool JP2_Image::load_whole(const std::filesystem::path &path) {
 
 bool JP2_Image::subset_whole(int da_x0, int da_y0, int da_x1, int da_y1) {
 	Magick::Geometry f_geom = whole_image->size();
-	unsigned long f_w = f_geom.width();
 	unsigned long w = da_x1 - da_x0;
 	unsigned long h = da_y1 - da_y0;
 	unsigned long w_clamped = w, h_clamped = h;

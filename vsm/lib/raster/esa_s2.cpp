@@ -70,7 +70,7 @@ const unsigned char ESA_S2_Image_Operator::fmsc_scl_value_map[4] = {
 
 ESA_S2_Image::ESA_S2_Image():
 	tile_size(512), scl_value_map(nullptr), max_scl_value(12), f_downscale(1), f_overlap(0.0f),
-	store_png(false), read_tiled(false) {
+	store_png(false), read_tiled(false), num_threads(0) {
 }
 ESA_S2_Image::~ESA_S2_Image() {}
 
@@ -112,6 +112,10 @@ void ESA_S2_Image::set_png_output(bool enabled) {
 
 void ESA_S2_Image::set_tiled_input(bool enabled) {
 	read_tiled = enabled;
+}
+
+void ESA_S2_Image::set_num_threads(int num_threads) {
+	this->num_threads = num_threads;
 }
 
 std::string ESA_S2_Image::get_product_name_from_path(const std::filesystem::path &path) {
@@ -333,6 +337,7 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 	float tile_size_div = (tile_size - tile_size * f_overlap) / div_f;
 
 	img_src.set_deflate_level(deflate_factor);
+	img_src.set_num_threads(num_threads);
 
 	// Propagate overlap factor for NetCDF metadata.
 	img_src.f_overlap = f_overlap;
@@ -440,6 +445,7 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 	float tile_size_div = (tile_size - tile_size * f_overlap) / div_f;
 
 	img_src.set_deflate_level(deflate_factor);
+	img_src.set_num_threads(num_threads);
 
 	// Propagate overlap factor for NetCDF metadata.
 	img_src.f_overlap = f_overlap;
@@ -554,6 +560,7 @@ bool ESA_S2_Image::splitPNG(const std::filesystem::path &path_in, const std::fil
 	img_src.f_overlap = f_overlap;
 
 	img_src.set_deflate_level(deflate_factor);
+	img_src.set_num_threads(num_threads);
 
 	// Get image dimensions.
 	retval &= img_src.load_header(path_in);
