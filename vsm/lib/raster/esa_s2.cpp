@@ -333,7 +333,8 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 	img_src.product_name = get_product_name_from_path(path_in);
 
 	// Get image dimensions.
-	retval &= img_src.load_header(path_in);
+	// retval &= img_src.load_header(path_in);
+	retval &= img_src.load_whole(path_in);
 
 	int w = img_src.main_geometry.width();
 
@@ -368,7 +369,8 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 			sy1 += tile_size * f_overlap / div_f;
 
 			// Load the source image.
-			img_src.load_subset(path_in, sx0, sy0, sx1, sy1);
+			// img_src.load_subset(path_in, sx0, sy0, sx1, sy1);
+			img_src.subset_whole(sx0, sy0, sx1, sy1);
 
 			// Remap pixel values for SCL.
 			if (data_type == ESA_S2_Image_Operator::DT_SCL) {
@@ -397,8 +399,9 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile" << "_" << xi << "_" << yi << ".png";
 
 			// Save PNG.
-			if (store_png)
+			if (store_png) {
 				img_src.save(ss_path_out_png.str());
+			}
 			// Add to NetCDF.
 			img_src.add_to_netcdf(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type]);
 
