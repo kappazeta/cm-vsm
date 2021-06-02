@@ -353,8 +353,6 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 
 		// Store content.
 		if (c == 1) {
-			Magick::ColorGray col;
-
 			if (main_depth > 8) {
 				RasterBufferPan<float> dst_px(size);
 
@@ -362,8 +360,7 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 					yw = y * w;
 					fyw = (h - 1 - y) * w;
 					for (unsigned int x=0; x<w; x++) {
-						col = src_px[yw + x];
-						dst_px.v[fyw + x] = col.shade();
+						dst_px.v[fyw + x] = ((float) src_px[yw + x].green) / MaxRGB;
 					}
 				}
 				add_layer_to_netcdf(ncid, path, name_in_netcdf, w, h, dimids, nd, (const void *) dst_px.v);
@@ -374,13 +371,11 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 					yw = y * w;
 					fyw = (h - 1 - y) * w;
 					for (unsigned int x=0; x<w; x++) {
-						col = src_px[yw + x];
-						dst_px.v[fyw + x] = (int) (col.shade() * 255);
+						dst_px.v[fyw + x] = (int) (src_px[yw + x].green * 255 / MaxRGB);
 					}
 				}
 				add_layer_to_netcdf(ncid, path, name_in_netcdf, w, h, dimids, nd, (const void *) dst_px.v);
 			}
-
 
 		} else if (c == 3) {
 			RasterBufferRGB<unsigned char> dst_px(size);
