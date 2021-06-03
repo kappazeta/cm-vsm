@@ -68,7 +68,10 @@ const unsigned char ESA_S2_Image_Operator::fmsc_scl_value_map[4] = {
 	0   // 2 - 255                     -> NO_DATA
 };
 
-ESA_S2_Image::ESA_S2_Image(): tile_size(512), scl_value_map(nullptr), max_scl_value(12), f_downscale(1), f_overlap(0.0f), store_png(true) {}
+ESA_S2_Image::ESA_S2_Image():
+	tile_size(512), scl_value_map(nullptr), max_scl_value(12), f_downscale(1), f_overlap(0.0f),
+	store_png(false), read_tiled(false), num_threads(0) {
+}
 ESA_S2_Image::~ESA_S2_Image() {}
 
 void ESA_S2_Image::set_tile_size(int tile_size) {
@@ -105,6 +108,14 @@ void ESA_S2_Image::set_resampling_method(const std::string &m) {
 
 void ESA_S2_Image::set_png_output(bool enabled) {
 	store_png = enabled;
+}
+
+void ESA_S2_Image::set_tiled_input(bool enabled) {
+	read_tiled = enabled;
+}
+
+void ESA_S2_Image::set_num_threads(int num_threads) {
+	this->num_threads = num_threads;
 }
 
 std::string ESA_S2_Image::get_product_name_from_path(const std::filesystem::path &path) {
@@ -326,14 +337,18 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 	float tile_size_div = (tile_size - tile_size * f_overlap) / div_f;
 
 	img_src.set_deflate_level(deflate_factor);
+	img_src.set_num_threads(num_threads);
 
 	// Propagate overlap factor for NetCDF metadata.
 	img_src.f_overlap = f_overlap;
 	// Assign product name from the input path.
 	img_src.product_name = get_product_name_from_path(path_in);
 
-	// Get image dimensions.
-	retval &= img_src.load_header(path_in);
+	// Either load the full image or load only the header.
+	if (read_tiled)
+		retval &= img_src.load_header(path_in);
+	else
+		retval &= img_src.load_whole(path_in);
 
 	int w = img_src.main_geometry.width();
 
@@ -367,8 +382,11 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 			sx1 += tile_size * f_overlap / div_f;
 			sy1 += tile_size * f_overlap / div_f;
 
-			// Load the source image.
-			img_src.load_subset(path_in, sx0, sy0, sx1, sy1);
+			// Subset the source image.
+			if (read_tiled)
+				img_src.load_subset(path_in, sx0, sy0, sx1, sy1);
+			else
+				img_src.subset_whole(sx0, sy0, sx1, sy1);
 
 			// Remap pixel values for SCL.
 			if (data_type == ESA_S2_Image_Operator::DT_SCL) {
@@ -393,17 +411,17 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 
 			std::filesystem::create_directories(ss_path_out.str());
 
-			ss_path_out_nc << ss_path_out.str() << extract_index_date(path_in) << "_" << "tile" << "_" << xi << "_" << yi << ".nc";
-			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile" << "_" << xi << "_" << yi << ".png";
-
 			// Save PNG.
-			if (store_png)
+			if (store_png) {
+				ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile" << "_" << xi << "_" << yi << ".png";
 				img_src.save(ss_path_out_png.str());
+			}
 			// Add to NetCDF.
+			ss_path_out_nc << ss_path_out.str() << extract_index_date(path_in) << "_" << "tile" << "_" << xi << "_" << yi << ".nc";
 			img_src.add_to_netcdf(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type]);
 
 			// Potential post-processing of the file.
-			if (!op(ss_path_out_png.str(), data_type))
+			if (!op(ss_path_out.str(), data_type))
 				return false;
 		}
 	}
@@ -427,6 +445,7 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 	float tile_size_div = (tile_size - tile_size * f_overlap) / div_f;
 
 	img_src.set_deflate_level(deflate_factor);
+	img_src.set_num_threads(num_threads);
 
 	// Propagate overlap factor for NetCDF metadata.
 	img_src.f_overlap = f_overlap;
@@ -504,17 +523,17 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 
 			std::filesystem::create_directories(ss_path_out.str());
 
-			ss_path_out_nc << ss_path_out.str() << extract_index_date(path_in) << "_" << "tile" << "_" << xi << "_" << yi << ".nc";
-			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile" << "_" << xi << "_" << yi << ".png";
-
 			// Save PNG.
-			if (store_png)
+			if (store_png) {
+				ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile" << "_" << xi << "_" << yi << ".png";
 				img_src.save(ss_path_out_png.str());
+			}
 			// Add to NetCDF.
+			ss_path_out_nc << ss_path_out.str() << extract_index_date(path_in) << "_" << "tile" << "_" << xi << "_" << yi << ".nc";
 			img_src.add_to_netcdf(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type]);
 
 			// Potential post-processing of the file.
-			if (!op(ss_path_out_png.str(), data_type))
+			if (!op(ss_path_out.str(), data_type))
 				return false;
 		}
 	}
@@ -541,6 +560,7 @@ bool ESA_S2_Image::splitPNG(const std::filesystem::path &path_in, const std::fil
 	img_src.f_overlap = f_overlap;
 
 	img_src.set_deflate_level(deflate_factor);
+	img_src.set_num_threads(num_threads);
 
 	// Get image dimensions.
 	retval &= img_src.load_header(path_in);
@@ -612,17 +632,18 @@ bool ESA_S2_Image::splitPNG(const std::filesystem::path &path_in, const std::fil
 
 			std::filesystem::create_directories(ss_path_out.str());
 
-			ss_path_out_nc << ss_path_out.str() << extract_index_date(path_in) << "_" << "tile" << "_" << xi << "_" << yi << ".nc";
-			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile" << "_" << xi << "_" << yi << ".png";
 
 			// Save PNG.
-			if (store_png)
+			if (store_png) {
+				ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile" << "_" << xi << "_" << yi << ".png";
 				img_src.save(ss_path_out_png.str());
+			}
 			// Add to NetCDF.
+			ss_path_out_nc << ss_path_out.str() << extract_index_date(path_in) << "_" << "tile" << "_" << xi << "_" << yi << ".nc";
 			img_src.add_to_netcdf(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type]);
 
 			// Potential post-processing of the file.
-			if (!op(ss_path_out_png.str(), data_type))
+			if (!op(ss_path_out.str(), data_type))
 				return false;
 		}
 	}

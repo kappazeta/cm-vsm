@@ -69,11 +69,20 @@ public:
 
 	/**
 	 * Callback for potential post-processing on the sub-tiles.
-	 * @param path Path to the sub-tile file.
+	 * @param path Path to the sub-tile subdirectory.
 	 * @param type File type.
 	 * @return True on success, false to abort sub-tile processing.
 	 */
 	virtual bool operator()(const std::filesystem::path &path, data_type_t type) { (void) path; (void) type; return false; }
+};
+
+
+class EmptyImageOperator: public ESA_S2_Image_Operator {
+public:
+	/**
+	 * Image operator which simply returns successfully without any actual processing.
+	 */
+	bool operator()(const std::filesystem::path &path, data_type_t type) { (void) path; (void) type; return true; }
 };
 
 
@@ -121,6 +130,18 @@ class ESA_S2_Image {
 		void set_png_output(bool enabled);
 
 		/**
+		 * Enable / disable tiled reading (reduced RAM footprint, at the cost of longer processing time).
+		 * @param enabled False to read the whole JP2 file into RAM, True to read the JP2 file in tiles.
+		 */
+		void set_tiled_input(bool enabled);
+
+		/**
+		 * Set the number of threads to parallelize to.
+		 * @param num_threads Number of threads (0 for default, negative to use all available threads).
+		 */
+		void set_num_threads(int num_threads);
+
+		/**
 		 * Extract S2 product name from file path.
 		 * @return Product name as a string.
 		 */
@@ -150,6 +171,8 @@ class ESA_S2_Image {
 		std::string resampling_method_name;	///< Name of the resampling method used for all bands except classification masks.
 
 		bool store_png;	///< Whether to store intermediate output in PNG files or not.
+		bool read_tiled;	///< Whether to read JP2 files in tiles, or to read full images into RAM.
+		int num_threads;	///< Number of threads to parallelize to.
 
 		/**
 		 * Split a JP2 file into sub-tiles.

@@ -82,7 +82,10 @@ RasterBufferRGB<T>::~RasterBufferRGB() {
 	delete [] b;
 }
 
-RasterImage::RasterImage(): subset(nullptr), main_depth(0), main_num_components(0), f_overlap(0.0f), deflate_level(9), scaling_factor(1.0f) {
+RasterImage::RasterImage():
+	subset(nullptr), main_depth(0), main_num_components(0), f_overlap(0.0f), num_threads(0),
+	deflate_level(9), scaling_factor(1.0f)
+{
 	set_resampling_filter("");
 }
 RasterImage::~RasterImage() {
@@ -113,6 +116,10 @@ Magick::FilterTypes RasterImage::set_resampling_filter(const std::string &filter
 		resampling_filter_name = "undefined";
 	}
 	return resampling_filter;
+}
+
+void RasterImage::set_num_threads(int num_threads) {
+	this->num_threads = num_threads;
 }
 
 void RasterImage::clear() {
@@ -348,7 +355,6 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 		int nd = sizeof(dimids) / sizeof(dimids[0]);
 
 		Magick::PixelPacket *src_px = subset->getPixels(0, 0, w, h);
-		float src_val;
 		unsigned int yw, fyw;
 
 		// Store content.
@@ -360,8 +366,7 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 					yw = y * w;
 					fyw = (h - 1 - y) * w;
 					for (unsigned int x=0; x<w; x++) {
-						src_val = Magick::ColorGray(src_px[yw + x]).shade();
-						dst_px.v[fyw + x] = src_val;
+						dst_px.v[fyw + x] = ((float) src_px[yw + x].green) / MaxRGB;
 					}
 				}
 				add_layer_to_netcdf(ncid, path, name_in_netcdf, w, h, dimids, nd, (const void *) dst_px.v);
@@ -372,13 +377,11 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 					yw = y * w;
 					fyw = (h - 1 - y) * w;
 					for (unsigned int x=0; x<w; x++) {
-						src_val = Magick::ColorGray(src_px[yw + x]).shade();
-						dst_px.v[fyw + x] = (int) (src_val * 255);
+						dst_px.v[fyw + x] = (int) (src_px[yw + x].green * 255 / MaxRGB);
 					}
 				}
 				add_layer_to_netcdf(ncid, path, name_in_netcdf, w, h, dimids, nd, (const void *) dst_px.v);
 			}
-
 
 		} else if (c == 3) {
 			RasterBufferRGB<unsigned char> dst_px(size);

@@ -21,8 +21,12 @@
 #define JP2_CFMT	1
 
 
-JP2_Image::JP2_Image() {}
-JP2_Image::~JP2_Image() {}
+JP2_Image::JP2_Image(): whole_image(nullptr) {}
+JP2_Image::~JP2_Image() {
+	if (whole_image != nullptr)
+		delete whole_image;
+	whole_image = nullptr;
+}
 
 void JP2_Image::error_callback(const char *msg, void *client_data) {
 	(void) client_data;
@@ -74,8 +78,10 @@ bool JP2_Image::load_header(const std::filesystem::path &path) {
 			throw std::exception();
 		}
 
-		// Limit to a single thread (allows to parallelize over multiple JP2 files).
-		opj_codec_set_threads(l_codec, 1);
+		if (num_threads > 0)
+			opj_codec_set_threads(l_codec, num_threads);
+		else if (num_threads < 0)
+			opj_codec_set_threads(l_codec, opj_get_num_cpus());
 
 		// Read file header with image size, number of components, etc.
 		if (!opj_read_header(l_stream, l_codec, &l_image)) {
@@ -297,4 +303,177 @@ bool JP2_Image::load_subset(const std::filesystem::path &path, int da_x0, int da
 	return retval;
 }
 
+bool JP2_Image::load_whole(const std::filesystem::path &path) {
+	// Used as reference:
+	//  https://github.com/uclouvain/openjpeg/blob/master/tests/unit/testempty2.c
+	//  https://web.archive.org/web/20180423091842/http://www.equasys.de/colorconversion.html
+
+	opj_dparameters_t l_param;
+	opj_codec_t* l_codec = nullptr;
+	opj_image_t* l_image = nullptr;
+
+	opj_stream_t* l_stream = nullptr;
+
+	bool retval = true;
+
+	try {
+		// Create a stream from the file.
+		l_stream = opj_stream_create_default_file_stream(path.string().c_str(), OPJ_TRUE);
+		if (!l_stream) {
+			std::cerr << "ERROR: OpenJPEG: Failed to create stream from " << path << std::endl;
+			throw std::exception();
+		}
+
+		// Initialize the decoder.
+		opj_set_default_decoder_parameters(&l_param);
+		l_param.decod_format = JP2_CFMT;
+
+		l_codec = opj_create_decompress(OPJ_CODEC_JP2);
+
+		// Avoid setting the info handler, to reduce spam.
+		opj_set_warning_handler(l_codec, JP2_Image::warning_callback, nullptr);
+		opj_set_error_handler(l_codec, JP2_Image::error_callback, nullptr);
+
+		if (!opj_setup_decoder(l_codec, &l_param)) {
+			std::cerr << "ERROR: OpenJPEG: Failed to setup decoder for " << path << std::endl;
+			throw std::exception();
+		}
+
+		if (num_threads > 0)
+			opj_codec_set_threads(l_codec, num_threads);
+		else if (num_threads < 0)
+			opj_codec_set_threads(l_codec, opj_get_num_cpus());
+
+		// Read file header with image size, number of components, etc.
+		if (!opj_read_header(l_stream, l_codec, &l_image)) {
+			std::cerr << "ERROR: OpenJPEG: Failed to read header from " << path << std::endl;
+			throw std::exception();
+		}
+
+		//! \note ESA S2 JP2 headers lack colorspace info. It seems that pixels are stored as RGB instead of YUV.
+
+		if (whole_image != nullptr)
+			delete whole_image;
+		if (subset != nullptr)
+			clear();
+
+		int w = l_image->x1 - l_image->x0;
+		int h = l_image->y1 - l_image->y0;
+		unsigned long size = w * h;
+
+		main_geometry.xOff(l_image->x0);
+		main_geometry.yOff(l_image->y0);
+		main_geometry.width(w);
+		main_geometry.height(h);
+
+		float f;
+		if (l_image->comps->prec <= 8) {
+			main_depth = 8;
+			f = 1 / 255.0f;
+		} else {
+			main_depth = 16;
+			f = 1 / 65535.0f;
+		}
+
+		main_num_components = l_image->numcomps;
+
+		std::cout << "INFO: Image size: " << l_image->x0 << ", " << l_image->y0 << ", " << l_image->x1 << ", " << l_image->y1 << std::endl;
+		std::cout << "INFO: Number of pixel components: " << l_image->numcomps << " with depth: " << (int) main_depth << std::endl;
+
+		// Read and decompress file contents.
+		if (!opj_decode(l_codec, l_stream, l_image)) {
+			std::cerr << "ERROR: OpenJPEG: Failed to decode " << path << std::endl;
+			throw std::exception();
+		}
+
+		if (main_num_components == 1) {
+			whole_image = new Magick::Image(Magick::Geometry(w, h), Magick::ColorGray(0));
+			whole_image->type(Magick::GrayscaleType);
+			whole_image->quiet(false);
+			whole_image->depth((int) main_depth);
+			whole_image->endian(Magick::LSBEndian);
+
+			Magick::ColorGray col;
+			Magick::PixelPacket *px = whole_image->getPixels(0, 0, w, h);
+			for (unsigned long i=0; i<size; i++) {
+				col.shade(l_image->comps[0].data[i] * f);
+				px[i] = col;
+			}
+		} else if (main_num_components == 3) {
+			whole_image = new Magick::Image(Magick::Geometry(w, h), Magick::ColorRGB(0, 0, 0));
+			whole_image->type(Magick::TrueColorType);
+			whole_image->quiet(false);
+			whole_image->depth((int) main_depth);
+			whole_image->endian(Magick::LSBEndian);
+
+			Magick::ColorRGB col;
+			Magick::PixelPacket *px = whole_image->getPixels(0, 0, w, h);
+			for (unsigned long i=0; i<size; i++) {
+				col.red(l_image->comps[0].data[i] * f);
+				col.green(l_image->comps[1].data[i] * f);
+				col.blue(l_image->comps[2].data[i] * f);
+				px[i] = col;
+			}
+		}
+		whole_image->syncPixels();
+
+		// Finish the stream.
+		if (!opj_end_decompress(l_codec, l_stream)) {
+			std::cerr << "ERROR: OpenJPEG: Failed to end decompression of " << path << std::endl;
+			throw std::exception();
+		}
+
+	} catch(std::exception &e) {
+		std::cerr << e.what() << std::endl;
+		retval = false;
+	}
+
+	// Free the allocated memory (if any).
+	if (l_stream != nullptr)
+		opj_stream_destroy(l_stream);
+	if (l_codec != nullptr)
+		opj_destroy_codec(l_codec);
+	if (l_image != nullptr)
+		opj_image_destroy(l_image);
+	return retval;
+}
+
+bool JP2_Image::subset_whole(int da_x0, int da_y0, int da_x1, int da_y1) {
+	Magick::Geometry f_geom = whole_image->size();
+	unsigned long w = da_x1 - da_x0;
+	unsigned long h = da_y1 - da_y0;
+	unsigned long w_clamped = w, h_clamped = h;
+
+	if (da_x0 + w >= f_geom.width())
+		w_clamped = f_geom.width() - da_x0;
+	if (da_y0 + h >= f_geom.height())
+		h_clamped = f_geom.height() - da_y0;
+
+	if (subset != nullptr)
+		clear();
+
+	if (main_num_components == 1) {
+		subset = new Magick::Image(Magick::Geometry(w, h), Magick::ColorGray(0));
+		subset->type(Magick::GrayscaleType);
+	} else if (main_num_components == 3) {
+		subset = new Magick::Image(Magick::Geometry(w, h), Magick::ColorRGB(0, 0, 0));
+		subset->type(Magick::TrueColorType);
+	}
+	subset->quiet(false);
+	subset->depth((int) main_depth);
+	subset->endian(Magick::LSBEndian);
+
+	// Blit the tile on the subset image.
+	const Magick::PixelPacket *px_src = whole_image->getConstPixels(da_x0, da_y0, w_clamped, h_clamped);
+	Magick::PixelPacket *px_dst = subset->getPixels(0, 0, w, h);
+
+	for (unsigned long y=0; y<h_clamped; y++) {
+		for (unsigned long x=0; x<w_clamped; x++) {
+			px_dst[x + y * w] = px_src[x + y * w_clamped];
+		}
+	}
+	subset->syncPixels();
+
+	return true;
+}
 
