@@ -17,9 +17,10 @@
 #pragma once
 
 #define CM_CONVERTER_NAME_STR		"cm-vsm"
-#define CM_CONVERTER_VERSION_STR	"0.1.21"
+#define CM_CONVERTER_VERSION_STR	"0.2.1"
 
 // Changelog
+//  0.2.1   Override output directory with the -O argument.
 //  0.1.21  Speed optimizations.
 //  0.1.20  CLI argument to disable PNG output.
 //  0.1.19  Fix semi-transparent cloud class for Segments.AI labels.

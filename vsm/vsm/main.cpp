@@ -62,9 +62,10 @@ int main(int argc, char* argv[]) {
 
 	if (argc < 2) {
 		std::cerr << "Usage: " << CM_CONVERTER_NAME_STR
-			<< " [-d S2_PATH] [-D CVAT_PATH] [-r CVAT_XML -n NETCDF] [-b BANDS] [-R SUPERVISELY_DIR -t TILENAME -n NETCDF] [-A CVAT_SAI_PATH] [-S TILESIZE [-s SHRINK]] [-f DEFLATE_LEVEL] [-m RESAMPLING_METHOD] [-o OVERLAP] [--png] [--tiled] [-j JOBS]" << std::endl
+			<< " [-d S2_PATH] [-D CVAT_PATH] [-O OUT_PATH] [-r CVAT_XML -n NETCDF] [-b BANDS] [-R SUPERVISELY_DIR -t TILENAME -n NETCDF] [-A CVAT_SAI_PATH] [-S TILESIZE [-s SHRINK]] [-f DEFLATE_LEVEL] [-m RESAMPLING_METHOD] [-o OVERLAP] [--png] [--tiled] [-j JOBS]" << std::endl
 			<< "\twhere S2_PATH points to the .SAFE directory of an ESA S2 L2A or L1C product." << std::endl
 			<< "\tCVAT_PATH points to the .CVAT directory (pre-processed ESA S2 product)." << std::endl
+			<< "\tOUT_PATH points to the directory to store the output files (.CVAT directory, right next to the input .SAFE, by default)." << std::endl
 			<< "\tCVAT_XML points to a CVAT annotations.xml file." << std::endl
 			<< "\tCVAT_SAI_PATH points to the .CVAT directory with Segments.AI segmentation masks stored in subtiles." << std::endl
 			<< "\tSUPERVISELY_DIR points to a directory with the Supervise.ly annotations files." << std::endl
@@ -84,7 +85,7 @@ int main(int argc, char* argv[]) {
 	Magick::InitializeMagick(*argv);
 
 	std::string arg_path_s2_dir, arg_path_cvat_dir, arg_path_rasterize, arg_path_nc, arg_path_cvat_sai_dir, arg_path_supervisely, arg_tilename;
-	std::string arg_bands, arg_resampling_method;
+	std::string arg_bands, arg_resampling_method, arg_path_out;
 	unsigned int tilesize = 512;
 	int downscale = -1;
 	int deflatelevel = 9;
@@ -95,6 +96,8 @@ int main(int argc, char* argv[]) {
 	for (int i=0; i<argc; i++) {
 		if (!strncmp(argv[i], "-d", 2))
 			arg_path_s2_dir.assign(argv[i + 1]);
+		else if (!strncmp(argv[i], "-O", 2))
+			arg_path_out.assign(argv[i + 1]);
 		else if (!strncmp(argv[i], "-D", 2))
 			arg_path_cvat_dir.assign(argv[i + 1]);
 		else if (!strncmp(argv[i], "-r", 2))
@@ -130,11 +133,18 @@ int main(int argc, char* argv[]) {
 	if (arg_path_s2_dir.length() > 0) {
 		ESA_S2_Image img;
 		EmptyImageOperator img_op;
+
 		std::filesystem::path path_dir_in(arg_path_s2_dir);
-		if (!path_dir_in.is_absolute()) {
+		if (!path_dir_in.is_absolute())
 			path_dir_in = std::filesystem::absolute(arg_path_s2_dir);
-		}
-		std::filesystem::path path_dir_out(path_dir_in.parent_path().string() + "/" + path_dir_in.stem().string() + ".CVAT");
+
+		std::string str_path_dir_out;
+		if (arg_path_out.empty())
+			str_path_dir_out = path_dir_in.parent_path().string() + "/" + path_dir_in.stem().string() + ".CVAT";
+		else
+			str_path_dir_out = arg_path_out;
+		std::filesystem::path path_dir_out(str_path_dir_out);
+
 		std::vector<std::string> bands;
 
 		// All bands, by default.
@@ -158,6 +168,7 @@ int main(int argc, char* argv[]) {
 		img.set_num_threads(num_jobs);
 
 		img.process(path_dir_in, path_dir_out, img_op, bands);
+
 	} else if (arg_path_cvat_dir.length() > 0) {
 		std::cout << arg_path_cvat_dir << std::endl;
 
