@@ -208,6 +208,8 @@ bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::
 					splitJP2(r20m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B05, data_resolution);
 				} else if (endswith(r20m_entry.path().string(), "_B06_20m.jp2") && b[ESA_S2_Image_Operator::DT_B06]) {
 					splitJP2(r20m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B06, data_resolution);
+				} else if (endswith(r20m_entry.path().string(), "_B07_20m.jp2") && b[ESA_S2_Image_Operator::DT_B07]) {
+					splitJP2(r20m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B07, data_resolution);
 				} else if (endswith(r20m_entry.path().string(), "_B8A_20m.jp2") && b[ESA_S2_Image_Operator::DT_B8A]) {
 					splitJP2(r20m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B8A, data_resolution);
 				} else if (endswith(r20m_entry.path().string(), "_B11_20m.jp2") && b[ESA_S2_Image_Operator::DT_B11]) {
@@ -223,6 +225,8 @@ bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::
 				splitJP2(r20m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B05, data_resolution);
 			} else if (endswith(r20m_entry.path().string(), "_B06.jp2") && b[ESA_S2_Image_Operator::DT_B06]) {
 				splitJP2(r20m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B06, data_resolution);
+			} else if (endswith(r20m_entry.path().string(), "_B07.jp2") && b[ESA_S2_Image_Operator::DT_B07]) {
+				splitJP2(r20m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B07, data_resolution);
 			} else if (endswith(r20m_entry.path().string(), "_B8A.jp2") && b[ESA_S2_Image_Operator::DT_B8A]) {
 				splitJP2(r20m_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_B8A, data_resolution);
 			} else if (endswith(r20m_entry.path().string(), "_B11.jp2") && b[ESA_S2_Image_Operator::DT_B11]) {
