@@ -25,16 +25,17 @@ def subsplit(path_src):
     """
     Process a Sentinel-2 product.
     """
-    subprocess.run(["cvat_vsm", "-d", path_src])
+    subprocess.run(["cm_vsm", "-d", path_src])
 
 
 def main():
     parser = argparse.ArgumentParser(description='Subsplit all S2 products in .SAFE directories')
     parser.add_argument('s2_path', type=str, help='Path to the directory with S2 products')
+    parser.add_argument('-j', '--num-jobs', type=int, default=1, help='Number of jobs to process in parallel')
     args = parser.parse_args()
 
     # TODO:: Turn into command-line arguments.
-    run_in_parallel = False
+    run_in_parallel = True
 
     paths = []
     # Map reduced product names to shapefile paths.
@@ -48,10 +49,12 @@ def main():
 
     # Run all splittings in parallel.
     if run_in_parallel:
-        commands = ["cvat_vsm -d " + p for p in paths]
-        procs = [Popen(p) for p in commands]
-        for p in procs:
-            p.wait()
+        commands = [["cm_vsm", "-d", p] for p in paths]
+        for i in range(0, len(commands), args.num_jobs):
+            cmds = commands[i:(i + args.num_jobs)]
+            procs = [subprocess.Popen(p) for p in cmds]
+            for p in procs:
+                p.wait()
 
 
 if __name__ == "__main__":
