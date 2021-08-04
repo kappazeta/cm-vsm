@@ -49,6 +49,7 @@ public:
 		DT_MAJAC,	///< MAJA classification map (8 bit), 10 m
 		DT_BHC,	///< Baetens & Hagolle classification map, 60 m
 		DT_FMSC,	///< Francis & Mrziglod & Sidiropoulos classification map, 20 m
+		DT_GSFC,    ///< NASA GSFC, vector layer
 		DT_COUNT
 	};
 
@@ -66,6 +67,7 @@ public:
 	static const unsigned char fmc_scl_value_map[6];	///< FMask to Sen2Cor classification map.
 	static const unsigned char ss2c_scl_value_map[3];	///< Sinergise S2Cloudless to Sen2Cor classification map.
 	static const unsigned char fmsc_scl_value_map[4];	///< Francis & Mrziglod & Sidiropoulos to Sen2Cor classification map.
+	static const unsigned char gsfc_scl_value_map[6];	///< NASA GSFC to Sen2Cor classification map.
 
 	/**
 	 * Callback for potential post-processing on the sub-tiles.
