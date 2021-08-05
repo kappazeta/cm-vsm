@@ -27,7 +27,7 @@
 
 const std::string ESA_S2_Image_Operator::data_type_name[ESA_S2_Image_Operator::DT_COUNT] = {
 	"TCI", "SCL", "AOT", "B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B8A", "B09", "B10", "B11", "B12",	"WVP",
-	"GML", "S2CC", "S2CS", "FMC", "SS2C", "SS2CC", "MAJAC", "BHC", "FMSC"
+	"GML", "S2CC", "S2CS", "FMC", "SS2C", "SS2CC", "MAJAC", "BHC", "FMSC", "GSFC"
 };
 
 //! Map BHC classes to SCL classes.
@@ -66,6 +66,16 @@ const unsigned char ESA_S2_Image_Operator::fmsc_scl_value_map[4] = {
 	9,  // 1  CLOUD                    -> CLOUD_HIGH_PROBABILITY
 	3,  // 2  CLOUD_SHADOWS            -> CLOUD_SHADOWS
 	0   // 2 - 255                     -> NO_DATA
+};
+
+//! Map GSFC classes to SCL classes.
+const unsigned char ESA_S2_Image_Operator::gsfc_scl_value_map[6] = {
+	7,  // 0  UNCLASSIFIED             -> UNCLASSIFIED
+	4,  // 1  CLEAR                    -> VEGETATION
+	9,  // 2  CLOUD                    -> CLOUD_HIGH_PROBABILITY
+	10, // 3  CIRRUS_CLOUD             -> THIN_CIRRUS
+	3,  // 4  CLOUD_SHADOWS            -> CLOUD_SHADOWS
+	0   // 5 - 255                     -> NO_DATA
 };
 
 ESA_S2_Image::ESA_S2_Image():
@@ -301,6 +311,15 @@ bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::
 				}
 			}
 		}
+		// Split NASA GSFC at 10 m resolution.
+		if (std::filesystem::is_directory(granule_entry.path().string() + "/GSFC/")) {
+			for (const auto &classification_entry: std::filesystem::directory_iterator(granule_entry.path().string() + "/GSFC/")) {
+				data_resolution = ESA_S2_Image_Operator::DR_10M;
+				if (endswith(classification_entry.path().string(), "label.tif") && b[ESA_S2_Image_Operator::DT_GSFC]) {
+					splitTIF(classification_entry.path(), path_dir_out, op, ESA_S2_Image_Operator::DT_GSFC, data_resolution);
+				}
+			}
+		}
 	}
 
 	// Split Baetens & Hagolle classification maps with a 60 m resolution.
@@ -503,6 +522,9 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 				tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
 			} else if (data_type == ESA_S2_Image_Operator::DT_MAJAC) {
 				CNES_MAJA_CLM_TIF::remap_majac_values(&img_src);
+				tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
+			} else if (data_type == ESA_S2_Image_Operator::DT_GSFC) {
+				img_src.remap_values(ESA_S2_Image_Operator::gsfc_scl_value_map, sizeof(ESA_S2_Image_Operator::gsfc_scl_value_map));
 				tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
 			}
 			if (tmp_data_type == ESA_S2_Image_Operator::DT_SCL) {

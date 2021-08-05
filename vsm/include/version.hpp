@@ -17,9 +17,10 @@
 #pragma once
 
 #define CM_CONVERTER_NAME_STR		"cm-vsm"
-#define CM_CONVERTER_VERSION_STR	"0.2.2"
+#define CM_CONVERTER_VERSION_STR	"0.2.3"
 
 // Changelog
+//  0.2.3   Support for NASA GSFC labels.
 //  0.2.2   Add missing B07.
 //  0.2.1   Override output directory with the -O argument.
 //  0.1.21  Speed optimizations.
