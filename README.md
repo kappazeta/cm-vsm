@@ -141,3 +141,4 @@ The following bands / layers are supported:
 |  24 | MAJAC |              10 m |         8 |      Mask | CNES MAJA cloud classification map                         |
 |  25 |   BHC |              60 m |         8 |      Mask | Baetens & Hagolle classification map                       |
 |  26 |  FMSC |              20 m |         8 |      Mask | Francis, Mrziglod, and Sidiropoulos classification map     |
+|  27 |  GSFC |              10 m |         8 |      Mask | NASA GSFC Vector mask converted into 10 m resolution raster|
