@@ -75,7 +75,7 @@ const unsigned char ESA_S2_Image_Operator::gsfc_scl_value_map[6] = {
 	9,  // 2  CLOUD                    -> CLOUD_HIGH_PROBABILITY
 	10, // 3  CIRRUS_CLOUD             -> THIN_CIRRUS
 	3,  // 4  CLOUD_SHADOWS            -> CLOUD_SHADOWS
-	0   // 2 - 255                     -> NO_DATA
+	0   // 5 - 255                     -> NO_DATA
 };
 
 ESA_S2_Image::ESA_S2_Image():
