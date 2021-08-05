@@ -1,7 +1,7 @@
 #!/bin/python3
 
-# Sentinel-2 product preprocessor for the reference dataset by Francis, Mrziglod, Sidiropoulos et al.
-# https://zenodo.org/record/4172871#.X6popcgzZaR
+# Sentinel-2 product preprocessor for the NASA GSFC dataset.
+# https://data.mendeley.com/datasets/r7tnvx7d9g/1
 #
 # Copyright 2021 KappaZeta Ltd.
 #
