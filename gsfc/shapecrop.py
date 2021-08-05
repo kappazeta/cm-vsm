@@ -16,11 +16,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import json
 import os
 import argparse
 import subprocess
-import gdal
+import re
 from pathlib import Path
 
 
@@ -44,12 +44,13 @@ def crop_gml(path_src, path_shp, path_dst):
 
 
 def label_rasterize(sample_band_path, shapefile_path_in, raster_path_out):
-    src = gdal.Open(sample_band_path)
-    x = src.RasterXSize
-    y = src.RasterYSize
+    gdai_info_output = (subprocess.run(["gdalinfo", sample_band_path], capture_output=True).stdout).decode('utf-8')
+    pattern = r"Size\sis\s([0-9]+),\s([0-9]+)"
+    match = re.findall(pattern, gdai_info_output)
+
     # gdal_rasterize -a class -ot Byte -ts x y input.shp output.tif
     new_name = os.path.join(raster_path_out[:raster_path_out.rfind('/')],'label.tif')
-    subprocess.run(["gdal_rasterize", "-a", "class", "-ot", "Byte", "-ts", str(x), str(y), shapefile_path_in, new_name])
+    subprocess.run(["gdal_rasterize", "-a", "class", "-ot", "Byte", "-ts", str(match[0][0]), str(match[0][1]), shapefile_path_in, new_name])
 
 
 def main():
@@ -58,6 +59,7 @@ def main():
     parser.add_argument('out_path', type=str, help='Path to the output directory')
     args = parser.parse_args()
 
+    # Look through the specified folder, find .SAFE and process them one by one
     for entry in os.listdir(args.s2_path):
         if '.SAFE' in entry:
             shapefile = ""
@@ -67,12 +69,13 @@ def main():
                 out_path = os.path.join(args.out_path, os.path.relpath(root, args.s2_path))
                 # Create subdirectories in the output directory.
                 Path(out_path).mkdir(parents=True, exist_ok=True)
-
+                # Save the path for the border layer
                 for fname in files:
                     if fname.endswith("border.shp"):
                         shapefile = os.path.join(root, fname)
                         break
 
+            # Find rasters and .gml files and crop them accordingly to border.shp
             for root, dirs, files in os.walk(abs_path):
                 for fname in files:
                     out_path = os.path.join(args.out_path, os.path.relpath(root, args.s2_path))
@@ -81,12 +84,14 @@ def main():
                     if fname.lower().endswith(".jp2"):
                         print("Cropping {}".format(fname))
                         crop_jp2(fpath, shapefile, out_fpath)
+                        # For rasterizing at 10m resulution B02 for L1C and B02_10m for L2A products are used
                         if "B02.jp2" in fname or "B02_10m.jp2" in fname:
                             sample_band = out_fpath
                     elif fname.lower().endswith(".gml"):
                         print("Cropping {}".format(fname))
                         crop_gml(fpath, shapefile, out_fpath)
 
+                # Rasterizing itself
                 for fname in files:
                     if 's2' in fname and fname.lower().endswith(".shp"):
                         out_path = os.path.join(args.out_path, os.path.relpath(root, args.s2_path))
