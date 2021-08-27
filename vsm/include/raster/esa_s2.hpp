@@ -1,4 +1,5 @@
-// Processing of ESA S2 L2A products
+//! @file
+//! @brief Processing of ESA S2 L2A products
 //
 // Copyright 2021 KappaZeta Ltd.
 //
@@ -20,8 +21,14 @@
 #include <vector>
 
 
+/**
+ * @brief An operator class for raster or vector layers, which are related to ESA Sentinel-2 images.
+ */
 class ESA_S2_Image_Operator {
 public:
+	/**
+	 * @brief Raster data type.
+	 */
 	enum data_type_t {
 		DT_TCI,	///< True Color Image (8 bit RGB), 10 m
 		DT_SCL,	///< Sen2Cor Scene Classification Image (8 bit), 20 m
@@ -50,16 +57,19 @@ public:
 		DT_BHC,	///< Baetens & Hagolle classification map, 60 m
 		DT_FMSC,	///< Francis & Mrziglod & Sidiropoulos classification map, 20 m
 		DT_GSFC,    ///< NASA GSFC, vector layer
-		DT_COUNT
+		DT_COUNT	///< Total number of data type options.
 	};
 
+	/**
+	 * @brief Ground resolution of the data.
+	 */
 	enum data_resolution_t {
-		DR_UNKNOWN,
-		DR_10M,
-		DR_20M,
-		DR_60M,
-		DR_VECTOR,
-		DR_COUNT
+		DR_UNKNOWN,	///< The resolution is not known.
+		DR_10M,	///< Each pixel is 10 x 10 \f$ m^2 \f$.
+		DR_20M,	///< Each pixel is 20 x 20 \f$ m^2 \f$.
+		DR_60M, ///< Each pixel is 60 x 60 \f$ m^2 \f$.
+		DR_VECTOR, ///< It's a vector layer (no inherent ground resolution).
+		DR_COUNT	///< Total number of data resolution options.
 	};
 
 	static const std::string data_type_name[DT_COUNT];	///< List of supported band names.
@@ -79,6 +89,9 @@ public:
 };
 
 
+/**
+ * @brief Empty image operator, serves as a placeholder.
+ */
 class EmptyImageOperator: public ESA_S2_Image_Operator {
 public:
 	/**
@@ -88,34 +101,46 @@ public:
 };
 
 
+/**
+ * @brief Class for an ESA Sentinel-2 image.
+ */
 class ESA_S2_Image {
 	public:
 		ESA_S2_Image();
 		~ESA_S2_Image();
 
 		/**
-		 * Set sub-tile size in pixels.
+		 * Set sub-tile size. Each sub-tile is \f$ tile_size \times tile_size \f$ pixels.
+		 * @param tile_size Length of tile edge in pixels.
 		 */
 		void set_tile_size(int tile_size);
 
 		/**
 		 * Set down-scaling factor for subsampling the image.
-		 * Useful for sub-splitting an image with 10 m resolution to match other images with 60 m resolution (f = 6).
+		 * Useful for sub-splitting an image with 10 m resolution to match other images with 60 m resolution (\f$ f = 6 \f$).
 		 */
 		void set_downscale_factor(int f);
 
 		/**
-		 * Set deflate factor [0, 9].
+		 * Set deflate factor.
+		 * @note For optimal performance during training or prediction, compression should be disabled (deflate factor set to `0`).
+		 * @param d Deflate factor, between 0 and 9. Specify 0 for no compression, or 9 for maximum compression.
 		 */
 		void set_deflate_factor(int d);
 
 		/**
-		 * Set overlap factor [0.0f, 0.5f].
+		 * Set overlap factor.
+		 * If the model architecture produces artifacts at sub-tile edges, overlapping sub-tiles can be used for prediction, and then the results can be merged into a single output image later.
+		 * @note The optimal overlap factor is defined by the filter sizes in the model architecture. For a classical UNet architecture for a \f$ 512 \times 512 px^2 \f$ sub-tile, the optimal overlap would be a border of 32 pixels.
+		 * @param f Specify `0.0f` for no overlap, `0.0625f` for 32 pixels of a \f$ 512 \times 512 px^2 \f$ sub-tile, or `0.5f` for the maximum overlap of half a sub-tile.
 		 */
 		void set_overlap_factor(float f);
 
 		/**
-		 * Set resampling method for all bands except classification masks to one of the following: "sinc", "cubic", "box", "point".
+		 * Set resampling method for all bands except classification masks to one of the following: `sinc`, `cubic`, `box`, `point`.
+		 * For classification masks, the nearest neighbour resampling method (either `box` or `point`) is used.
+		 * @note The resampling methods used for training and prediction must be identical.
+		 * @param m Reference to the name of the resampling method.
 		 */
 		void set_resampling_method(const std::string &m);
 
@@ -126,7 +151,8 @@ class ESA_S2_Image {
 		void set_scl_class_map(unsigned char *class_map);
 
 		/**
-		 * Enable / disable the storage of PNG files.
+		 * Enable / disable the storage of individual bands in PNG files.
+		 * Useful for debugging or visualization.
 		 * @param enabled True to store PNG files, False to skip them.
 		 */
 		void set_png_output(bool enabled);
@@ -145,6 +171,7 @@ class ESA_S2_Image {
 
 		/**
 		 * Extract S2 product name from file path.
+		 * @param[in] path Reference to the path to a Sentinel-2 product.
 		 * @return Product name as a string.
 		 */
 		static std::string get_product_name_from_path(const std::filesystem::path &path);

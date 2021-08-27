@@ -1,4 +1,5 @@
-// Tiled loading of a JP2 image
+//! @file
+//! @brief Tiled loading of a JP2 image
 //
 // Copyright 2020 KappaZeta Ltd.
 //
@@ -21,9 +22,19 @@
 #include <filesystem>
 
 
+/**
+ * @brief JP2 (JPEG2000) raster image class.
+ */
 class JP2_Image: public RasterImage {
 	public:
+		/**
+		 * Initialize an empty JP2 raster.
+		 */
 		JP2_Image();
+
+		/**
+		 * De-initialize the raster.
+		 */
 		~JP2_Image();
 
 		/**
@@ -35,11 +46,13 @@ class JP2_Image: public RasterImage {
 
 		/**
 		 * Load a subset of a JP2 file.
+		 * The top-left corner of the subset is specified by \f$x_0, y_0\f$
+		 * and the bottom-right corner is specified by \f$x_1, y_1\f$.
 		 * @param[in] path Path to the JP2 file.
-		 * @param[in] da_x0 Left side of the decode area, in pixels.
-		 * @param[in] da_y0 Top side of the decode area, in pixels.
-		 * @param[in] da_x1 Right side of the decode area, in pixels.
-		 * @param[in] da_y1 Bottom side of the decode area, in pixels.
+		 * @param da_x0 \f$x_0\f$ coordinate (left side) of the image to load.
+		 * @param da_y0 \f$y_0\f$ coordinate (top side) of the image to load.
+		 * @param da_x1 \f$x_1\f$ coordinate (right side) of the image to load.
+		 * @param da_y1 \f$y_1\f$ coordinate (bottom side) of the image to load.
 		 * @return True on success, False otherwise.
 		 */
 		bool load_subset(const std::filesystem::path &path, int da_x0, int da_y0, int da_x1, int da_y1);

@@ -1,4 +1,5 @@
-// Generic raster image
+//! @file
+//! @brief Generic raster image
 //
 // Copyright 2021 KappaZeta Ltd.
 //
@@ -23,8 +24,16 @@
 #include <vector>
 
 
+/**
+ * @brief Class for exceptions related to NetCDF files.
+ */
 class NCException: public std::exception {
 	public:
+		/**
+		 * @param[in] msg Reference to the error message.
+		 * @param[in] path Reference to the path of the NetCDF file which this error relates to.
+		 * @param[in] retval Error code from the NetCDF library.
+		 */
 		NCException(const std::string &msg, const std::filesystem::path &path, int retval) {
 			message = msg;
 			nc_path = path;
@@ -35,60 +44,146 @@ class NCException: public std::exception {
 			full_message.assign(ss.str());
 		}
 
-		std::string message;
-		std::filesystem::path nc_path;
-		int nc_retval;
+		std::string message;	///< Error message.
+		std::filesystem::path nc_path;	///< Path to the NetCDF file which this error relates to.
+		int nc_retval;	///< Error code from the NetCDF library.
 
+		/**
+		 * Pointer to the full message C string.
+		 */
 		virtual const char* what() const throw() {
 			return full_message.c_str();
 		}
 
 	protected:
-		std::string full_message;
+		std::string full_message;	///< Full human-readable message.
 };
 
+/**
+ * @brief An 8-bit RGB pixel class.
+ */
 class PixelRGB8 {
 	public:
+		/**
+		 * Initialize an RGB pixel.
+		 * @param[in] _r Red component, 0 - 255.
+		 * @param[in] _g Green component, 0 - 255.
+		 * @param[in] _b Blue component, 0 - 255.
+		 */
 		PixelRGB8(unsigned char _r, unsigned char _g, unsigned char _b);
+
+		/**
+		 * Initialize an RGB pixel, based on input from GraphicsMagick++.
+		 * @param[in] px Reference to a GraphicsMagick++ PixelPacket as an input for the pixel components.
+		 */
 		PixelRGB8(const Magick::PixelPacket &px);
+
+		/**
+		 * Initialize a grayscale pixel.
+		 * @param[in] c Grayscale component, 0 - 255.
+		 */
 		PixelRGB8(unsigned char c);
+
+		/**
+		 * Initialize a black pixel.
+		 */
 		PixelRGB8();
+
+		/**
+		 * Deinitialize the pixel.
+		 */
 		~PixelRGB8();
 
-		unsigned char r;
-		unsigned char g;
-		unsigned char b;
+		unsigned char r;	///< Red component, 0 - 255.
+		unsigned char g;	///< Green component, 0 - 255.
+		unsigned char b;	///< Blue component, 0 - 255.
 
+		/**
+		 * Set pixel value from an std::vector of components.
+		 * @param[in] components Reference to a vector of 3 components: R, G, B.
+		 * @return Reference to the pixel class instance.
+		 */
 		PixelRGB8 &set(const std::vector<int> &components);
+
+		/**
+		 * Set pixel value from a GraphicsMagick::PixelPacket.
+		 * @param[in] px Reference to the PixelPacket to use as an input.
+		 * @return Reference to the pixel class instance.
+		 */
 		PixelRGB8 &set(const Magick::PixelPacket &px);
 
+		/**
+		 * Assign pixel components from another pixel instance.
+		 * @param[in] a Reference to the source.
+		 * @return Reference to the pixel class instance.
+		 */
 		PixelRGB8 &operator=(const PixelRGB8 &a);
+
+		/**
+		 * Check if two pixel instances have equal components.
+		 * @param[in] Reference to a pixel instance to compare against.
+		 * @return True if all components are equal, otherwise false.
+		 */
 		bool operator==(const PixelRGB8 &a);
 };
 
+/**
+ * @brief 1D raster buffer class for a pan-chromatic image.
+ * @tparam T Data type for pixel values.
+ */
 template <typename T>
 class RasterBufferPan {
 	public:
+		/**
+		 * Initialize the buffer.
+		 * @param size Number of pixels to allocate for the buffer.
+		 */
 		RasterBufferPan(unsigned long int size);
+
+		/**
+		 * Free the buffer.
+		 */
 		~RasterBufferPan();
 
-		T *v;
+		T *v;	///< Pointer to an array of pixel values.
 };
 
+/**
+ * @brief 1D raster buffer class for an RGB colour image.
+ * @tparam T Data type for pixel values.
+ */
 template <typename T>
 class RasterBufferRGB {
 	public:
+		/**
+		 * Initialize the buffer.
+		 * @param size Number of pixels to allocate for the buffer.
+		 */
 		RasterBufferRGB(unsigned long int size);
+
+		/**
+		 * Free the buffer.
+		 */
 		~RasterBufferRGB();
 
-		T *r;
-		T *g;
-		T *b;
+		T *r;	///< Pointer to an array of pixel red components.
+		T *g;	///< Pointer to an array of pixel green components.
+		T *b;	///< Pointer to an array of pixel blue components.
 };
 
+/**
+ * @brief A generic raster class.
+ */
 class RasterImage {
 	public:
+		/**
+		 * Initialize an empty raster.
+		 */
 		RasterImage();
+
+		/**
+		 * De-initialize the raster.
+		 */
 		~RasterImage();
 
 		/**

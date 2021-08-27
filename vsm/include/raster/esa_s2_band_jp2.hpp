@@ -1,4 +1,5 @@
-// ESA S2 band image, in JP2 format
+//! @file
+//! @brief ESA S2 band image, in JP2 format
 //
 // Copyright 2020 KappaZeta Ltd.
 //
@@ -20,9 +21,19 @@
 #include <filesystem>
 
 
+/**
+ * @brief Raster image class for an ESA Sentinel-2 band.
+ */
 class ESA_S2_Band_JP2_Image: public JP2_Image {
 	public:
+		/**
+		 * Initialize an empty raster.
+		 */
 		ESA_S2_Band_JP2_Image();
+
+		/**
+		 * De-initialize the raster.
+		 */
 		~ESA_S2_Band_JP2_Image();
 };
 

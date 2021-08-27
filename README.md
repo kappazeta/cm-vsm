@@ -12,6 +12,7 @@ The following system dependencies are needed:
 * GraphicsMagick++ (`libgraphicsmagick++1-dev`)
 * NetCDF (`libnetcdf-dev`)
 * nlohmann's JSON (https://github.com/nlohmann/json)
+* Doxygen (for documentation only)
 
 On Ubuntu, the following commands could be used to install the dependencies:
 
@@ -51,6 +52,13 @@ cget install
 cmake .. -DCMAKE_CXX_COMPILER=g++-9 -DCMAKE_BUILD_TYPE=Debug
 make
 sudo make install
+```
+
+Once CMake has already been run in the build directory, the documentation can be built as follows:
+
+```
+cd vsm/build
+make doc
 ```
 
 ## Building in Visual Studio Code (Ubuntu Linux)
