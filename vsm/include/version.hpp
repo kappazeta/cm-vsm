@@ -1,4 +1,5 @@
-// Version macros
+//! @file
+//! @brief Version macros and changelog
 //
 // Copyright 2021 KappaZeta Ltd.
 //
@@ -16,7 +17,9 @@
 
 #pragma once
 
+//! @brief Library / tool name.
 #define CM_CONVERTER_NAME_STR		"cm-vsm"
+//! @brief Library version.
 #define CM_CONVERTER_VERSION_STR	"0.2.3"
 
 /** \page Changelog
