@@ -28,7 +28,7 @@ jobs:
       run: |
         sudo add-apt-repository ppa:ubuntu-toolchain-r/test
         sudo apt update
-        sudo apt-get install -y gcc-9 g++-9 python3-pip libopenjp2-7-dev libgdal-dev gdal-bin libexpat1-dev libgraphicsmagick++1-dev libnetcdf-dev
+        sudo apt-get install -y gcc-9 g++-9 python3-pip libopenjp2-7-dev libgdal-dev gdal-bin libexpat1-dev libgraphicsmagick++1-dev libnetcdf-dev doxygen
         pip3 install cget
 
     # Install dependencies with cget
