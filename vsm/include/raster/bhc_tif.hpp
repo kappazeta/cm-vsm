@@ -1,4 +1,5 @@
-// Baetens & Hagolle classification map, in TIF format
+//! @file
+//! @brief Baetens & Hagolle classification map, in TIF format
 //
 // Copyright 2020 KappaZeta Ltd.
 //
@@ -20,9 +21,19 @@
 #include <filesystem>
 
 
+/**
+ * @brief Class for Baetens & Hagolle classification map, in TIF format
+ */
 class BHC_TIF_Image: public TIF_Image {
 	public:
+		/**
+		 * Initialize an empty raster.
+		 */
 		BHC_TIF_Image();
+
+		/**
+		 * De-initialize the raster.
+		 */
 		~BHC_TIF_Image();
 };
 

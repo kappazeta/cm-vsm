@@ -1,4 +1,5 @@
-// Supervise.ly JSON vector layer rasterization to PNG and NetCDF.
+//! @file
+//! @brief Supervise.ly JSON vector layer rasterization to PNG and NetCDF.
 //
 // Copyright 2020 KappaZeta Ltd.
 //
@@ -25,11 +26,24 @@
 #include <vector>
 
 
+/**
+ * @brief Supervise.ly polygon parser.
+ */
 class SuperviselyPolygon {
 public:
+	/**
+	 * @brief Initialize the parser.
+	 */
 	SuperviselyPolygon();
+
+	/**
+	 * De-initialize the parser.
+	 */
 	~SuperviselyPolygon();
 
+	/**
+	 * @brief Classes used for KappaMask labelling.
+	 */
 	enum class_value_t {
 		SVLY_UNDEFINED = 0,	///< Exclude pixel from training, priority 0.
 		SVLY_CLEAR = 1,	///< Clear pixel, priority -4.
@@ -44,36 +58,82 @@ public:
 	//! Render priority per class. Higher priority is rendered on top of lower priority.
 	static const int class_priority[SVLY_COUNT];
 
-	int label_index;
-	Magick::CoordinateList exterior;
-	Magick::CoordinateList interior;
+	int label_index;	///< Label index of the polygon.
+	Magick::CoordinateList exterior;	///< Line of vertices marking the exterior of the polygon.
+	Magick::CoordinateList interior;	///< Line of vertices marking the interior of the polygon.
 
+	/**
+	 * @brief Assign a polygon parser.
+	 * @param[in] poly Reference to the source polygon parser instance.
+	 * @return A copy of the polygon parser.
+	 */
 	SuperviselyPolygon &operator=(const SuperviselyPolygon &poly);
+
+	/**
+	 * @brief Compare polygons by their priority.
+	 * @param[in] poly Reference to the other polygon to compare against.
+	 * @return True if this polygon is to be rendered below the other one.
+	 */
 	bool operator<(const SuperviselyPolygon &poly) const;
 
+	/**
+	 * @brief Parse vertex coordinates from a JSON dict.
+	 * @param[in] j Reference to the JSON dict to be parsed.
+	 * @return True on success, otherwise false.
+	 */
 	bool parse_points(const nlohmann::json &j);
 
+	/**
+	 * @brief Assign a label to this polygon.
+	 * @param[in] label Reference to the name of the class to assign to this polygon.
+	 * @return True on success, otherwise false.
+	 */
 	bool set_label(const std::string &label);
 
+	/**
+	 * @brief Clear the polygon with all its coordinates.
+	 */
 	void clear();
 };
 
+/**
+ * @brief A Supervise.ly rasterizer class.
+ * https://supervise.ly/
+ */
 class SuperviselyRasterizer {
 public:
+	/**
+	 * @brief Initialize the rasterizer.
+	 */
 	SuperviselyRasterizer();
+
+	/**
+	 * @brief De-initialize the rasterizer.
+	 */
 	~SuperviselyRasterizer();
 
+	/**
+	 * @brief Convert from Supervise.ly format into a raster with the KappaMask classification scheme.
+	 * @param[in] path_dir_in Reference to the path to the directory which contains `/ds0/ann/PRODUCT_TILE_NAME.png.json`.
+	 * @param[in] product_tile_name Reference to the name of the product tile to convert.
+	 * @param[in] path_out_nc Reference to the path to the output NetCDF file. Leave empty to skip NetCDF output.
+	 * @param[in] path_out_png Reference to the path to the output PNG file. Leave empty to skip PNG output.
+	 * @return True on success, otherwise false.
+	 */
 	bool convert(const std::filesystem::path &path_dir_in, const std::string &product_tile_name, const std::filesystem::path &path_out_nc, const std::filesystem::path &path_out_png);
 
-	RasterImage image;
+	RasterImage image;	///< Output raster instance.
 
 protected:
+	/**
+	 * @brief Rasterize the vector input.
+	 */
 	bool rasterize();
 
-	std::ifstream file_in;
+	std::ifstream file_in;	///< Input file stream.
 
-	std::string description;
+	std::string description;	///< Description from the Supervise.ly metadata.
 
-	std::vector<SuperviselyPolygon> polygons;
+	std::vector<SuperviselyPolygon> polygons;	///< Vector of parsed polygons.
 };
 

@@ -1,4 +1,5 @@
-// Utilities for operating with date-time
+//! @file
+//! @brief Utilities for operating with date-time
 //
 // Copyright 2021 KappaZeta Ltd.
 //
@@ -19,5 +20,9 @@
 #include <iostream>
 
 
+/**
+ * @brief Textual representation of the current date-time.
+ * @return Date-time string in format `YYYY-MM-DD HH:mm:SS`.
+ */
 std::string datetime_now_str();
 

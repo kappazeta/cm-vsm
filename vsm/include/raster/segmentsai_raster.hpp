@@ -1,4 +1,5 @@
-// Segments.AI annotations format
+//! @file
+//! @brief Segments.AI annotations format
 //
 // Copyright 2021 KappaZeta Ltd.
 //
@@ -21,13 +22,34 @@
 #include <filesystem>
 
 
+/**
+ * @brief A Segments.AI raster class.
+ */
 class SegmentsAIRaster: public RasterImage {
 	public:
+		/**
+		 * Initialize an empty raster.
+		 */
 		SegmentsAIRaster();
+
+		/**
+		 * De-initialize the raster.
+		 */
 		~SegmentsAIRaster();
 
-	bool load(const std::filesystem::path &mask_path, const std::filesystem::path &classes_path);
+		/**
+		 * Load the raster.
+		 * @param[in] mask_path Reference to the path to the mask image.
+		 * @param[in] classes_path Reference to the path of the metadata file with classes and the pixel values which they correspond to.
+		 * @return True on success, otherwise false.
+		 */
+		bool load(const std::filesystem::path &mask_path, const std::filesystem::path &classes_path);
 
-	bool convert(const std::filesystem::path &path_dir);
+		/**
+		 * Convert the loaded raster into our own format (PNG and NetCDF) and classification scheme.
+		 * @param[in] path_dir Reference to the path to the directory to store the PNG and NetCDF files in. If the NetCDF file already exists, then the `Label` channel is replaced.
+		 * @return True on success, otherwise false.
+		 */
+		bool convert(const std::filesystem::path &path_dir);
 };
 

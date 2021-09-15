@@ -1,4 +1,5 @@
-// CNES MAJA Classification Map, in TIF format
+//! @file
+//! @brief CNES MAJA Classification Map, in TIF format
 //
 // Copyright 2020 KappaZeta Ltd.
 //
@@ -21,13 +22,26 @@
 #include <filesystem>
 
 
+/**
+ * @brief Class for CNES MAJA Classification Map, in TIF format.
+ */
 class CNES_MAJA_CLM_TIF: public TIF_Image {
 	public:
+		/**
+		 * Initialize an empty raster.
+		 */
 		CNES_MAJA_CLM_TIF();
+
+		/**
+		 * De-initialize the raster.
+		 */
 		~CNES_MAJA_CLM_TIF();
 
-		// For reference:
-		// https://labo.obs-mip.fr/multitemp/sentinel-2/theias-sentinel-2-l2a-product-format/
+		/**
+		 * @brief MAJA classification flags.
+		 * \par For reference
+		 * https://labo.obs-mip.fr/multitemp/sentinel-2/theias-sentinel-2-l2a-product-format/
+		 */
 		enum clm_flag_t {
 			CLM_CLOUDS_SHADOWS = 1,	///< All clouds except the thinnest and all shadows.
 			CLM_CLOUDS = 2,	///< All clouds (except the thinnest).

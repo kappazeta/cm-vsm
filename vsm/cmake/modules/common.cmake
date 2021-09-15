@@ -43,3 +43,27 @@ macro(vsm_set_source_files src_path name)
 	file(GLOB ${name}_INC ${VSM_ROOT}/include/${name}/*.hpp ${VSM_ROOT}/include/${name}/*/*.hpp)
 	include_directories(${root_path}/include)
 endmacro(vsm_set_source_files)
+
+# Create a "doc" target for documentation
+macro(vsm_doc_target)
+	find_package(Doxygen)
+	if(NOT DOXYGEN_FOUND)
+		message(FATAL_ERROR "Doxygen is needed to build the documentation.")
+	endif()
+
+	set(logo_in ${VSM_ROOT}/doc/kz_logo.png)
+	set(logo_out ${CMAKE_CURRENT_BINARY_DIR}/kz_logo.png)
+	set(doxyfile_in ${VSM_ROOT}/doc/cm_vsm.doxyfile)
+	set(doxyfile_out ${CMAKE_CURRENT_BINARY_DIR}/doxyfile)
+
+	configure_file(${doxyfile_in} ${doxyfile_out} @ONLY)
+	configure_file(${logo_in} ${logo_out} COPYONLY)
+
+	add_custom_target(
+		doc
+		COMMAND ${DOXYGEN_EXECUTABLE} ${doxyfile_out}
+		WORKING_DIRECTORY ${VSM_ROOT}/doc
+		COMMENT "Generating API documentation with Doxygen"
+		VERBATIM
+	)
+endmacro(vsm_doc_target)

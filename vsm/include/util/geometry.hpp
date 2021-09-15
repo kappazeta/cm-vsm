@@ -1,4 +1,5 @@
-// Geometry classes for vector layers
+//! @file
+//! @brief Geometry classes for vector layers
 //
 // Copyright 2020 KappaZeta Ltd.
 //
@@ -16,14 +17,29 @@
 
 #pragma once
 
+
+/**
+ * A floating-point vertex class
+ */
 class FVertex {
 public:
+	/**
+	 * Initialize a vertex \f$(0, 0)\f$.
+	 */
 	FVertex();
+
+	/**
+	 * Initialize a vertex with the given coordinates.
+	 */
 	FVertex(float x, float y);
+
+	/**
+	 * De-initialize the vertex.
+	 */
 	~FVertex();
 
 	//! \todo Math operators (need at least scaling)
 
-	float x, y;
+	float x, y;	///< Coordinates.
 };
 
