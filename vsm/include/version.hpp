@@ -20,7 +20,7 @@
 //! @brief Library / tool name.
 #define CM_CONVERTER_NAME_STR		"cm-vsm"
 //! @brief Library version.
-#define CM_CONVERTER_VERSION_STR	"0.2.3"
+#define CM_CONVERTER_VERSION_STR	"0.2.4"
 
 /** \page Changelog
  * \par Changelog
@@ -29,6 +29,7 @@
  *
  * Version | Changes
  * --------|--------
+ * 0.2.4   | Support for IPL-UV DL-L8S2-UV rgbiswir classification mask.
  * 0.2.3   | Support for NASA GSFC labels.
  * 0.2.2   | Add missing `B07`.
  * 0.2.1   | Override output directory with the `-O` argument.

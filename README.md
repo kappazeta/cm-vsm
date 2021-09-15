@@ -120,33 +120,34 @@ Rasterization of a labelled subtile 2, 3, for example:
 ## Supported bands
 The following bands / layers are supported:
 
-| No. | Name  | Ground resolution | Bit-depth | Format    | Description                                                |
-| --- | ----- | ----------------- | --------- | --------- | ---------------------------------------------------------- |
-|     | Label |              10 m |         8 |      Mask | Segmentation mask from one of the supported labeling tools |
-|   1 |   TCI |              10 m |         8 |       RGB | True Color Image                                           |
-|   2 |   SCL |              20 m |         8 |      Mask | Sen2Cor Scene Classification Image                         |
-|   3 |   AOT |              10 m |        16 | Grayscale | Aerosol Optical Thickness map                              |
-|   4 |   B01 |              60 m |        16 | Grayscale | 433 - 453 nm                                               |
-|   5 |   B02 |              10 m |        16 | Grayscale | 457.5 - 522.5 nm                                           |
-|   6 |   B03 |              10 m |        16 | Grayscale | 542.5 - 577.5 nm                                           |
-|   7 |   B04 |              10 m |        16 | Grayscale | 650 - 680 nm                                               |
-|   8 |   B05 |              20 m |        16 | Grayscale | 697.5 - 712.5 nm                                           |
-|   9 |   B06 |              20 m |        16 | Grayscale | 732.5 - 747.5 nm                                           |
-|  10 |   B07 |              20 m |        16 | Grayscale | 773 - 793 nm                                               |
-|  11 |   B08 |              10 m |        16 | Grayscale | 784.5 - 899.5 nm                                           |
-|  12 |   B8A |              20 m |        16 | Grayscale | 855 - 875 nm                                               |
-|  13 |   B09 |              60 m |        16 | Grayscale | 935 - 955 nm                                               |
-|  14 |   B10 |              60 m |        16 | Grayscale | 1358 - 1389 nm                                             |
-|  15 |   B11 |              20 m |        16 | Grayscale | 1565 - 1655 nm                                             |
-|  16 |   B12 |              20 m |        16 | Grayscale | 2100 - 2280 nm                                             |
-|  17 |   WVP |              10 m |        16 | Grayscale | Water Vapour map                                           |
-|  18 |   GML |                   |           |    Vector | GML vector mask                                            |
-|  19 |  S2CC |              20 m |         8 |      Mask | Sen2Cor cloud probabilities                                |
-|  20 |  S2CS |              20 m |         8 |      Mask | Sen2Cor snow probabilities                                 |
-|  21 |   FMC |              20 m |         8 |      Mask | Fmask classification map                                   |
-|  22 |  SS2C |              60 m |         8 |      Mask | Sinergise S2Cloudless classification map                   |
-|  23 | SS2CC |              60 m |         8 |      Mask | Sinergise S2Cloudless cloud probabilities                  |
-|  24 | MAJAC |              10 m |         8 |      Mask | CNES MAJA cloud classification map                         |
-|  25 |   BHC |              60 m |         8 |      Mask | Baetens & Hagolle classification map                       |
-|  26 |  FMSC |              20 m |         8 |      Mask | Francis, Mrziglod, and Sidiropoulos classification map     |
-|  27 |  GSFC |              10 m |         8 |      Mask | NASA GSFC Vector mask converted into 10 m resolution raster|
+| No. | Name       | Ground resolution | Bit-depth | Format    | Description                                                 |
+| --- | ---------- | ----------------- | --------- | --------- | ----------------------------------------------------------- |
+|     |      Label |              10 m |         8 |      Mask | Segmentation mask from one of the supported labeling tools  |
+|   1 |        TCI |              10 m |         8 |       RGB | True Color Image                                            |
+|   2 |        SCL |              20 m |         8 |      Mask | Sen2Cor Scene Classification Image                          |
+|   3 |        AOT |              10 m |        16 | Grayscale | Aerosol Optical Thickness map                               |
+|   4 |        B01 |              60 m |        16 | Grayscale | 433 - 453 nm                                                |
+|   5 |        B02 |              10 m |        16 | Grayscale | 457.5 - 522.5 nm                                            |
+|   6 |        B03 |              10 m |        16 | Grayscale | 542.5 - 577.5 nm                                            |
+|   7 |        B04 |              10 m |        16 | Grayscale | 650 - 680 nm                                                |
+|   8 |        B05 |              20 m |        16 | Grayscale | 697.5 - 712.5 nm                                            |
+|   9 |        B06 |              20 m |        16 | Grayscale | 732.5 - 747.5 nm                                            |
+|  10 |        B07 |              20 m |        16 | Grayscale | 773 - 793 nm                                                |
+|  11 |        B08 |              10 m |        16 | Grayscale | 784.5 - 899.5 nm                                            |
+|  12 |        B8A |              20 m |        16 | Grayscale | 855 - 875 nm                                                |
+|  13 |        B09 |              60 m |        16 | Grayscale | 935 - 955 nm                                                |
+|  14 |        B10 |              60 m |        16 | Grayscale | 1358 - 1389 nm                                              |
+|  15 |        B11 |              20 m |        16 | Grayscale | 1565 - 1655 nm                                              |
+|  16 |        B12 |              20 m |        16 | Grayscale | 2100 - 2280 nm                                              |
+|  17 |        WVP |              10 m |        16 | Grayscale | Water Vapour map                                            |
+|  18 |        GML |                   |           |    Vector | GML vector mask                                             |
+|  19 |       S2CC |              20 m |         8 |      Mask | Sen2Cor cloud probabilities                                 |
+|  20 |       S2CS |              20 m |         8 |      Mask | Sen2Cor snow probabilities                                  |
+|  21 |        FMC |              20 m |         8 |      Mask | Fmask classification map                                    |
+|  22 |       SS2C |              60 m |         8 |      Mask | Sinergise S2Cloudless classification map                    |
+|  23 |      SS2CC |              60 m |         8 |      Mask | Sinergise S2Cloudless cloud probabilities                   |
+|  24 |      MAJAC |              10 m |         8 |      Mask | CNES MAJA cloud classification map                          |
+|  25 |        BHC |              60 m |         8 |      Mask | Baetens & Hagolle classification map                        |
+|  26 |       FMSC |              20 m |         8 |      Mask | Francis, Mrziglod, and Sidiropoulos classification map      |
+|  27 |       GSFC |              10 m |         8 |      Mask | NASA GSFC Vector mask converted into 10 m resolution raster |
+|  28 | DL-L8S2-UV |              10 m |         8 |      Mask | IPL-UV DL-L8S2-UV rgbiswir classification mask              |
