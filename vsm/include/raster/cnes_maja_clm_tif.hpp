@@ -40,7 +40,7 @@ class CNES_MAJA_CLM_TIF: public TIF_Image {
 		/**
 		 * @brief MAJA classification flags.
 		 * \par For reference
-		 * https://labo.obs-mip.fr/multitemp/sentinel-2/theias-sentinel-2-l2a-product-format/
+		 * https://labo.obs-mip.fr/multitemp/sentinel-2/majas-native-sentinel-2-format/#English
 		 */
 		enum clm_flag_t {
 			CLM_CLOUDS_SHADOWS = 1,         ///< All clouds except the thinnest and all shadows.
