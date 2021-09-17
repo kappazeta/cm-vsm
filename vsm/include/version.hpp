@@ -29,7 +29,7 @@
  *
  * Version | Changes
  * --------|--------
- * 0.2.4   | MAJA classification map update from THEIA MUSCATE format to native Sentinel-2 format.
+ * 0.2.4   | Support for IPL-UV DL-L8S2-UV rgbiswir classification mask. MAJA classification map update from THEIA MUSCATE format to native Sentinel-2 format.
  * 0.2.3   | Support for NASA GSFC labels.
  * 0.2.2   | Add missing `B07`.
  * 0.2.1   | Override output directory with the `-O` argument.

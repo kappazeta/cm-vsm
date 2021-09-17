@@ -57,6 +57,7 @@ public:
 		DT_BHC,	///< Baetens & Hagolle classification map, 60 m
 		DT_FMSC,	///< Francis & Mrziglod & Sidiropoulos classification map, 20 m
 		DT_GSFC,    ///< NASA GSFC, vector layer
+		DT_DL_L8S2_UV,	///< IPL-UV DL-L8S2-UV, binary classification map, 10 m
 		DT_COUNT	///< Total number of data type options.
 	};
 
@@ -78,6 +79,7 @@ public:
 	static const unsigned char ss2c_scl_value_map[3];	///< Sinergise S2Cloudless to Sen2Cor classification map.
 	static const unsigned char fmsc_scl_value_map[4];	///< Francis & Mrziglod & Sidiropoulos to Sen2Cor classification map.
 	static const unsigned char gsfc_scl_value_map[6];	///< NASA GSFC to Sen2Cor classification map.
+	static const unsigned char dl_l8s2_uv_scl_value_map[4];	///< IPL-UV DL-L8S2-UV, binary classification map.
 
 	/**
 	 * Callback for potential post-processing on the sub-tiles.

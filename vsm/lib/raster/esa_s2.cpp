@@ -27,7 +27,7 @@
 
 const std::string ESA_S2_Image_Operator::data_type_name[ESA_S2_Image_Operator::DT_COUNT] = {
 	"TCI", "SCL", "AOT", "B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B8A", "B09", "B10", "B11", "B12",	"WVP",
-	"GML", "S2CC", "S2CS", "FMC", "SS2C", "SS2CC", "MAJAC", "BHC", "FMSC", "GSFC"
+	"GML", "S2CC", "S2CS", "FMC", "SS2C", "SS2CC", "MAJAC", "BHC", "FMSC", "GSFC", "DL-L8S2-UV"
 };
 
 //! Map BHC classes to SCL classes.
@@ -76,6 +76,14 @@ const unsigned char ESA_S2_Image_Operator::gsfc_scl_value_map[6] = {
 	10, // 3  CIRRUS_CLOUD             -> THIN_CIRRUS
 	3,  // 4  CLOUD_SHADOWS            -> CLOUD_SHADOWS
 	0   // 5 - 255                     -> NO_DATA
+};
+
+//! Map DL-L8S2-UV classes to SCL classes.
+const unsigned char ESA_S2_Image_Operator::dl_l8s2_uv_scl_value_map[4] = {
+	0,  // 0                           -> NO_DATA
+	4,  // 1  CLEAR                    -> VEGETATION
+	9,  // 2  CLOUD                    -> CLOUD_HIGH_PROBABILITY
+	0   // 3 - 255                     -> NO_DATA
 };
 
 ESA_S2_Image::ESA_S2_Image():
@@ -340,6 +348,12 @@ bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::
 			}
 		}
 	}
+	// Split IPL-UV DL-L8S2-UV classification maps with a 10 m resolution.
+	if (std::filesystem::is_regular_file(path_dir_in.string() + "/dluvclouds_rgbiswir.tif") && b[ESA_S2_Image_Operator::DT_DL_L8S2_UV]) {
+		std::filesystem::path fpath(path_dir_in.string() + "/dluvclouds_rgbiswir.tif");
+		data_resolution = ESA_S2_Image_Operator::DR_10M;
+		splitTIF(fpath, path_dir_out, op, ESA_S2_Image_Operator::DT_DL_L8S2_UV, data_resolution);
+	}
 
 	return true;
 }
@@ -525,6 +539,9 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 				tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
 			} else if (data_type == ESA_S2_Image_Operator::DT_GSFC) {
 				img_src.remap_values(ESA_S2_Image_Operator::gsfc_scl_value_map, sizeof(ESA_S2_Image_Operator::gsfc_scl_value_map));
+				tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
+			} else if (data_type == ESA_S2_Image_Operator::DT_DL_L8S2_UV) {
+				img_src.remap_values(ESA_S2_Image_Operator::dl_l8s2_uv_scl_value_map, sizeof(ESA_S2_Image_Operator::dl_l8s2_uv_scl_value_map));
 				tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
 			}
 			if (tmp_data_type == ESA_S2_Image_Operator::DT_SCL) {

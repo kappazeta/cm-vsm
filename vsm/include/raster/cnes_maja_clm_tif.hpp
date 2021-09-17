@@ -46,7 +46,7 @@ class CNES_MAJA_CLM_TIF: public TIF_Image {
 			CLM_CLOUDS_SHADOWS = 1,         ///< All clouds except the thinnest and all shadows.
 			CLM_CLOUDS = 2,                 ///< All clouds (except the thinnest).
 			CLM_CLOUD_SHADOWS = 4,          ///< Cloud shadows cast by a detected cloud.
-			CLM_CLOUD_SHADOWS_OUTSIDE = 8,  ///< Cloud shadows cast by a cloud outside image. 
+			CLM_CLOUD_SHADOWS_OUTSIDE = 8,  ///< Cloud shadows cast by a cloud outside image.
 			CLM_CLOUDS_MONOTEMP = 16,       ///< Clouds detected via mono-temporal thresholds.
 			CLM_CLOUDS_MULTITEMP = 32,      ///< Clouds detected via multi-temporal thresholds.
 			CLM_THIN_CLOUDS = 64,           ///< Thinnest clouds.
