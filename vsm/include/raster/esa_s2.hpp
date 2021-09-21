@@ -172,6 +172,12 @@ class ESA_S2_Image {
 		void set_num_threads(int num_threads);
 
 		/**
+		 * Set a WKT geometry of the area of interest which limits the sub-tiles.
+		 * @param wkt_geom Reference to the WKT string which outlines the area of interest.
+		 */
+		void set_aoi_geometry(const std::string &wkt_geom);
+
+		/**
 		 * Extract S2 product name from file path.
 		 * @param[in] path Reference to the path to a Sentinel-2 product.
 		 * @return Product name as a string.
@@ -204,6 +210,8 @@ class ESA_S2_Image {
 		bool store_png;	///< Whether to store intermediate output in PNG files or not.
 		bool read_tiled;	///< Whether to read JP2 files in tiles, or to read full images into RAM.
 		int num_threads;	///< Number of threads to parallelize to.
+
+		std::string wkt_geom_aoi;	///< Area of interest as WKT geometry.
 
 		/**
 		 * Split a JP2 file into sub-tiles.

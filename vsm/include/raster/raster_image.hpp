@@ -25,6 +25,38 @@
 
 
 /**
+ * @brief Class for exceptions related to raster files.
+ */
+class RasterException: public std::exception {
+	public:
+		/**
+		 * @param[in] msg Reference to the error message.
+		 * @param[in] path Reference to the path of the raster file which this error relates to.
+		 */
+		RasterException(const std::string &msg, const std::filesystem::path &path) {
+			message = msg;
+			r_path = path;
+
+			std::ostringstream ss;
+			ss << "Raster file " << r_path << ": " << message;
+			full_message.assign(ss.str());
+		}
+
+		std::string message;	///< Error message.
+		std::filesystem::path r_path;	///< Path to the raster file which this error relates to.
+
+		/**
+		 * Pointer to the full message C string.
+		 */
+		virtual const char* what() const throw() {
+			return full_message.c_str();
+		}
+
+	protected:
+		std::string full_message;	///< Full human-readable message.
+};
+
+/**
  * @brief Class for exceptions related to NetCDF files.
  */
 class NCException: public std::exception {

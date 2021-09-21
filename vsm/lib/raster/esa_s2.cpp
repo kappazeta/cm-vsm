@@ -22,7 +22,13 @@
 #include "raster/png_image.hpp"
 
 #include "util/text.hpp"
+#include "util/geometry.hpp"
 #include <math.h>
+
+// GDAL
+#include <ogrsf_frmts.h>
+#include <ogr_geometry.h>
+#include <ogr_spatialref.h>
 
 
 const std::string ESA_S2_Image_Operator::data_type_name[ESA_S2_Image_Operator::DT_COUNT] = {
@@ -134,6 +140,10 @@ void ESA_S2_Image::set_tiled_input(bool enabled) {
 
 void ESA_S2_Image::set_num_threads(int num_threads) {
 	this->num_threads = num_threads;
+}
+
+void ESA_S2_Image::set_aoi_geometry(const std::string &wkt_geom) {
+	wkt_geom_aoi = wkt_geom;
 }
 
 std::string ESA_S2_Image::get_product_name_from_path(const std::filesystem::path &path) {
@@ -390,6 +400,25 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 	int w = img_src.main_geometry.width();
 
 	std::cout << "Processing " << path_in << std::endl;
+
+	// GDAL dataset.
+	GDALDataset *p_dataset;
+	p_dataset = (GDALDataset *) GDALOpen(path_in.string().c_str(), GA_ReadOnly);
+	if (p_dataset == NULL)
+		throw RasterException(path_in, "Failed to load with GDAL");
+	if (p_dataset->GetProjectionRef() != NULL) {
+		std::cout << "Projection: " << p_dataset->GetProjectionRef() << std::endl;
+	}
+	if (wkt_geom_aoi.length() > 0) {
+		OGRGeometry *p_geom = nullptr;
+
+		wkt_to_geom(wkt_geom_aoi, &p_geom);
+		std::vector<IVertex> vv = proj_coords_to_raster(p_geom, p_dataset);
+		std::cout << vv.size() << std::endl;
+	}
+	GDALClose(p_dataset);
+
+	//! \todo Use GDAL for reading raster data, too.
 
 	// Subset the image, and store the subsets in a dedicated directory.
 	int xi, yi;
