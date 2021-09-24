@@ -377,7 +377,10 @@ public:
 	AABB<int> image_aabb;
 	AABB<int> poly_aabb_buf;
 
-	virtual bool fill(Vector<int> p) {}
+	virtual bool fill(Vector<int> p) {
+		std::ignore = p;
+		return false;
+	}
 };
 
 class FillJP2Tile: public FillPixel {
@@ -467,8 +470,8 @@ public:
 bool fill_poly(Polygon<int> &poly, AABB<int> &image_aabb, int pixel_size, FillPixel *cb_fill) {
 	// Inspired by
 	//   http://alienryderflex.com/polygon_fill/
-	int nodes, i, j, swap;
-	std::vector<int> node_x(poly.size());
+	int i, j;
+	std::vector<int> node_x;
 	Vector<int> pixel;
 	Vector<float> local_a, local_b;
 	std::vector<Vector<int>> filled;
@@ -485,20 +488,14 @@ bool fill_poly(Polygon<int> &poly, AABB<int> &image_aabb, int pixel_size, FillPi
 			ceil(((float) poly_dim.y) / pixel_size))
 	);
 
-	std::cout << "Image " << image_aabb << std::endl;
-	std::cout << "Local " << local_aabb << std::endl;
-
 	for (pixel.y=local_aabb.vmin.y; pixel.y < local_aabb.vmax.y; pixel.y++) {
-		std::cout << "Pixel Y " << pixel.y << std::endl;
 		// Build a list of nodes.
-		nodes = 0;
 		j = poly.size() - 1;
-		for (i=0; i<poly.size(); i++) {
+		for (i=0; i<(int)poly.size(); i++) {
 			local_a.x = ((float) poly[i].x - image_aabb.vmin.x) / pixel_size;
 			local_a.y = ((float) poly[i].y - image_aabb.vmin.y) / pixel_size;
 			local_b.x = ((float) poly[j].x - image_aabb.vmin.x) / pixel_size;
 			local_b.y = ((float) poly[j].y - image_aabb.vmin.y) / pixel_size;
-			std::cout << " " << local_a << ", " << local_b;
 			// Case 1: 2 points with different y, pixel.y in between.
 			// Case 2: 2 points with different y, one of them equal to pixel.y.
 			// Case 3: 2 points overlapping.
@@ -509,47 +506,35 @@ bool fill_poly(Polygon<int> &poly, AABB<int> &image_aabb, int pixel_size, FillPi
 			if ((int) round(local_a.y) == (int) round(local_b.y)) {
 				// Case 3: 2 points overlapping. Skip.
 				if (local_a == local_b) {
-					std::cout << " Skipping" << std::endl;
 					continue;
 				// Case 4: 2 points with same y and pixel.y. Mark both as nodes.
 				} else if (pixel.y == (int) round(local_a.y)) {
-					node_x[nodes++] = (int) local_a.x;
-					node_x[nodes++] = (int) ceil(local_b.x);
-					std::cout << " SameY " << node_x[nodes - 2] << ", " << node_x[nodes - 1];
+					node_x.push_back((int) local_a.x);
+					node_x.push_back((int) ceil(local_b.x));
 				}
 			} else {
 				// Case 1: 2 points with different y, pixel.y in between. Mark the intersection point as node.
 				if ((local_a.y < pixel.y && local_b.y >= pixel.y)
 					|| (local_b.y < pixel.y && local_a.y >= pixel.y)) {
 					// Calculate the x-coordinate of the intersection between AB and y = pixel.y.
-					node_x[nodes++] = (int) (local_a.x + (pixel.y - local_a.y) / (local_b.y - local_a.y) * (local_b.x - local_a.x));
-					std::cout << " Between " << node_x[nodes - 1];
+					node_x.push_back((int) (local_a.x + (pixel.y - local_a.y) / (local_b.y - local_a.y) * (local_b.x - local_a.x)));
 				// Case 2: 2 points with different y, one of them equal to pixel.y. Mark the point as two nodes.
 				} else if ((int) round(local_a.y) == pixel.y) {
-					node_x[nodes++] = (int) local_a.x;
-					node_x[nodes++] = (int) ceil(local_a.x);
-					std::cout << " Tip " << node_x[nodes - 1];
+					node_x.push_back((int) local_a.x);
+					node_x.push_back((int) ceil(local_a.x));
 				} else if ((int) round(local_b.y) == pixel.y) {
-					node_x[nodes++] = (int) local_b.x;
-					node_x[nodes++] = (int) round(local_b.x);
-					std::cout << " Tip " << node_x[nodes - 1];
+					node_x.push_back((int) local_b.x);
+					node_x.push_back((int) round(local_b.x));
 				}
 			}
-			std::cout << std::endl;
 			j = i;
 		}
 
 		// Sort the nodes.
-		std::sort(node_x.begin(), node_x.begin() + nodes);
-
-		std::cout << " Sorted nodes:";
-		for (i=0; i<nodes; i++)
-			std::cout << " " << node_x[i];
-		std::cout << std::endl;
+		std::sort(node_x.begin(), node_x.end());
 
 		// Fill pixels between node pairs.
-		for (i=0; i<nodes; i+=2) {
-			std::cout << " Nodes " << node_x[i] << ", " << node_x[i + 1] << std::endl;
+		for (i=0; i<(int)node_x.size(); i+=2) {
 			if (node_x[i] >= local_aabb.vmax.x)
 				break;
 			if (node_x[i + 1] >= local_aabb.vmin.x) {
@@ -560,20 +545,40 @@ bool fill_poly(Polygon<int> &poly, AABB<int> &image_aabb, int pixel_size, FillPi
 				for (pixel.x=node_x[i]; pixel.x<=node_x[i + 1]; pixel.x++) {
 					// Skip if the pixel has already been filled.
 					already_filled = false;
-					for (j=0; j<filled.size(); j++) {
+					for (j=0; j<(int)filled.size(); j++) {
 						if (filled[j] == pixel) {
 							already_filled = true;
 							break;
 						}
 					}
 					if (!already_filled) {
-						std::cout << "  Filling " << pixel.x << ", " << pixel.y << std::endl;
 						if (!cb_fill->fill(pixel))
 							return false;
 						filled.push_back(pixel);
 					}
 				}
 			}
+		}
+	}
+	return true;
+}
+
+bool fill_whole(AABB<int> &image_aabb, int pixel_size, FillPixel *cb_fill) {
+	Vector<int> p;
+
+	cb_fill->image_aabb = image_aabb;
+	Vector<int> img_dim = image_aabb.vmax - image_aabb.vmin;
+	// Axis-aligned bounding box in the local reference frame.
+	AABB<int> local_aabb(
+		Vector<int>(0, 0),
+		Vector<int>(ceil(((float) img_dim.x) / pixel_size),
+			ceil(((float) img_dim.y) / pixel_size))
+	);
+
+	for (p.y=local_aabb.vmin.y; p.y<local_aabb.vmax.y; p.y++) {
+		for (p.x=local_aabb.vmin.x; p.x<local_aabb.vmax.x; p.x++) {
+			if (!cb_fill->fill(p))
+				return false;
 		}
 	}
 	return true;
@@ -619,28 +624,6 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 		std::cout << "Projection: " << p_dataset->GetProjectionRef() << std::endl;
 	}
 
-	AABB<int> image_aabb(img_src.main_geometry);
-	Polygon<int> poly;
-	if (wkt_geom_aoi.length() > 0) {
-		OGRGeometry *p_geom = nullptr;
-
-		wkt_to_geom(wkt_geom_aoi, &p_geom);
-		poly = proj_coords_to_raster<int>(p_geom, p_dataset);
-		// Remove the last point, which is identical to the first.
-		poly.remove(poly.size() - 1);
-		// Only keep the part of the polygon which is inside the raster.
-		poly.clip_to_aabb(image_aabb);
-	}
-	GDALClose(p_dataset);
-
-	AABB<int> aabb = poly.get_aabb();
-	AABB<int> aabb_buf = aabb.buffer(tile_size * f_overlap);
-
-	//! \todo Use GDAL for reading raster data, too.
-
-	int w = img_src.main_geometry.width();
-	int h = img_src.main_geometry.height();
-
 	FillJP2Tile fjp2t;
 
 	fjp2t.div_f = div_f;
@@ -658,18 +641,39 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 	fjp2t.read_tiled = read_tiled;
 	fjp2t.store_png = store_png;
 	fjp2t.resampling_method_name = resampling_method_name;
-	fjp2t.poly_aabb_buf = aabb_buf;
 
-	std::cout << poly << std::endl;
-	std::cout << aabb_buf << std::endl;
+	AABB<int> image_aabb(img_src.main_geometry);
+	Polygon<int> poly;
+	if (wkt_geom_aoi.length() > 0) {
+		OGRGeometry *p_geom = nullptr;
 
-	// Subset the image, and store the subsets in a dedicated directory.
-	if (poly.size() > 0) {
-		fill_poly(poly, aabb_buf, tile_size, &fjp2t);
+		wkt_to_geom(wkt_geom_aoi, &p_geom);
+		poly = proj_coords_to_raster<int>(p_geom, p_dataset);
+		// Remove the last point, which is identical to the first.
+		poly.remove(poly.size() - 1);
+		// Only keep the part of the polygon which is inside the raster.
+		poly.clip_to_aabb(image_aabb);
+
+		AABB<int> aabb = poly.get_aabb();
+		AABB<int> aabb_buf = aabb.buffer(tile_size * f_overlap);
+
+		//! \todo Use GDAL for reading raster data, too.
+
+		fjp2t.poly_aabb_buf = aabb_buf;
+
+		// Subset the image, and store the subsets in a dedicated directory.
+		if (poly.size() > 0) {
+			fill_poly(poly, aabb_buf, tile_size, &fjp2t);
+		} else {
+			std::cerr << "ERROR: No overlap between the area of interest polygon and raster" << std::endl;
+			retval = false;
+		}
 	} else {
-		std::cerr << "ERROR: No overlap between the area of interest polygon and raster" << std::endl;
-		retval = false;
+		fjp2t.poly_aabb_buf = image_aabb;
+
+		fill_whole(image_aabb, tile_size, &fjp2t);
 	}
+	GDALClose(p_dataset);
 
 	std::cout << path_in << std::endl;
 
