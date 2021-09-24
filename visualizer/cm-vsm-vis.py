@@ -59,7 +59,7 @@ class CMVSMVis(object):
         """
         m = re.match(r".*tile_(\d+)_(\d+)/(\w+).nc", fpath)
         if m:
-            x, y = int(m.group(1)), int(m.group(2))
+            y, x = int(m.group(1)), int(m.group(2))
             return x, y
         return None, None
 
@@ -99,7 +99,7 @@ class CMVSMVis(object):
         x1 = (tile_x + 1) * self.tile_w
         y0 = tile_y * self.tile_h
         y1 = (tile_y + 1) * self.tile_h
-        self.image[y0:y1, x0:x1] = band_data
+        self.image[x0:x1, y0:y1] = band_data
 
         return self.image
 

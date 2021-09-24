@@ -66,7 +66,7 @@ void XMLCALL GMLConverter::tag_start_handler(void *user_data, const XML_Char *el
 	p_inst->last_tag.assign(el);
 }
 
-void GMLConverter::parse_polygon(const std::string &content, std::vector<FVertex> *coordinates) {
+void GMLConverter::parse_polygon(const std::string &content, Polygon<float> *coordinates) {
 	size_t idx_sep_start = 0;
 	size_t idx_sep_end = 0;
 	float x, y;
@@ -86,7 +86,7 @@ void GMLConverter::parse_polygon(const std::string &content, std::vector<FVertex
 		x = atoi(x_str.c_str()) * multiplier;
 		y = atoi(y_str.c_str()) * multiplier;
 
-		coordinates->push_back(FVertex(x, y));
+		coordinates->push_back(Vector<float>(x, y));
 	}
 }
 

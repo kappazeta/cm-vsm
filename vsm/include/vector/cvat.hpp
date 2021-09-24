@@ -62,7 +62,7 @@ public:
 	 * @param[in] coordinates Reference to a vector of vertices.
 	 * @return Polygon as a string.
 	 */
-	std::string cvat_polygon(unsigned int class_index, const std::vector<FVertex> &coordinates);
+	std::string cvat_polygon(unsigned int class_index, const Polygon<float> &coordinates);
 
 	/**
 	 * @brief Generate the file footer.

@@ -18,26 +18,326 @@
 #include <cstring>
 // GDAL
 #include <ogrsf_frmts.h>
-// #include <ogr_geometry.h>
 #include <ogr_spatialref.h>
 
 
-FVertex::FVertex(): x(0.0f), y(0.0f) {}
-FVertex::FVertex(float x, float y): x(x), y(y) {}
-FVertex::~FVertex() {}
+const float f_epsilon = 1e-5f;
 
-IVertex::IVertex(): x(0), y(0) {}
-IVertex::IVertex(int x, int y): x(x), y(y) {}
-IVertex::~IVertex() {}
+template<class T>
+Vector<T>::Vector(): x(0), y(0) {}
 
-IVertex geo_to_pixel_coords(const double *padfTransform, double x, double y) {
+template<class T>
+Vector<T>::Vector(T x, T y): x(x), y(y) {}
+
+template<class T>
+Vector<T>::~Vector() {}
+
+template<class T>
+Vector<T> Vector<T>::operator-(const Vector<T> &a) {
+	return Vector<T>(x - a.x, y - a.y);
+}
+
+template<class T>
+Vector<T> Vector<T>::operator+(const Vector<T> &a) {
+	return Vector<T>(x + a.x, y + a.y);
+}
+
+template<>
+Vector<int> Vector<int>::operator*(float f) {
+	return Vector<int>((int) round(x * f), (int) round(y * f));
+}
+
+template<>
+Vector<float> Vector<float>::operator*(float f) {
+	return Vector<float>(x * f, y * f);
+}
+
+template<>
+Vector<int> Vector<int>::operator/(float f) {
+	return Vector<int>((int) round(x / f), (int) round(y / f));
+}
+
+template<>
+Vector<float> Vector<float>::operator/(float f) {
+	return Vector<float>(x / f, y / f);
+}
+
+template<>
+bool operator==(const Vector<int> &a, const Vector<int> &b) {
+	return (a.x == b.x && a.y == b.y);
+}
+
+template<>
+bool operator==(const Vector<float> &a, const Vector<float> &b) {
+	return (abs(a.x - b.x) < f_epsilon && abs(a.y - b.y) < f_epsilon);
+}
+
+template<class T>
+Vector<T> &Vector<T>::operator=(const Vector<T> &a) {
+	this->x = a.x;
+	this->y = a.y;
+	return *this;
+}
+
+template<class T>
+Vector<T> &Vector<T>::operator-=(const Vector<T> &a) {
+	this->x -= a.x;
+	this->y -= a.y;
+	return *this;
+}
+
+template<class T>
+Vector<T> &Vector<T>::operator+=(const Vector<T> &a) {
+	this->x += a.x;
+	this->y += a.y;
+	return *this;
+}
+
+template<>
+Vector<int> &Vector<int>::operator*=(float f) {
+	this->x = (int) round(this->x * f);
+	this->y = (int) round(this->y * f);
+	return *this;
+}
+
+template<>
+Vector<float> &Vector<float>::operator*=(float f) {
+	this->x *= f;
+	this->y *= f;
+	return *this;
+}
+
+template<>
+Vector<int> &Vector<int>::operator/=(float f) {
+	this->x = (int) round(this->x / f);
+	this->y = (int) round(this->y / f);
+	return *this;
+}
+
+template<>
+Vector<float> &Vector<float>::operator/=(float f) {
+	this->x /= f;
+	this->y /= f;
+	return *this;
+}
+
+template<>
+Vector<int> &Vector<int>::from_geo_coords(const double *padfTransform, double gx, double gy) {
 	// https://stackoverflow.com/a/58814574/1692112
-	IVertex v;
+	this->x = (int) ((gx - padfTransform[0]) / padfTransform[1]);
+	this->y = (int) ((gy - padfTransform[3]) / padfTransform[5]);
 
-	v.x = int((x - padfTransform[0]) / padfTransform[1]);
-	v.y = int((y - padfTransform[3]) / padfTransform[5]);
+	return *this;
+}
 
-	return v;
+template<>
+Vector<float> &Vector<float>::from_geo_coords(const double *padfTransform, double gx, double gy) {
+	// https://stackoverflow.com/a/58814574/1692112
+	this->x = (gx - padfTransform[0]) / padfTransform[1];
+	this->y = (gy - padfTransform[3]) / padfTransform[5];
+
+	return *this;
+}
+
+template<class T>
+AABB<T>::AABB() {}
+
+template<class T>
+AABB<T>::AABB(const Vector<T> &vmin, const Vector<T> &vmax) {
+	this->vmin = vmin;
+	this->vmax = vmax;
+}
+
+template<class T>
+AABB<T>::AABB(T minx, T miny, T maxx, T maxy) {
+	this->vmin.x = minx;
+	this->vmin.y = miny;
+	this->vmax.x = maxx;
+	this->vmax.y = maxy;
+}
+
+template<class T>
+AABB<T>::AABB(const Magick::Geometry &geom) {
+	this->vmin.x = geom.xOff();
+	this->vmin.y = geom.yOff();
+	this->vmax.x = geom.width();
+	this->vmax.y = geom.height();
+}
+
+template<class T>
+AABB<T>::~AABB() {}
+
+template<class T>
+Vector<T> &AABB<T>::operator[](std::size_t idx) {
+	switch(idx) {
+		case 0: return vmin;
+		case 1: return vmax;
+		default: throw std::out_of_range("AABB vertex index out of range.");
+	}
+}
+
+template<>
+AABB<int> AABB<int>::buffer(float buf_pixels) {
+	return AABB<int>(
+		(int) round(vmin.x - buf_pixels),
+		(int) round(vmin.y - buf_pixels),
+		(int) round(vmax.x + buf_pixels),
+		(int) round(vmax.y + buf_pixels)
+	);
+}
+
+template<>
+AABB<float> AABB<float>::buffer(float buf_pixels) {
+	return AABB<float>(
+		vmin.x - buf_pixels,
+		vmin.y - buf_pixels,
+		vmax.x + buf_pixels,
+		vmax.y + buf_pixels
+	);
+}
+
+template<class T>
+bool AABB<T>::contains(const Vector<T> &p) const {
+	if (p.x < vmin.x || p.x > vmax.x)
+		return false;
+	if (p.y < vmin.y || p.y > vmax.y)
+		return false;
+	return true;
+}
+
+template<class T>
+bool AABB<T>::overlaps(const AABB<T> &aabb) const {
+	if (vmax.x < aabb.vmin.x || vmin.x > aabb.vmax.x)
+		return false;
+	if (vmax.y < aabb.vmin.y || vmin.y > aabb.vmax.y)
+		return false;
+	return true;
+}
+
+template<class T>
+size_t AABB<T>::size() {
+	return 2;
+}
+
+template<class T>
+Polygon<T>::Polygon() {}
+
+template<class T>
+Polygon<T>::Polygon(const std::vector<Vector<T>> &poly) {
+	this->v = poly;
+}
+
+template<class T>
+Polygon<T>::~Polygon() {
+	v.clear();
+}
+
+template<class T>
+Vector<T> &Polygon<T>::operator[](std::size_t idx) {
+	if (idx < 0 || idx >= v.size())
+		throw std::out_of_range("Polygon vertex index out of range.");
+	return v[idx];
+}
+
+template<class T>
+const Vector<T> &Polygon<T>::operator[](std::size_t idx) const {
+	if (idx < 0 || idx >= v.size())
+		throw std::out_of_range("Polygon vertex index out of range.");
+	return v[idx];
+}
+
+template<class T>
+AABB<T> Polygon<T>::get_aabb() const {
+	if (v.size() == 0)
+		return AABB<T>();
+
+	AABB<T> aabb(v[0], v[0]);
+	for (size_t i=0; i<v.size(); i++) {
+		if (v[i].x < aabb.vmin.x)
+			aabb.vmin.x = v[i].x;
+		if (v[i].y < aabb.vmin.y)
+			aabb.vmin.y = v[i].y;
+		if (v[i].x > aabb.vmax.x)
+			aabb.vmax.x = v[i].x;
+		if (v[i].y > aabb.vmax.y)
+			aabb.vmax.y = v[i].y;
+	}
+
+	return aabb;
+}
+
+template<class T>
+void Polygon<T>::clip_to_aabb(const AABB<T> &aabb) {
+	int num_points_in_raster = 0;
+	for (size_t i=0; i<v.size(); i++) {
+		if (aabb.contains(v[i])) {
+			num_points_in_raster++;
+		} else {
+			if (v[i].x < aabb.vmin.x)
+				v[i].x = aabb.vmin.x;
+			if (v[i].y < aabb.vmin.y)
+				v[i].y = aabb.vmin.y;
+			if (v[i].x > aabb.vmax.x)
+				v[i].x = aabb.vmax.x;
+			if (v[i].y > aabb.vmax.y)
+				v[i].y = aabb.vmax.y;
+		}
+	}
+	if (num_points_in_raster == 0)
+		v.clear();
+}
+
+template<class T>
+bool Polygon<T>::contains(const Vector<T> &p) const {
+	// http://www.alienryderflex.com/polygon/
+	size_t j = v.size() - 1;
+	bool odd_nodes = false;
+
+	for (size_t i=0; i<v.size(); i++) {
+		if ((v[i].y < p.y && v[j].y >= p.y)
+			|| (v[j].y < p.y && v[i].y >= p.y)) {
+			if (v[i].x + (p.y - v[i].y) / (v[j].y - v[i].y) * (v[j].x - v[i].x) < p.x)
+				odd_nodes = !odd_nodes;
+		}
+		j = i;
+	}
+	return odd_nodes;
+}
+
+template<class T>
+void Polygon<T>::push_back(const Vector<T> &p) {
+	v.push_back(p);
+}
+
+template<class T>
+bool Polygon<T>::remove(std::size_t idx) {
+	if (idx >= 0 && idx < v.size()) {
+		v.erase(v.begin() + idx);
+		return true;
+	}
+	return false;
+}
+
+template<class T>
+void Polygon<T>::clear() {
+	v.clear();
+}
+
+template<class T>
+size_t Polygon<T>::size() const {
+	return v.size();
+}
+
+template<class T>
+std::ostream &operator<<(std::ostream &os, const Polygon<T> &poly) {
+	os << "Polygon(";
+	for (size_t i=0; i<poly.size(); i++) {
+		os << poly[i];
+		if (i < poly.size() - 1)
+			os << ", ";
+	}
+	os << ")";
+	return os;
 }
 
 OGRGeometry *wkt_to_geom(const std::string &wkt, OGRGeometry **p_geom) {
@@ -83,8 +383,9 @@ OGRGeometry *wkt_to_geom(const std::string &wkt, OGRGeometry **p_geom) {
 	return nullptr;
 }
 
-std::vector<IVertex> proj_coords_to_raster(const OGRGeometry *p_geom, GDALDataset *p_dataset) {
-	std::vector<IVertex> vv;
+template<class T>
+Polygon<T> proj_coords_to_raster(const OGRGeometry *p_geom, GDALDataset *p_dataset) {
+	Polygon<T> poly;
 	CPLErr cplerr = CE_None;
 	OGRErr ogrerr = OGRERR_NONE;
 
@@ -105,7 +406,7 @@ std::vector<IVertex> proj_coords_to_raster(const OGRGeometry *p_geom, GDALDatase
 	if (wkbFlatten(p_geom->getGeometryType()) == wkbPolygon) {
 		OGRPoint pt;
 		double px, py;
-		IVertex iv;
+		Vector<T> v;
 
 		OGRPolygon *p_poly = nullptr;
 #if GDAL_VERSION_NUM >= GDAL_COMPUTE_VERSION(2,3,0)
@@ -123,15 +424,96 @@ std::vector<IVertex> proj_coords_to_raster(const OGRGeometry *p_geom, GDALDatase
 			if (!p_ct->Transform(1, &px, &py)) {
 				throw GDALOGRException("Failed to transform coordinates", ogrerr);
 			} else {
-				iv = geo_to_pixel_coords(p_geo_tf, px, py);
-				vv.push_back(iv);
-				std::cout << "Point " << pt.getX() << ", " << pt.getY() << " -> " << px << ", " << py << " -> " << iv.x << ", " << iv.y << std::endl;
+				v.from_geo_coords(p_geo_tf, px, py);
+				poly.push_back(v);
+				std::cout << "Point " << pt.getX() << ", " << pt.getY() << " -> " << px << ", " << py << " -> " << v.x << ", " << v.y << std::endl;
 			}
 		}
 	}
 
 	if (p_srs_r != nullptr)
 		delete p_srs_r;
-	return vv;
+	return poly;
 }
 
+/*
+float signed_tri_area(const FVector &pa, const FVector &pb, const FVector &pc) {
+	return (pa.x - pc.x) * (pb.y - pc.y) - (pa.y - pc.y) * (pb.x - pc.x);
+}
+
+bool line_in_line(const FVector &pa, const FVector &pb, const FVector &pc, const FVector &pd, float *pt, FVector *p) {
+	float a1 = signed_tri_area(pa, pb, pd);
+	float a2 = signed_tri_area(pa, pb, pc);
+	if (a1 * a2 < 0.0f) {
+		float a3 = signed_tri_area(pc, pd, pa);
+		float a4 = a3 + a2 - a1;
+		if (a3 * a4 < 0.0f) {
+			*pt = a3 / (a3 - a4);
+			*p = pa + *pt * (pb - pa);
+			return true
+		}
+	}
+	return false;
+}
+
+std::vector<IVector> aabb_to_poly(const std::vector<IVector> &aabb) {
+	std::vector<IVector> poly;
+
+	poly.push_back(IVector(aabb[0].x aabb[0].y));
+	poly.push_back(IVector(aabb[1].x aabb[0].y));
+	poly.push_back(IVector(aabb[1].x aabb[1].y));
+	poly.push_back(IVector(aabb[0].x aabb[1].y));
+
+	return poly;
+}
+
+bool aabb_in_poly(const std::vector<IVector> &aabb, const std::vector<IVector> &poly) {
+	std::vector<IVector> poly_aabb = poly_to_aabb(poly);
+
+	if (!aabb_in_aabb(aabb, poly_aabb))
+		return false;
+
+	// Are any of the polygon vertices in the bounding box?
+	for (size_t i=0; i<poly.size(); i++) {
+		if (poly[i].x >= aabb[0].x &&
+			poly[i].x <= aabb[1].x &&
+			poly[i].y >= aabb[0].y &&
+			poly[i].y <= aabb[1].y)
+			return true;
+	}
+
+	std::vector<IVector> aabb_poly = aabb_to_poly(aabb);
+
+	// Are any of the bounding box vertices within the polygon?
+	if (point_in_poly(aabb_poly[0], poly)
+		|| point_in_poly(aabb_poly[1], poly)
+		|| point_in_poly(aabb_poly[2], poly)
+		|| point_in_poly(aabb_poly[3], poly))
+		return true;
+
+	float t;
+	FVector p;
+	bool b = false;
+	for (size_t i=1; i<poly.size(); i++) {
+		for (size_t j=1; j<4; j++) {
+			b = line_in_line(
+					FVector(poly[i - 1]), FVector(poly[i]),
+					FVector(aabb_poly[j - 1]), FVector(aabb_poly[j].x),
+					&t, &p
+			);
+			if (b)
+				return true;
+		}
+	}
+}
+*/
+
+// Explicit template instantiation:
+template class Vector<int>;
+template class Vector<float>;
+template class AABB<int>;
+template class AABB<float>;
+template class Polygon<int>;
+template class Polygon<float>;
+template Polygon<int> proj_coords_to_raster(const OGRGeometry *p_geom, GDALDataset *p_dataset);
+template Polygon<float> proj_coords_to_raster(const OGRGeometry *p_geom, GDALDataset *p_dataset);
