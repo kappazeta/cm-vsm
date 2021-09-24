@@ -369,105 +369,7 @@ bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::
 	return true;
 }
 
-class FillPixel {
-public:
-	FillPixel() {}
-	~FillPixel() {}
-
-	AABB<int> image_aabb;
-	AABB<int> poly_aabb_buf;
-
-	virtual bool fill(Vector<int> p) {
-		std::ignore = p;
-		return false;
-	}
-};
-
-class FillJP2Tile: public FillPixel {
-public:
-	FillJP2Tile(): read_tiled(false), store_png(false) {}
-	~FillJP2Tile() {}
-
-	float div_f;
-	float f_overlap;
-	float f_downscale;
-	unsigned int tile_size;
-	float tile_size_div;
-	JP2_Image *img_src;
-	unsigned char *scl_value_map;
-	unsigned char max_scl_value;
-	ESA_S2_Image_Operator::data_type_t data_type;
-	std::filesystem::path path_in;
-	std::filesystem::path path_dir_out;
-	ESA_S2_Image_Operator *op;
-	bool read_tiled;
-	bool store_png;
-	std::string resampling_method_name;
-
-	bool fill(Vector<int> p) {
-		// Coordinates in the source image (possibly with different dimensions).
-		int sx0 = poly_aabb_buf.vmin.x + floor(tile_size_div * p.x);
-		int sy0 = poly_aabb_buf.vmin.y + floor(tile_size_div * p.y);
-		int sx1 = ceil(sx0 + tile_size_div);
-		int sy1 = ceil(sy0 + tile_size_div);
-
-		// It's possible that due to rounding errors, the tile would no longer be square.
-		// For this case, we'll crop the additional row / column of pixels to square the tile once again.
-		if (sx1 - sx0 > sy1 - sy0)
-			sx1 = sx0 + sy1 - sy0;
-		else if (sy1 - sy0 > sx1 - sx0)
-			sy1 = sy0 + sx1 - sx0;
-
-		// Account for overlap.
-		sx1 += tile_size * f_overlap / div_f;
-		sy1 += tile_size * f_overlap / div_f;
-
-		// Subset the source image.
-		if (read_tiled)
-			img_src->load_subset(path_in, sx0, sy0, sx1, sy1);
-		else
-			img_src->subset_whole(sx0, sy0, sx1, sy1);
-
-		// Remap pixel values for SCL.
-		if (data_type == ESA_S2_Image_Operator::DT_SCL) {
-			if (scl_value_map != nullptr)
-				img_src->remap_values(scl_value_map, max_scl_value);
-			// Scale SCL with point filter.
-			img_src->set_resampling_filter("point");
-			img_src->scale_to((unsigned int) (tile_size / f_downscale));
-		} else {
-			// Scale other images with sinc filter.
-			img_src->set_resampling_filter(resampling_method_name);
-			img_src->scale_to((unsigned int) (tile_size / f_downscale));
-		}
-
-		if (img_src->subset->rows() != tile_size || img_src->subset->columns() != tile_size) {
-			std::cout << "Invalid geometry " << img_src->subset->rows() << "x" << img_src->subset->columns() << " for subtile " << p.x << ", " << p.y << std::endl;
-		}
-
-		std::ostringstream ss_path_out, ss_path_out_png, ss_path_out_nc;
-
-		ss_path_out << path_dir_out.string() << "/tile_" << p.x << "_" << p.y << "/";
-
-		std::filesystem::create_directories(ss_path_out.str());
-
-		// Save PNG.
-		if (store_png) {
-			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile" << "_" << p.x << "_" << p.y << ".png";
-			img_src->save(ss_path_out_png.str());
-		}
-		// Add to NetCDF.
-		ss_path_out_nc << ss_path_out.str() << extract_index_date(path_in) << "_" << "tile" << "_" << p.x << "_" << p.y << ".nc";
-		img_src->add_to_netcdf(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type]);
-
-		// Potential post-processing of the file.
-		if (!(*op)(ss_path_out.str(), data_type))
-			return false;
-		return true;
-	}
-};
-
-bool fill_poly(Polygon<int> &poly, AABB<int> &image_aabb, int pixel_size, FillPixel *cb_fill) {
+std::vector<Vector<int>> fill_poly_overlap(Polygon<int> &poly, AABB<int> &image_aabb, float pixel_size_div) {
 	// Inspired by
 	//   http://alienryderflex.com/polygon_fill/
 	int i, j;
@@ -477,56 +379,63 @@ bool fill_poly(Polygon<int> &poly, AABB<int> &image_aabb, int pixel_size, FillPi
 	std::vector<Vector<int>> filled;
 	bool already_filled;
 
-	cb_fill->image_aabb = image_aabb;
-
 	AABB<int> poly_aabb = poly.get_aabb();
 	Vector<int> poly_dim = poly_aabb.vmax - poly_aabb.vmin;
 	// Axis-aligned bounding box in the local reference frame.
 	AABB<int> local_aabb(
 		Vector<int>(0, 0),
-		Vector<int>(ceil(((float) poly_dim.x) / pixel_size),
-			ceil(((float) poly_dim.y) / pixel_size))
+		Vector<int>(ceil(((float) poly_dim.x) / pixel_size_div),
+			ceil(((float) poly_dim.y) / pixel_size_div))
 	);
 
 	for (pixel.y=local_aabb.vmin.y; pixel.y < local_aabb.vmax.y; pixel.y++) {
+		node_x.clear();
 		// Build a list of nodes.
 		j = poly.size() - 1;
 		for (i=0; i<(int)poly.size(); i++) {
-			local_a.x = ((float) poly[i].x - image_aabb.vmin.x) / pixel_size;
-			local_a.y = ((float) poly[i].y - image_aabb.vmin.y) / pixel_size;
-			local_b.x = ((float) poly[j].x - image_aabb.vmin.x) / pixel_size;
-			local_b.y = ((float) poly[j].y - image_aabb.vmin.y) / pixel_size;
+			local_a.x = ((float) poly[i].x - image_aabb.vmin.x) / pixel_size_div;
+			local_a.y = ((float) poly[i].y - image_aabb.vmin.y) / pixel_size_div;
+			local_b.x = ((float) poly[j].x - image_aabb.vmin.x) / pixel_size_div;
+			local_b.y = ((float) poly[j].y - image_aabb.vmin.y) / pixel_size_div;
 			// Case 1: 2 points with different y, pixel.y in between.
 			// Case 2: 2 points with different y, one of them equal to pixel.y.
 			// Case 3: 2 points overlapping.
 			// Case 4: 2 points with same y and pixel.y
 			// Case 5: 2 points, no intersection with the pixel.y horizontal.
 
-			// Are the points on the same horizontal?
-			if ((int) round(local_a.y) == (int) round(local_b.y)) {
+			std::cout << Vector<int>(local_a.x, local_a.y) << ", " << Vector<int>(local_b.x, local_b.y);
+
+			// Are both points on the same horizontal?
+			if ((int) local_a.y == (int) local_b.y) {
 				// Case 3: 2 points overlapping. Skip.
-				if (local_a == local_b) {
+				if (Vector<int>(local_a.x, local_a.y) == Vector<int>(local_b.x, local_b.y)) {
+					std::cout << " Skipping" << std::endl;
 					continue;
 				// Case 4: 2 points with same y and pixel.y. Mark both as nodes.
-				} else if (pixel.y == (int) round(local_a.y)) {
+				} else if (pixel.y == (int) local_a.y) {
 					node_x.push_back((int) local_a.x);
 					node_x.push_back((int) ceil(local_b.x));
+					std::cout << " SameY " << (int) local_a.x << ", " << (int) ceil(local_b.x);
 				}
 			} else {
 				// Case 1: 2 points with different y, pixel.y in between. Mark the intersection point as node.
-				if ((local_a.y < pixel.y && local_b.y >= pixel.y)
-					|| (local_b.y < pixel.y && local_a.y >= pixel.y)) {
+				if (((int) local_a.y < pixel.y && ceil(local_b.y) >= pixel.y)
+					|| ((int) local_b.y < pixel.y && ceil(local_a.y) >= pixel.y)) {
 					// Calculate the x-coordinate of the intersection between AB and y = pixel.y.
 					node_x.push_back((int) (local_a.x + (pixel.y - local_a.y) / (local_b.y - local_a.y) * (local_b.x - local_a.x)));
+					std::cout << " Between " << (int) (local_a.x + (pixel.y - local_a.y) / (local_b.y - local_a.y) * (local_b.x - local_a.x));
 				// Case 2: 2 points with different y, one of them equal to pixel.y. Mark the point as two nodes.
-				} else if ((int) round(local_a.y) == pixel.y) {
+				} else if ((int) local_a.y == pixel.y) {
 					node_x.push_back((int) local_a.x);
 					node_x.push_back((int) ceil(local_a.x));
-				} else if ((int) round(local_b.y) == pixel.y) {
+					std::cout << " Tip " << (int) local_a.x << ", " << (int) ceil(local_a.x);
+				} else if ((int) local_b.y == pixel.y) {
 					node_x.push_back((int) local_b.x);
-					node_x.push_back((int) round(local_b.x));
+					node_x.push_back((int) ceil(local_b.x));
+					std::cout << " Tip " << (int) local_b.x << ", " << (int) ceil(local_b.x);
 				}
 			}
+			std::cout << std::endl;
 			j = i;
 		}
 
@@ -552,21 +461,22 @@ bool fill_poly(Polygon<int> &poly, AABB<int> &image_aabb, int pixel_size, FillPi
 						}
 					}
 					if (!already_filled) {
-						if (!cb_fill->fill(pixel))
-							return false;
+						std::cout << "Filling " << pixel << std::endl;
 						filled.push_back(pixel);
+					} else {
+						std::cout << "Already filled " << pixel << std::endl;
 					}
 				}
 			}
 		}
 	}
-	return true;
+	return filled;
 }
 
-bool fill_whole(AABB<int> &image_aabb, int pixel_size, FillPixel *cb_fill) {
+std::vector<Vector<int>> fill_whole(AABB<int> &image_aabb, int pixel_size) {
+	std::vector<Vector<int>> subtiles;
 	Vector<int> p;
 
-	cb_fill->image_aabb = image_aabb;
 	Vector<int> img_dim = image_aabb.vmax - image_aabb.vmin;
 	// Axis-aligned bounding box in the local reference frame.
 	AABB<int> local_aabb(
@@ -577,11 +487,10 @@ bool fill_whole(AABB<int> &image_aabb, int pixel_size, FillPixel *cb_fill) {
 
 	for (p.y=local_aabb.vmin.y; p.y<local_aabb.vmax.y; p.y++) {
 		for (p.x=local_aabb.vmin.x; p.x<local_aabb.vmax.x; p.x++) {
-			if (!cb_fill->fill(p))
-				return false;
+			subtiles.push_back(p);
 		}
 	}
-	return true;
+	return subtiles;
 }
 
 //! \todo Generalize the splitting logic, to deduplicate code.
@@ -624,25 +533,9 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 		std::cout << "Projection: " << p_dataset->GetProjectionRef() << std::endl;
 	}
 
-	FillJP2Tile fjp2t;
-
-	fjp2t.div_f = div_f;
-	fjp2t.f_overlap = f_overlap;
-	fjp2t.f_downscale = f_downscale;
-	fjp2t.tile_size = tile_size;
-	fjp2t.tile_size_div = tile_size_div;
-	fjp2t.img_src = &img_src;
-	fjp2t.scl_value_map = scl_value_map;
-	fjp2t.max_scl_value = max_scl_value;
-	fjp2t.data_type = data_type;
-	fjp2t.path_in = path_in;
-	fjp2t.path_dir_out = path_dir_out;
-	fjp2t.op = &op;
-	fjp2t.read_tiled = read_tiled;
-	fjp2t.store_png = store_png;
-	fjp2t.resampling_method_name = resampling_method_name;
-
+	std::vector<Vector<int>> subtiles;
 	AABB<int> image_aabb(img_src.main_geometry);
+	AABB<int> aabb, aabb_buf;
 	Polygon<int> poly;
 	if (wkt_geom_aoi.length() > 0) {
 		OGRGeometry *p_geom = nullptr;
@@ -654,26 +547,88 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 		// Only keep the part of the polygon which is inside the raster.
 		poly.clip_to_aabb(image_aabb);
 
-		AABB<int> aabb = poly.get_aabb();
-		AABB<int> aabb_buf = aabb.buffer(tile_size * f_overlap);
+		aabb = poly.get_aabb();
+		aabb_buf = aabb.buffer(tile_size * f_overlap);
 
 		//! \todo Use GDAL for reading raster data, too.
 
-		fjp2t.poly_aabb_buf = aabb_buf;
-
 		// Subset the image, and store the subsets in a dedicated directory.
 		if (poly.size() > 0) {
-			fill_poly(poly, aabb_buf, tile_size, &fjp2t);
+			subtiles = fill_poly_overlap(poly, aabb_buf, tile_size_div);
 		} else {
 			std::cerr << "ERROR: No overlap between the area of interest polygon and raster" << std::endl;
 			retval = false;
 		}
 	} else {
-		fjp2t.poly_aabb_buf = image_aabb;
+		aabb_buf = image_aabb;
 
-		fill_whole(image_aabb, tile_size, &fjp2t);
+		subtiles = fill_whole(image_aabb, tile_size);
 	}
 	GDALClose(p_dataset);
+
+	Vector<int> p;
+	for (int i=0; i<(int)subtiles.size(); i++) {
+		p = subtiles[i];
+
+		// Coordinates in the source image (possibly with different dimensions).
+		int sx0 = aabb_buf.vmin.x + floor(tile_size_div * p.x);
+		int sy0 = aabb_buf.vmin.y + floor(tile_size_div * p.y);
+		int sx1 = ceil(sx0 + tile_size_div);
+		int sy1 = ceil(sy0 + tile_size_div);
+
+		// It's possible that due to rounding errors, the tile would no longer be square.
+		// For this case, we'll crop the additional row / column of pixels to square the tile once again.
+		if (sx1 - sx0 > sy1 - sy0)
+			sx1 = sx0 + sy1 - sy0;
+		else if (sy1 - sy0 > sx1 - sx0)
+			sy1 = sy0 + sx1 - sx0;
+
+		// Account for overlap.
+		sx1 += tile_size * f_overlap / div_f;
+		sy1 += tile_size * f_overlap / div_f;
+
+		// Subset the source image.
+		if (read_tiled)
+			img_src.load_subset(path_in, sx0, sy0, sx1, sy1);
+		else
+			img_src.subset_whole(sx0, sy0, sx1, sy1);
+
+		// Remap pixel values for SCL.
+		if (data_type == ESA_S2_Image_Operator::DT_SCL) {
+			if (scl_value_map != nullptr)
+				img_src.remap_values(scl_value_map, max_scl_value);
+			// Scale SCL with point filter.
+			img_src.set_resampling_filter("point");
+			img_src.scale_to((unsigned int) (tile_size / f_downscale));
+		} else {
+			// Scale other images with sinc filter.
+			img_src.set_resampling_filter(resampling_method_name);
+			img_src.scale_to((unsigned int) (tile_size / f_downscale));
+		}
+
+		if (img_src.subset->rows() != tile_size || img_src.subset->columns() != tile_size) {
+			std::cout << "Invalid geometry " << img_src.subset->rows() << "x" << img_src.subset->columns() << " for subtile " << p.x << ", " << p.y << std::endl;
+		}
+
+		std::ostringstream ss_path_out, ss_path_out_png, ss_path_out_nc;
+
+		ss_path_out << path_dir_out.string() << "/tile_" << p.x << "_" << p.y << "/";
+
+		std::filesystem::create_directories(ss_path_out.str());
+
+		// Save PNG.
+		if (store_png) {
+			ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile" << "_" << p.x << "_" << p.y << ".png";
+			img_src.save(ss_path_out_png.str());
+		}
+		// Add to NetCDF.
+		ss_path_out_nc << ss_path_out.str() << extract_index_date(path_in) << "_" << "tile" << "_" << p.x << "_" << p.y << ".nc";
+		img_src.add_to_netcdf(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type]);
+
+		// Potential post-processing of the file.
+		if (!op(ss_path_out.str(), data_type))
+			return false;
+	}
 
 	std::cout << path_in << std::endl;
 

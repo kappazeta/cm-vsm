@@ -426,7 +426,6 @@ Polygon<T> proj_coords_to_raster(const OGRGeometry *p_geom, GDALDataset *p_datas
 			} else {
 				v.from_geo_coords(p_geo_tf, px, py);
 				poly.push_back(v);
-				std::cout << "Point " << pt.getX() << ", " << pt.getY() << " -> " << px << ", " << py << " -> " << v.x << ", " << v.y << std::endl;
 			}
 		}
 	}
@@ -435,78 +434,6 @@ Polygon<T> proj_coords_to_raster(const OGRGeometry *p_geom, GDALDataset *p_datas
 		delete p_srs_r;
 	return poly;
 }
-
-/*
-float signed_tri_area(const FVector &pa, const FVector &pb, const FVector &pc) {
-	return (pa.x - pc.x) * (pb.y - pc.y) - (pa.y - pc.y) * (pb.x - pc.x);
-}
-
-bool line_in_line(const FVector &pa, const FVector &pb, const FVector &pc, const FVector &pd, float *pt, FVector *p) {
-	float a1 = signed_tri_area(pa, pb, pd);
-	float a2 = signed_tri_area(pa, pb, pc);
-	if (a1 * a2 < 0.0f) {
-		float a3 = signed_tri_area(pc, pd, pa);
-		float a4 = a3 + a2 - a1;
-		if (a3 * a4 < 0.0f) {
-			*pt = a3 / (a3 - a4);
-			*p = pa + *pt * (pb - pa);
-			return true
-		}
-	}
-	return false;
-}
-
-std::vector<IVector> aabb_to_poly(const std::vector<IVector> &aabb) {
-	std::vector<IVector> poly;
-
-	poly.push_back(IVector(aabb[0].x aabb[0].y));
-	poly.push_back(IVector(aabb[1].x aabb[0].y));
-	poly.push_back(IVector(aabb[1].x aabb[1].y));
-	poly.push_back(IVector(aabb[0].x aabb[1].y));
-
-	return poly;
-}
-
-bool aabb_in_poly(const std::vector<IVector> &aabb, const std::vector<IVector> &poly) {
-	std::vector<IVector> poly_aabb = poly_to_aabb(poly);
-
-	if (!aabb_in_aabb(aabb, poly_aabb))
-		return false;
-
-	// Are any of the polygon vertices in the bounding box?
-	for (size_t i=0; i<poly.size(); i++) {
-		if (poly[i].x >= aabb[0].x &&
-			poly[i].x <= aabb[1].x &&
-			poly[i].y >= aabb[0].y &&
-			poly[i].y <= aabb[1].y)
-			return true;
-	}
-
-	std::vector<IVector> aabb_poly = aabb_to_poly(aabb);
-
-	// Are any of the bounding box vertices within the polygon?
-	if (point_in_poly(aabb_poly[0], poly)
-		|| point_in_poly(aabb_poly[1], poly)
-		|| point_in_poly(aabb_poly[2], poly)
-		|| point_in_poly(aabb_poly[3], poly))
-		return true;
-
-	float t;
-	FVector p;
-	bool b = false;
-	for (size_t i=1; i<poly.size(); i++) {
-		for (size_t j=1; j<4; j++) {
-			b = line_in_line(
-					FVector(poly[i - 1]), FVector(poly[i]),
-					FVector(aabb_poly[j - 1]), FVector(aabb_poly[j].x),
-					&t, &p
-			);
-			if (b)
-				return true;
-		}
-	}
-}
-*/
 
 // Explicit template instantiation:
 template class Vector<int>;
