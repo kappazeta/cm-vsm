@@ -22,7 +22,6 @@
 #include "raster/png_image.hpp"
 
 #include "util/text.hpp"
-#include "util/geometry.hpp"
 #include <algorithm>
 #include <math.h>
 
@@ -95,7 +94,7 @@ const unsigned char ESA_S2_Image_Operator::dl_l8s2_uv_scl_value_map[4] = {
 
 ESA_S2_Image::ESA_S2_Image():
 	tile_size(512), scl_value_map(nullptr), max_scl_value(12), f_downscale(1), f_overlap(0.0f),
-	store_png(false), read_tiled(false), num_threads(0) {
+	store_png(false), read_tiled(false), num_threads(0), geo_extracted(false) {
 }
 ESA_S2_Image::~ESA_S2_Image() {}
 
@@ -473,7 +472,7 @@ std::vector<Vector<int>> fill_poly_overlap(Polygon<int> &poly, AABB<int> &image_
 	return filled;
 }
 
-std::vector<Vector<int>> fill_whole(AABB<int> &image_aabb, int pixel_size) {
+std::vector<Vector<int>> fill_whole(const AABB<int> &image_aabb, int pixel_size) {
 	std::vector<Vector<int>> subtiles;
 	Vector<int> p;
 
@@ -491,6 +490,46 @@ std::vector<Vector<int>> fill_whole(AABB<int> &image_aabb, int pixel_size) {
 		}
 	}
 	return subtiles;
+}
+
+void ESA_S2_Image::extract_geo(const std::filesystem::path &path_in, const AABB<int> &image_aabb, float tile_size_div) {
+	GDALDataset *p_dataset = (GDALDataset *) GDALOpen(path_in.string().c_str(), GA_ReadOnly);
+	if (p_dataset == NULL)
+		throw RasterException(path_in, "Failed to load with GDAL");
+	if (p_dataset->GetProjectionRef() != NULL) {
+		std::cout << "Projection: " << p_dataset->GetProjectionRef() << std::endl;
+	}
+
+	if (wkt_geom_aoi.length() > 0) {
+		std::cout << "Projecting AOI polygon into pixel coordinates." << std::endl;
+
+		OGRGeometry *p_geom = nullptr;
+
+		wkt_to_geom(wkt_geom_aoi, &p_geom);
+		aoi_poly = proj_coords_to_raster<int>(p_geom, p_dataset);
+		// Remove the last point, which is identical to the first.
+		aoi_poly.remove(aoi_poly.size() - 1);
+		// Only keep the part of the polygon which is inside the raster.
+		aoi_poly.clip_to_aabb(image_aabb);
+
+		AABB<int> aabb = aoi_poly.get_aabb();
+		aabb_buf = aabb.buffer(tile_size * f_overlap);
+
+		//! \todo Use GDAL for reading raster data, too.
+
+		// Subset the image, and store the subsets in a dedicated directory.
+		if (aoi_poly.size() > 0) {
+			subtiles = fill_poly_overlap(aoi_poly, aabb_buf, tile_size_div);
+		} else {
+			GDALClose(p_dataset);
+			throw RasterException(path_in, "No overlap between the area of interest polygon and raster");
+		}
+	} else {
+		aabb_buf = image_aabb;
+
+		subtiles = fill_whole(image_aabb, tile_size);
+	}
+	GDALClose(p_dataset);
 }
 
 //! \todo Generalize the splitting logic, to deduplicate code.
@@ -524,47 +563,11 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 
 	std::cout << "Processing " << path_in << std::endl;
 
-	// GDAL dataset.
-	GDALDataset *p_dataset;
-	p_dataset = (GDALDataset *) GDALOpen(path_in.string().c_str(), GA_ReadOnly);
-	if (p_dataset == NULL)
-		throw RasterException(path_in, "Failed to load with GDAL");
-	if (p_dataset->GetProjectionRef() != NULL) {
-		std::cout << "Projection: " << p_dataset->GetProjectionRef() << std::endl;
+	if (!geo_extracted) {
+		std::cout << "Extracting geo-coordinates." << std::endl;
+		AABB<int> image_aabb(img_src.main_geometry);
+		extract_geo(path_in, image_aabb, tile_size_div);
 	}
-
-	std::vector<Vector<int>> subtiles;
-	AABB<int> image_aabb(img_src.main_geometry);
-	AABB<int> aabb, aabb_buf;
-	Polygon<int> poly;
-	if (wkt_geom_aoi.length() > 0) {
-		OGRGeometry *p_geom = nullptr;
-
-		wkt_to_geom(wkt_geom_aoi, &p_geom);
-		poly = proj_coords_to_raster<int>(p_geom, p_dataset);
-		// Remove the last point, which is identical to the first.
-		poly.remove(poly.size() - 1);
-		// Only keep the part of the polygon which is inside the raster.
-		poly.clip_to_aabb(image_aabb);
-
-		aabb = poly.get_aabb();
-		aabb_buf = aabb.buffer(tile_size * f_overlap);
-
-		//! \todo Use GDAL for reading raster data, too.
-
-		// Subset the image, and store the subsets in a dedicated directory.
-		if (poly.size() > 0) {
-			subtiles = fill_poly_overlap(poly, aabb_buf, tile_size_div);
-		} else {
-			std::cerr << "ERROR: No overlap between the area of interest polygon and raster" << std::endl;
-			retval = false;
-		}
-	} else {
-		aabb_buf = image_aabb;
-
-		subtiles = fill_whole(image_aabb, tile_size);
-	}
-	GDALClose(p_dataset);
 
 	Vector<int> p;
 	for (int i=0; i<(int)subtiles.size(); i++) {

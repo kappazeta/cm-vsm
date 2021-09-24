@@ -85,6 +85,14 @@ public:
 	 */
 	Vector<T> &operator/=(float f);
 
+	friend Vector operator-(const Vector &a, const Vector &b) {
+		return Vector(a.x - b.x, a.y - b.y);
+	}
+
+	friend Vector operator+(const Vector &a, const Vector &b) {
+		return Vector(a.x + b.x, a.y + b.y);
+	}
+
 	friend std::ostream &operator<<(std::ostream &os, const Vector &v) {
 		os << "Vector(" << v.x << ", " << v.y << ")";
 		return os;
