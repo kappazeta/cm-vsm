@@ -481,7 +481,8 @@ bool fill_poly(Polygon<int> &poly, AABB<int> &image_aabb, int pixel_size, FillPi
 	// Axis-aligned bounding box in the local reference frame.
 	AABB<int> local_aabb(
 		Vector<int>(0, 0),
-		Vector<int>(ceil(poly_dim.x / pixel_size), ceil(poly_dim.y / pixel_size))
+		Vector<int>(ceil(((float) poly_dim.x) / pixel_size),
+			ceil(((float) poly_dim.y) / pixel_size))
 	);
 
 	std::cout << "Image " << image_aabb << std::endl;
