@@ -470,7 +470,7 @@ bool fill_poly(Polygon<int> &poly, AABB<int> &image_aabb, int pixel_size, FillPi
 	int nodes, i, j, swap;
 	std::vector<int> node_x(poly.size());
 	Vector<int> pixel;
-	Vector<int> local_a, local_b;
+	Vector<float> local_a, local_b;
 	std::vector<Vector<int>> filled;
 	bool already_filled;
 
@@ -493,8 +493,10 @@ bool fill_poly(Polygon<int> &poly, AABB<int> &image_aabb, int pixel_size, FillPi
 		nodes = 0;
 		j = poly.size() - 1;
 		for (i=0; i<poly.size(); i++) {
-			local_a = (poly[i] - image_aabb.vmin) / pixel_size;
-			local_b = (poly[j] - image_aabb.vmin) / pixel_size;
+			local_a.x = ((float) poly[i].x - image_aabb.vmin.x) / pixel_size;
+			local_a.y = ((float) poly[i].y - image_aabb.vmin.y) / pixel_size;
+			local_b.x = ((float) poly[j].x - image_aabb.vmin.x) / pixel_size;
+			local_b.y = ((float) poly[j].y - image_aabb.vmin.y) / pixel_size;
 			std::cout << " " << local_a << ", " << local_b;
 			// Case 1: 2 points with different y, pixel.y in between.
 			// Case 2: 2 points with different y, one of them equal to pixel.y.
@@ -503,15 +505,15 @@ bool fill_poly(Polygon<int> &poly, AABB<int> &image_aabb, int pixel_size, FillPi
 			// Case 5: 2 points, no intersection with the pixel.y horizontal.
 
 			// Are the points on the same horizontal?
-			if (local_a.y == local_b.y) {
+			if ((int) round(local_a.y) == (int) round(local_b.y)) {
 				// Case 3: 2 points overlapping. Skip.
 				if (local_a == local_b) {
 					std::cout << " Skipping" << std::endl;
 					continue;
 				// Case 4: 2 points with same y and pixel.y. Mark both as nodes.
-				} else if (pixel.y == local_a.y) {
-					node_x[nodes++] = local_a.x;
-					node_x[nodes++] = local_b.x;
+				} else if (pixel.y == (int) round(local_a.y)) {
+					node_x[nodes++] = (int) local_a.x;
+					node_x[nodes++] = (int) ceil(local_b.x);
 					std::cout << " SameY " << node_x[nodes - 2] << ", " << node_x[nodes - 1];
 				}
 			} else {
@@ -522,13 +524,13 @@ bool fill_poly(Polygon<int> &poly, AABB<int> &image_aabb, int pixel_size, FillPi
 					node_x[nodes++] = (int) (local_a.x + (pixel.y - local_a.y) / (local_b.y - local_a.y) * (local_b.x - local_a.x));
 					std::cout << " Between " << node_x[nodes - 1];
 				// Case 2: 2 points with different y, one of them equal to pixel.y. Mark the point as two nodes.
-				} else if (local_a.y == pixel.y) {
-					node_x[nodes++] = local_a.x;
-					node_x[nodes++] = local_a.x;
+				} else if ((int) round(local_a.y) == pixel.y) {
+					node_x[nodes++] = (int) local_a.x;
+					node_x[nodes++] = (int) ceil(local_a.x);
 					std::cout << " Tip " << node_x[nodes - 1];
-				} else if (local_b.y == pixel.y) {
-					node_x[nodes++] = local_b.x;
-					node_x[nodes++] = local_b.x;
+				} else if ((int) round(local_b.y) == pixel.y) {
+					node_x[nodes++] = (int) local_b.x;
+					node_x[nodes++] = (int) round(local_b.x);
 					std::cout << " Tip " << node_x[nodes - 1];
 				}
 			}

@@ -25,7 +25,7 @@
 #include <ogr_geometry.h>
 
 
-const float f_epsilon;
+extern const float f_epsilon;
 
 /**
  * An integer vector class
