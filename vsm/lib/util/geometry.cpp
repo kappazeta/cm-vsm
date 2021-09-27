@@ -288,6 +288,22 @@ void Polygon<T>::clip_to_aabb(const AABB<T> &aabb) {
 }
 
 template<class T>
+Vector<T> Polygon<T>::center() const {
+	Vector<T> c;
+	for (size_t i=0; i<v.size(); i++)
+		c += v[i];
+	c /= (float) v.size();
+	return c;
+}
+
+template<class T>
+void Polygon<T>::scale(float f) {
+	Vector<T> c = center();
+	for (size_t i=0; i<v.size(); i++)
+		v[i] = c + (v[i] - c) * f;
+}
+
+template<class T>
 bool Polygon<T>::contains(const Vector<T> &p) const {
 	// http://www.alienryderflex.com/polygon/
 	size_t j = v.size() - 1;

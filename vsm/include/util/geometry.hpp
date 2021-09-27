@@ -187,6 +187,10 @@ public:
 
 	void clip_to_aabb(const AABB<T> &aabb);
 
+	Vector<T> center() const;
+
+	void scale(float f);
+
 	/**
 	 * @brief Checks if a point is in the polygon.
 	 * @param[in] p Reference to the point to check.

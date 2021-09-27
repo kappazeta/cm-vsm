@@ -24,6 +24,7 @@
 #include "util/text.hpp"
 #include <algorithm>
 #include <math.h>
+#include <set>
 
 // GDAL
 #include <ogrsf_frmts.h>
@@ -368,12 +369,13 @@ bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::
 	return true;
 }
 
-std::vector<Vector<int>> fill_poly_overlap(Polygon<int> &poly, AABB<int> &image_aabb, float pixel_size_div) {
+std::vector<Vector<int>> fill_poly_overlap(Polygon<int> &poly, float pixel_size_div) {
 	// Inspired by
 	//   http://alienryderflex.com/polygon_fill/
-	int i, j;
-	float xf;
+	int i, j, k;
+	float xf1, xf2;
 	std::vector<int> node_x;
+	std::set<int> extra_x;
 	Vector<int> pixel;
 	Vector<float> local_a, local_b;
 	std::vector<Vector<int>> filled;
@@ -390,57 +392,57 @@ std::vector<Vector<int>> fill_poly_overlap(Polygon<int> &poly, AABB<int> &image_
 
 	for (pixel.y=local_aabb.vmin.y; pixel.y < local_aabb.vmax.y; pixel.y++) {
 		node_x.clear();
+		extra_x.clear();
 		// Build a list of nodes.
 		j = poly.size() - 1;
 		for (i=0; i<(int)poly.size(); i++) {
-			local_a.x = ((float) poly[i].x - image_aabb.vmin.x) / pixel_size_div;
-			local_a.y = ((float) poly[i].y - image_aabb.vmin.y) / pixel_size_div;
-			local_b.x = ((float) poly[j].x - image_aabb.vmin.x) / pixel_size_div;
-			local_b.y = ((float) poly[j].y - image_aabb.vmin.y) / pixel_size_div;
-			// Case 1: 2 points with different y, pixel.y in between.
-			// Case 2: 2 points with different y, one of them equal to pixel.y.
-			// Case 3: 2 points overlapping.
-			// Case 4: 2 points with same y and pixel.y
-			// Case 5: 2 points, no intersection with the pixel.y horizontal.
+			local_a.x = ((float) poly[i].x - poly_aabb.vmin.x) / pixel_size_div;
+			local_a.y = ((float) poly[i].y - poly_aabb.vmin.y) / pixel_size_div;
+			local_b.x = ((float) poly[j].x - poly_aabb.vmin.x) / pixel_size_div;
+			local_b.y = ((float) poly[j].y - poly_aabb.vmin.y) / pixel_size_div;
 
-			std::cout << Vector<int>(local_a.x, local_a.y) << ", " << Vector<int>(local_b.x, local_b.y);
+			// std::cout << Vector<int>(local_a.x, local_a.y) << ", " << Vector<int>(local_b.x, local_b.y) << " - " << node_x.size();
+			std::cout << local_a << ", " << local_b << " - " << node_x.size();
 
-			// Are both points on the same horizontal?
-			if ((int) local_a.y == (int) local_b.y) {
-				// Case 3: 2 points overlapping. Skip.
-				if (Vector<int>(local_a.x, local_a.y) == Vector<int>(local_b.x, local_b.y)) {
-					std::cout << " Skipping" << std::endl;
-					continue;
-				// Case 4: 2 points with same y and pixel.y. Mark both as nodes.
-				} else if (pixel.y == (int) local_a.y) {
-					node_x.push_back((int) local_a.x);
-					node_x.push_back((int) ceil(local_b.x));
-					std::cout << " SameY " << (int) local_a.x << ", " << (int) ceil(local_b.x);
+			if ((local_a.y < (float) pixel.y && local_b.y >= (float) pixel.y)
+				|| (local_b.y < (float) pixel.y && local_a.y >= (float) pixel.y)) {
+				// Calculate the x-coordinate of the intersection between AB and y = pixel.y.
+				xf1 = local_a.x + (pixel.y - local_a.y) / (local_b.y - local_a.y) * (local_b.x - local_a.x);
+				if (node_x.size() % 2 == 0) {
+					node_x.push_back((int) xf1);
+				} else {
+					node_x.push_back((int) ceil(xf1));
 				}
-			} else {
-				// Case 1: 2 points with different y, pixel.y in between. Mark the intersection point as node.
-				if (((int) local_a.y < pixel.y && ceil(local_b.y) >= pixel.y)
-					|| ((int) local_b.y < pixel.y && ceil(local_a.y) >= pixel.y)) {
-					// Calculate the x-coordinate of the intersection between AB and y = pixel.y.
-					xf = local_a.x + (pixel.y - local_a.y) / (local_b.y - local_a.y) * (local_b.x - local_a.x);
-					node_x.push_back((int) xf);
-					if ((int) xf != (int) ceil(xf))
-						node_x.push_back((int) ceil(xf));
-					std::cout << " Between " << (int) xf << ", " << (int) ceil(xf);
-				// Case 2: 2 points with different y, one of them equal to pixel.y. Mark the point as two nodes.
-				} else if ((int) local_a.y == pixel.y) {
-					node_x.push_back((int) local_a.x);
-					node_x.push_back((int) ceil(local_a.x));
-					std::cout << " Tip " << (int) local_a.x << ", " << (int) ceil(local_a.x);
-				} else if ((int) local_b.y == pixel.y) {
-					node_x.push_back((int) local_b.x);
-					node_x.push_back((int) ceil(local_b.x));
-					std::cout << " Tip " << (int) local_b.x << ", " << (int) ceil(local_b.x);
+				std::cout << " Between " << (int) xf1 << ", " << (int) ceil(xf1) << " - " << node_x[node_x.size() - 1];
+			// Either of the points is on the scanline?
+			} else if (pixel.y == (int) local_a.y || pixel.y == (int) ceil(local_a.y)) {
+				// Are both points on the scanline? Draw a line between them.
+				if (abs(local_a.y - local_b.y) < 1.0f) {
+					xf1 = std::fmin(local_a.x, local_b.x);
+					xf2 = ceil(std::fmax(local_a.x, local_b.x));
+
+					for (k=(int)xf1; k<=(int)xf2; k++)
+						extra_x.insert(k);
+					std::cout << " SameY " << xf1 << ", " << xf2;
+				} else {
+					xf1 = local_a.x;
+					xf2 = ceil(xf1);
+					extra_x.insert((int) xf1);
+					extra_x.insert((int) xf2);
+					std::cout << " Tip " << xf1 << ", " << xf2;
 				}
+			} else if (pixel.y == (int) local_b.y || pixel.y == (int) ceil(local_b.y)) {
+				xf1 = local_b.x;
+				xf2 = ceil(xf1);
+				extra_x.insert((int) xf1);
+				extra_x.insert((int) xf2);
+				std::cout << " Tip " << xf1 << ", " << xf2;
 			}
 			std::cout << std::endl;
 			j = i;
 		}
+
+		std::cout << "Sorting " << node_x.size() << std::endl;
 
 		// Sort the nodes.
 		std::sort(node_x.begin(), node_x.end());
@@ -470,6 +472,24 @@ std::vector<Vector<int>> fill_poly_overlap(Polygon<int> &poly, AABB<int> &image_
 						std::cout << "Already filled " << pixel << std::endl;
 					}
 				}
+			}
+		}
+		// Fill additional pixels.
+		for (std::set<int>::iterator it=extra_x.begin(); it!=extra_x.end(); ++it) {
+			pixel.x = *it;
+
+			already_filled = false;
+			for (j=0; j<(int)filled.size(); j++) {
+				if (filled[j] == pixel) {
+					already_filled = true;
+					break;
+				}
+			}
+			if (!already_filled) {
+				std::cout << "Filling " << pixel << std::endl;
+				filled.push_back(pixel);
+			} else {
+				std::cout << "Already filled " << pixel << std::endl;
 			}
 		}
 	}
@@ -513,6 +533,8 @@ void ESA_S2_Image::extract_geo(const std::filesystem::path &path_in, const AABB<
 		aoi_poly = proj_coords_to_raster<int>(p_geom, p_dataset);
 		// Remove the last point, which is identical to the first.
 		aoi_poly.remove(aoi_poly.size() - 1);
+		// Increase the size of the polygon, to include overlap.
+		aoi_poly.scale(1.0f + f_overlap);
 		// Only keep the part of the polygon which is inside the raster.
 		aoi_poly.clip_to_aabb(image_aabb);
 
@@ -523,7 +545,7 @@ void ESA_S2_Image::extract_geo(const std::filesystem::path &path_in, const AABB<
 
 		// Subset the image, and store the subsets in a dedicated directory.
 		if (aoi_poly.size() > 0) {
-			subtiles = fill_poly_overlap(aoi_poly, aabb_buf, tile_size_div);
+			subtiles = fill_poly_overlap(aoi_poly, tile_size_div);
 		} else {
 			GDALClose(p_dataset);
 			throw RasterException(path_in, "No overlap between the area of interest polygon and raster");
