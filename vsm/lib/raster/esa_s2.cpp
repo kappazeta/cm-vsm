@@ -372,6 +372,7 @@ std::vector<Vector<int>> fill_poly_overlap(Polygon<int> &poly, AABB<int> &image_
 	// Inspired by
 	//   http://alienryderflex.com/polygon_fill/
 	int i, j;
+	float xf;
 	std::vector<int> node_x;
 	Vector<int> pixel;
 	Vector<float> local_a, local_b;
@@ -421,8 +422,11 @@ std::vector<Vector<int>> fill_poly_overlap(Polygon<int> &poly, AABB<int> &image_
 				if (((int) local_a.y < pixel.y && ceil(local_b.y) >= pixel.y)
 					|| ((int) local_b.y < pixel.y && ceil(local_a.y) >= pixel.y)) {
 					// Calculate the x-coordinate of the intersection between AB and y = pixel.y.
-					node_x.push_back((int) (local_a.x + (pixel.y - local_a.y) / (local_b.y - local_a.y) * (local_b.x - local_a.x)));
-					std::cout << " Between " << (int) (local_a.x + (pixel.y - local_a.y) / (local_b.y - local_a.y) * (local_b.x - local_a.x));
+					xf = local_a.x + (pixel.y - local_a.y) / (local_b.y - local_a.y) * (local_b.x - local_a.x);
+					node_x.push_back((int) xf);
+					if ((int) xf != (int) ceil(xf))
+						node_x.push_back((int) ceil(xf));
+					std::cout << " Between " << (int) xf << ", " << (int) ceil(xf);
 				// Case 2: 2 points with different y, one of them equal to pixel.y. Mark the point as two nodes.
 				} else if ((int) local_a.y == pixel.y) {
 					node_x.push_back((int) local_a.x);
@@ -472,7 +476,7 @@ std::vector<Vector<int>> fill_poly_overlap(Polygon<int> &poly, AABB<int> &image_
 	return filled;
 }
 
-std::vector<Vector<int>> fill_whole(const AABB<int> &image_aabb, int pixel_size) {
+std::vector<Vector<int>> fill_whole(const AABB<int> &image_aabb, float tile_size_div) {
 	std::vector<Vector<int>> subtiles;
 	Vector<int> p;
 
@@ -480,8 +484,8 @@ std::vector<Vector<int>> fill_whole(const AABB<int> &image_aabb, int pixel_size)
 	// Axis-aligned bounding box in the local reference frame.
 	AABB<int> local_aabb(
 		Vector<int>(0, 0),
-		Vector<int>(ceil(((float) img_dim.x) / pixel_size),
-			ceil(((float) img_dim.y) / pixel_size))
+		Vector<int>(ceil(((float) img_dim.x) / tile_size_div),
+			ceil(((float) img_dim.y) / tile_size_div))
 	);
 
 	for (p.y=local_aabb.vmin.y; p.y<local_aabb.vmax.y; p.y++) {
@@ -527,7 +531,7 @@ void ESA_S2_Image::extract_geo(const std::filesystem::path &path_in, const AABB<
 	} else {
 		aabb_buf = image_aabb;
 
-		subtiles = fill_whole(image_aabb, tile_size);
+		subtiles = fill_whole(image_aabb, tile_size_div);
 	}
 	GDALClose(p_dataset);
 }
