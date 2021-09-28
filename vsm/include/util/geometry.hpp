@@ -48,6 +48,12 @@ public:
 	 */
 	~Vector();
 
+	template<class U>
+	Vector(const Vector<U> &a) {
+		x = a.x;
+		y = a.y;
+	}
+
 	/**
 	 * Add two vectors.
 	 */
@@ -68,6 +74,14 @@ public:
 	 * Assign the coordinates from another vector.
 	 */
 	Vector<T> &operator=(const Vector<T> &a);
+
+	template<class U>
+	Vector<T> &operator=(const Vector<U> &a) {
+		x = a.x;
+		y = a.y;
+		return *this;
+	}
+
 	/**
 	 * Add another vector to this one.
 	 */
@@ -134,9 +148,22 @@ public:
 	AABB(const Magick::Geometry &geom);
 	~AABB();
 
+	template<class U>
+	AABB(const AABB<U> &a) {
+		vmin = a.vmin;
+		vmax = a.vmax;
+	}
+
 	Vector<T> vmin, vmax;
 
 	Vector<T> &operator[](std::size_t idx);
+
+	template<class U>
+	AABB<T>& operator=(const AABB<U> &a) {
+		vmin = a.vmin;
+		vmax = a.vmax;
+		return *this;
+	}
 
 	friend std::ostream &operator<<(std::ostream &os, const AABB &aabb) {
 		os << "AABB(" << aabb.vmin << ", " << aabb.vmax << ")";
@@ -305,14 +332,3 @@ OGRGeometry *wkt_to_geom(const std::string &wkt, OGRGeometry **p_geom);
 template<class T>
 Polygon<T> proj_coords_to_raster(const OGRGeometry *p_geom, GDALDataset *p_dataset);
 
-/**
- * @brief Test if two segments AB and CD intersect.
- * @param[in] pa Reference to point A.
- * @param[in] pb Reference to point B.
- * @param[in] pc Reference to point C.
- * @param[in] pd Reference to point D.
- * @param[out] pt Pointer to the intersection value along AB.
- * @param[out] p Pointer to the intersection point.
- * @return True if the line segments intersect, otherwise false.
- */
-// bool line_in_line(const FVector &pa, const FVector &pb, const FVector &pc, const FVector &pd, float *pt, FVector *p);

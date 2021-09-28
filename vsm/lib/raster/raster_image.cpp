@@ -355,7 +355,7 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 		int nd = sizeof(dimids) / sizeof(dimids[0]);
 
 		Magick::PixelPacket *src_px = subset->getPixels(0, 0, w, h);
-		unsigned int yw, fyw;
+		unsigned int yw;
 
 		// Store content.
 		if (c == 1) {
@@ -364,9 +364,8 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 
 				for (unsigned int y=0; y<h; y++) {
 					yw = y * w;
-					fyw = (h - 1 - y) * w;
 					for (unsigned int x=0; x<w; x++) {
-						dst_px.v[fyw + x] = ((float) src_px[yw + x].green) / MaxRGB;
+						dst_px.v[yw + x] = ((float) src_px[yw + x].green) / MaxRGB;
 					}
 				}
 				add_layer_to_netcdf(ncid, path, name_in_netcdf, w, h, dimids, nd, (const void *) dst_px.v);
@@ -375,9 +374,8 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 
 				for (unsigned int y=0; y<h; y++) {
 					yw = y * w;
-					fyw = (h - 1 - y) * w;
 					for (unsigned int x=0; x<w; x++) {
-						dst_px.v[fyw + x] = (int) (src_px[yw + x].green * 255 / MaxRGB);
+						dst_px.v[yw + x] = (int) (src_px[yw + x].green * 255 / MaxRGB);
 					}
 				}
 				add_layer_to_netcdf(ncid, path, name_in_netcdf, w, h, dimids, nd, (const void *) dst_px.v);
@@ -388,13 +386,12 @@ bool RasterImage::add_to_netcdf(const std::filesystem::path &path, const std::st
 
 			for (unsigned int y=0; y<h; y++) {
 				yw = y * w;
-				fyw = (h - 1 - y) * w;
 				for (unsigned int x=0; x<w; x++) {
 					//! \todo TODO:: Figure out why pixels of an 8-bit image are stored as 16-bit values.
 					// Is it due to the TrueColorType?
-					dst_px.r[fyw + x] = (int) (src_px[yw + x].red * 255 / 65535.0f);
-					dst_px.g[fyw + x] = (int) (src_px[yw + x].green * 255 / 65535.0f);
-					dst_px.b[fyw + x] = (int) (src_px[yw + x].blue * 255 / 65535.0f);
+					dst_px.r[yw + x] = (int) (src_px[yw + x].red * 255 / 65535.0f);
+					dst_px.g[yw + x] = (int) (src_px[yw + x].green * 255 / 65535.0f);
+					dst_px.b[yw + x] = (int) (src_px[yw + x].blue * 255 / 65535.0f);
 				}
 			}
 

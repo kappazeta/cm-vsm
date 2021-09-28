@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
 
 	if (argc < 2) {
 		std::cerr << "Usage: " << CM_CONVERTER_NAME_STR
-			<< " [-d S2_PATH] [-D CVAT_PATH] [-O OUT_PATH] [-r CVAT_XML -n NETCDF] [-b BANDS] [-R SUPERVISELY_DIR -t TILENAME -n NETCDF] [-A CVAT_SAI_PATH] [-S TILESIZE [-s SHRINK]] [-f DEFLATE_LEVEL] [-m RESAMPLING_METHOD] [-o OVERLAP] [--png] [--tiled] [-j JOBS] [-g WKT]" << std::endl
+			<< " [-d S2_PATH] [-D CVAT_PATH] [-O OUT_PATH] [-r CVAT_XML -n NETCDF] [-b BANDS] [-R SUPERVISELY_DIR -t TILENAME -n NETCDF] [-A CVAT_SAI_PATH] [-S TILESIZE [-s SHRINK]] [-f DEFLATE_LEVEL] [-m RESAMPLING_METHOD] [-o OVERLAP] [--png] [--tiled] [-j JOBS] [-g EWKT]" << std::endl
 			<< "\twhere S2_PATH points to the .SAFE directory of an ESA S2 L2A or L1C product." << std::endl
 			<< "\tCVAT_PATH points to the .CVAT directory (pre-processed ESA S2 product)." << std::endl
 			<< "\tOUT_PATH points to the directory to store the output files (.CVAT directory, right next to the input .SAFE, by default)." << std::endl
@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
 			<< "\tRESAMPLING_METHOD defines a preferred way for resampling (point, box, cubic or sinc)." << std::endl
 			<< "\tOVERLAP Overlap between sub-tiles (between 0 and 0.5)." << std::endl
 			<< "\tJOBS Number of threads to parallelize to (0 for default, negative to use all available threads)." << std::endl
-			<< "\tWKT Geometry for area of interest (whole product, by default)." << std::endl
+			<< "\tEWKT Geometry for area of interest (whole product, by default)." << std::endl
 			<< "\t\tFor example: \"SRID=4326;Polygon ((22.64992375534184887 50.27513740160615185, 23.60228115218003708 50.35482161490517683, 23.54514084707420452 49.94024031630130622, 23.3153953947536472 50.21771699530808775, 22.64992375534184887 50.27513740160615185))\"" << std::endl;
 		return 1;
 	}

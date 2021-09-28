@@ -218,7 +218,7 @@ class ESA_S2_Image {
 		bool geo_extracted;	///< Whether the geo-coordinates have been extracted from at least one of the overlapping rasters.
 		std::string proj_ref;	///< Projection reference, as extracted from the JP2 file.
 		std::vector<std::vector<unsigned char>> subtile_mask;	///< Mask of subtiles to fill.
-		AABB<int> aabb_buf;	///< Buffered axis-aligned bounding box surrounding the area of interest polygon, in pixel coordinates.
+		AABB<float> aabb_buf;	///< Buffered axis-aligned bounding box surrounding the area of interest polygon, in relative image coordinates.
 		Polygon<int> aoi_poly;	///< Area of interest polygon in pixel coordinates.
 
 		void extract_geo(const std::filesystem::path &path_in, const AABB<int> &image_aabb, float tile_size_div);

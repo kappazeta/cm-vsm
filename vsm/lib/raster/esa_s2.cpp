@@ -369,6 +369,12 @@ bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::
 	return true;
 }
 
+/**
+ * @brief Polygon-fill the subtile mask. Each pixel of the subtile mask corresponds to a sub-tile of the whole product.
+ * @param[in] poly Reference to the polygon to fill onto the mask.
+ * @param[in] pixel_size_div Effective pixel size, accounting the overlap.
+ * @return 2D array of values (0 - skipped, 1 - sub-tile within area of interest).
+ */
 std::vector<std::vector<unsigned char>> fill_poly_overlap(Polygon<int> &poly, float pixel_size_div) {
 	// Inspired by
 	//   http://alienryderflex.com/polygon_fill/
@@ -400,20 +406,14 @@ std::vector<std::vector<unsigned char>> fill_poly_overlap(Polygon<int> &poly, fl
 			local_b.x = ((float) poly[j].x - poly_aabb.vmin.x) / pixel_size_div;
 			local_b.y = ((float) poly[j].y - poly_aabb.vmin.y) / pixel_size_div;
 
-			std::cout << local_a << ", " << local_b << " - " << node_x.size();
-
 			if ((local_a.y < (float) pixel.y && local_b.y >= (float) pixel.y)
 				|| (local_b.y < (float) pixel.y && local_a.y >= (float) pixel.y)) {
 				// Calculate the x-coordinate of the intersection between AB and y = pixel.y.
 				xf = local_a.x + (pixel.y - local_a.y) / (local_b.y - local_a.y) * (local_b.x - local_a.x);
 				node_x.push_back((int) xf);
-				std::cout << " Between " << (int) xf << ", " << (int) ceil(xf) << " - " << node_x[node_x.size() - 1];
 			}
-			std::cout << std::endl;
 			j = i;
 		}
-
-		std::cout << "Sorting " << node_x.size() << std::endl;
 
 		// Sort the nodes.
 		std::sort(node_x.begin(), node_x.end());
@@ -428,7 +428,9 @@ std::vector<std::vector<unsigned char>> fill_poly_overlap(Polygon<int> &poly, fl
 				if (node_x[i + 1] > local_aabb.vmax.x)
 					node_x[i + 1] = local_aabb.vmax.x;
 				for (pixel.x=node_x[i]; pixel.x<=node_x[i + 1]; pixel.x++) {
+					// Fill the pixel covered by the polygon.
 					subtile_mask[pixel.x][pixel.y] = 1;
+					// Also fill the immediate surrounding pixels.
 					if (pixel.x > 0)
 						subtile_mask[pixel.x-1][pixel.y] = 1;
 					if (pixel.x < local_aabb.vmax.x)
@@ -437,7 +439,6 @@ std::vector<std::vector<unsigned char>> fill_poly_overlap(Polygon<int> &poly, fl
 						subtile_mask[pixel.x][pixel.y-1] = 1;
 					if (pixel.y < local_aabb.vmax.y)
 						subtile_mask[pixel.x][pixel.y+1] = 1;
-					std::cout << "Filling " << pixel << std::endl;
 				}
 			}
 		}
@@ -445,6 +446,12 @@ std::vector<std::vector<unsigned char>> fill_poly_overlap(Polygon<int> &poly, fl
 	return subtile_mask;
 }
 
+/**
+ * @brief Fill the entire subtile mask. Each pixel of the subtile mask corresponds to a sub-tile of the whole product.
+ * @param[in] image_aabb Reference to the axis-aligned bounding box of the whole product.
+ * @param[in] tile_size_div Effective pixel size, accounting the overlap.
+ * @return 2D array of values 1 - all sub-tiles within the area of interest.
+ */
 std::vector<std::vector<unsigned char>> fill_whole(const AABB<int> &image_aabb, float tile_size_div) {
 	std::vector<Vector<int>> subtiles;
 	Vector<int> p;
@@ -463,6 +470,12 @@ std::vector<std::vector<unsigned char>> fill_whole(const AABB<int> &image_aabb, 
 	return subtile_mask;
 }
 
+/**
+ * @brief Extract the projection, geo-coordinates from the Sentinel-2 product. Produce the subtile mask for processing a subset of the product.
+ * @param[in] path_in Reference to the axis-aligned bounding box of the whole product.
+ * @param[in] image_aabb Reference to the axis-aligned bounding box of the whole product.
+ * @param[in] tile_size_div Effective pixel size, accounting the overlap.
+ */
 void ESA_S2_Image::extract_geo(const std::filesystem::path &path_in, const AABB<int> &image_aabb, float tile_size_div) {
 	GDALDataset *p_dataset = (GDALDataset *) GDALOpen(path_in.string().c_str(), GA_ReadOnly);
 	if (p_dataset == NULL)
@@ -471,6 +484,7 @@ void ESA_S2_Image::extract_geo(const std::filesystem::path &path_in, const AABB<
 		std::cout << "Projection: " << p_dataset->GetProjectionRef() << std::endl;
 	}
 
+	// If there's an area of interest polygon, then fill the subtile mask with the polygon.
 	subtile_mask.clear();
 	if (wkt_geom_aoi.length() > 0) {
 		std::cout << "Projecting AOI polygon into pixel coordinates." << std::endl;
@@ -488,18 +502,22 @@ void ESA_S2_Image::extract_geo(const std::filesystem::path &path_in, const AABB<
 
 		AABB<int> aabb = aoi_poly.get_aabb();
 		aabb_buf = aabb.buffer(tile_size * f_overlap);
+		aabb_buf.vmin.x /= image_aabb.vmax.x;
+		aabb_buf.vmin.y /= image_aabb.vmax.y;
+		aabb_buf.vmax.x /= image_aabb.vmax.x;
+		aabb_buf.vmax.y /= image_aabb.vmax.y;
 
 		//! \todo Use GDAL for reading raster data, too.
 
-		// Subset the image, and store the subsets in a dedicated directory.
 		if (aoi_poly.size() > 0) {
 			subtile_mask = fill_poly_overlap(aoi_poly, tile_size_div);
 		} else {
 			GDALClose(p_dataset);
 			throw RasterException(path_in, "No overlap between the area of interest polygon and raster");
 		}
+	// Otherwise take all the subtiles.
 	} else {
-		aabb_buf = image_aabb;
+		aabb_buf = AABB<float>(0, 0, 1, 1);
 		subtile_mask = fill_whole(image_aabb, tile_size_div);
 	}
 	GDALClose(p_dataset);
@@ -536,19 +554,23 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 
 	std::cout << "Processing " << path_in << std::endl;
 
+	Vector<int> p;
+
+	// Extract image geo-coordinates, project area of interest polygon into pixel coordinates,
+	// and produce a subtile mask, unless all of this has already been done.
 	if (!geo_extracted) {
 		std::cout << "Extracting geo-coordinates." << std::endl;
 		AABB<int> image_aabb(img_src.main_geometry);
 		extract_geo(path_in, image_aabb, tile_size_div);
+		geo_extracted = true;
 	}
 
-	Vector<int> p;
 	for (p.x=0; p.x<(int)subtile_mask.size(); p.x++) {
 		for (p.y=0; p.y<(int)subtile_mask[p.x].size(); p.y++) {
 			if (subtile_mask[p.x][p.y] == 1) {
 				// Coordinates in the source image (possibly with different dimensions).
-				int sx0 = aabb_buf.vmin.x + floor(tile_size_div * p.x);
-				int sy0 = aabb_buf.vmin.y + floor(tile_size_div * p.y);
+				int sx0 = aabb_buf.vmin.x * img_src.main_geometry.width() + floor(tile_size_div * p.x);
+				int sy0 = aabb_buf.vmin.y * img_src.main_geometry.height() + floor(tile_size_div * p.y);
 				int sx1 = ceil(sx0 + tile_size_div);
 				int sy1 = ceil(sy0 + tile_size_div);
 
@@ -608,8 +630,6 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 		}
 	}
 
-	std::cout << path_in << std::endl;
-
 	return retval;
 }
 
@@ -635,98 +655,92 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 	// Get image dimensions.
 	retval &= img_src.load_header(path_in);
 
-	int w = img_src.main_geometry.width();
-
 	std::cout << "Processing " << path_in << std::endl;
 
-	// Subset the image, and store the subsets in a dedicated directory.
-	int xi, yi;
-	int xi0 = 0, yi0 = 0;
-
 	// NOTE:: Assume square images and square tiles.
-	int num_tiles = ceil(w / tile_size_div);
 	int sx0, sy0, sx1, sy1;
 
 	// Iterate over tiles in the output raster.
-	for (yi=xi0; yi<num_tiles; yi++) {
-		for (xi=yi0; xi<num_tiles; xi++) {
-			// Coordinates in the source image (possibly with different dimensions).
-			sx0 = floor(tile_size_div * xi);
-			sy0 = floor(tile_size_div * yi);
-			sx1 = ceil(sx0 + tile_size_div);
-			sy1 = ceil(sy0 + tile_size_div);
+	Vector<int> p;
+	for (p.x=0; p.x<(int)subtile_mask.size(); p.x++) {
+		for (p.y=0; p.y<(int)subtile_mask[p.x].size(); p.y++) {
+			if (subtile_mask[p.x][p.y] == 1) {
+				// Coordinates in the source image (possibly with different dimensions).
+				sx0 = aabb_buf.vmin.x * img_src.main_geometry.width() + floor(tile_size_div * p.x);
+				sy0 = aabb_buf.vmin.y * img_src.main_geometry.height() + floor(tile_size_div * p.y);
+				sx1 = ceil(sx0 + tile_size_div);
+				sy1 = ceil(sy0 + tile_size_div);
 
-			// It's possible that due to rounding errors, the tile would no longer be square.
-			// For this case, we'll crop the additional row / column of pixels to square the tile once again.
-			if (sx1 - sx0 > sy1 - sy0)
-				sx1 = sx0 + sy1 - sy0;
-			else if (sy1 - sy0 > sx1 - sx0)
-				sy1 = sy0 + sx1 - sx0;
+				// It's possible that due to rounding errors, the tile would no longer be square.
+				// For this case, we'll crop the additional row / column of pixels to square the tile once again.
+				if (sx1 - sx0 > sy1 - sy0)
+					sx1 = sx0 + sy1 - sy0;
+				else if (sy1 - sy0 > sx1 - sx0)
+					sy1 = sy0 + sx1 - sx0;
 
-			// Account for overlap.
-			sx1 += tile_size * f_overlap / div_f;
-			sy1 += tile_size * f_overlap / div_f;
+				// Account for overlap.
+				sx1 += tile_size * f_overlap / div_f;
+				sy1 += tile_size * f_overlap / div_f;
 
-			// Load the source image.
-			img_src.load_subset(path_in, sx0, sy0, sx1, sy1);
+				// Load the source image.
+				img_src.load_subset(path_in, sx0, sy0, sx1, sy1);
 
-			// Remap pixel values from BHC, FMC or MAJAC into SCL and then from SCL into the desired classes.
-			// This helps to ensure that there's only a single place in code which is responsible for the mapping
-			// and that the mapping is configurable.
-			if (data_type == ESA_S2_Image_Operator::DT_BHC) {
-				img_src.remap_values(ESA_S2_Image_Operator::bhc_scl_value_map, sizeof(ESA_S2_Image_Operator::bhc_scl_value_map));
-				tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
-			} else if (data_type == ESA_S2_Image_Operator::DT_FMC) {
-				img_src.remap_values(ESA_S2_Image_Operator::fmc_scl_value_map, sizeof(ESA_S2_Image_Operator::fmc_scl_value_map));
-				tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
-			} else if (data_type == ESA_S2_Image_Operator::DT_MAJAC) {
-				CNES_MAJA_CLM_TIF::remap_majac_values(&img_src);
-				tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
-			} else if (data_type == ESA_S2_Image_Operator::DT_GSFC) {
-				img_src.remap_values(ESA_S2_Image_Operator::gsfc_scl_value_map, sizeof(ESA_S2_Image_Operator::gsfc_scl_value_map));
-				tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
-			} else if (data_type == ESA_S2_Image_Operator::DT_DL_L8S2_UV) {
-				img_src.remap_values(ESA_S2_Image_Operator::dl_l8s2_uv_scl_value_map, sizeof(ESA_S2_Image_Operator::dl_l8s2_uv_scl_value_map));
-				tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
+				// Remap pixel values from BHC, FMC or MAJAC into SCL and then from SCL into the desired classes.
+				// This helps to ensure that there's only a single place in code which is responsible for the mapping
+				// and that the mapping is configurable.
+				if (data_type == ESA_S2_Image_Operator::DT_BHC) {
+					img_src.remap_values(ESA_S2_Image_Operator::bhc_scl_value_map, sizeof(ESA_S2_Image_Operator::bhc_scl_value_map));
+					tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
+				} else if (data_type == ESA_S2_Image_Operator::DT_FMC) {
+					img_src.remap_values(ESA_S2_Image_Operator::fmc_scl_value_map, sizeof(ESA_S2_Image_Operator::fmc_scl_value_map));
+					tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
+				} else if (data_type == ESA_S2_Image_Operator::DT_MAJAC) {
+					CNES_MAJA_CLM_TIF::remap_majac_values(&img_src);
+					tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
+				} else if (data_type == ESA_S2_Image_Operator::DT_GSFC) {
+					img_src.remap_values(ESA_S2_Image_Operator::gsfc_scl_value_map, sizeof(ESA_S2_Image_Operator::gsfc_scl_value_map));
+					tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
+				} else if (data_type == ESA_S2_Image_Operator::DT_DL_L8S2_UV) {
+					img_src.remap_values(ESA_S2_Image_Operator::dl_l8s2_uv_scl_value_map, sizeof(ESA_S2_Image_Operator::dl_l8s2_uv_scl_value_map));
+					tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
+				}
+				if (tmp_data_type == ESA_S2_Image_Operator::DT_SCL) {
+					if (scl_value_map != nullptr)
+						img_src.remap_values(scl_value_map, max_scl_value);
+					// Scale with point filter.
+					img_src.set_resampling_filter("point");
+					img_src.scale_to((unsigned int) (tile_size / f_downscale));
+				} else {
+					// Scale other images with sinc filter.
+					img_src.set_resampling_filter(resampling_method_name);
+					img_src.scale_to((unsigned int) (tile_size / f_downscale));
+				}
+
+				if (img_src.subset->rows() != tile_size || img_src.subset->columns() != tile_size) {
+					std::cout << "Invalid geometry " << img_src.subset->rows() << "x" << img_src.subset->columns() << " for subtile " << p.x << ", " << p.y << std::endl;
+				}
+
+				std::ostringstream ss_path_out, ss_path_out_png, ss_path_out_nc;
+
+				ss_path_out << path_dir_out.string() << "/tile_" << p.x << "_" << p.y << "/";
+
+				std::filesystem::create_directories(ss_path_out.str());
+
+				// Save PNG.
+				if (store_png) {
+					ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile" << "_" << p.x << "_" << p.y << ".png";
+					img_src.save(ss_path_out_png.str());
+				}
+				// Add to NetCDF.
+				ss_path_out_nc << ss_path_out.str() << extract_index_date(path_in) << "_" << "tile" << "_" << p.x << "_" << p.y << ".nc";
+				img_src.add_to_netcdf(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type]);
+
+				// Potential post-processing of the file.
+				if (!op(ss_path_out.str(), data_type))
+					return false;
 			}
-			if (tmp_data_type == ESA_S2_Image_Operator::DT_SCL) {
-				if (scl_value_map != nullptr)
-					img_src.remap_values(scl_value_map, max_scl_value);
-				// Scale with point filter.
-				img_src.set_resampling_filter("point");
-				img_src.scale_to((unsigned int) (tile_size / f_downscale));
-			} else {
-				// Scale other images with sinc filter.
-				img_src.set_resampling_filter(resampling_method_name);
-				img_src.scale_to((unsigned int) (tile_size / f_downscale));
-			}
-
-			if (img_src.subset->rows() != tile_size || img_src.subset->columns() != tile_size) {
-				std::cout << "Invalid geometry " << img_src.subset->rows() << "x" << img_src.subset->columns() << " for subtile " << xi << ", " << yi << std::endl;
-			}
-
-			std::ostringstream ss_path_out, ss_path_out_png, ss_path_out_nc;
-
-			ss_path_out << path_dir_out.string() << "/tile_" << xi << "_" << yi << "/";
-
-			std::filesystem::create_directories(ss_path_out.str());
-
-			// Save PNG.
-			if (store_png) {
-				ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile" << "_" << xi << "_" << yi << ".png";
-				img_src.save(ss_path_out_png.str());
-			}
-			// Add to NetCDF.
-			ss_path_out_nc << ss_path_out.str() << extract_index_date(path_in) << "_" << "tile" << "_" << xi << "_" << yi << ".nc";
-			img_src.add_to_netcdf(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type]);
-
-			// Potential post-processing of the file.
-			if (!op(ss_path_out.str(), data_type))
-				return false;
 		}
 	}
-
-	std::cout << path_in << std::endl;
 
 	return retval;
 }
@@ -753,90 +767,84 @@ bool ESA_S2_Image::splitPNG(const std::filesystem::path &path_in, const std::fil
 	// Get image dimensions.
 	retval &= img_src.load_header(path_in);
 
-	int w = img_src.main_geometry.width();
-
 	std::cout << "Processing " << path_in << std::endl;
 
-	// Subset the image, and store the subsets in a dedicated directory.
-	int xi, yi;
-	int xi0 = 0, yi0 = 0;
-
 	// NOTE:: Assume square images and square tiles.
-	int num_tiles = ceil(w / tile_size_div);
 	int sx0, sy0, sx1, sy1;
 
 	// Iterate over tiles in the output raster.
-	for (yi=xi0; yi<num_tiles; yi++) {
-		for (xi=yi0; xi<num_tiles; xi++) {
-			// Coordinates in the source image (possibly with different dimensions).
-			sx0 = floor(tile_size_div * xi);
-			sy0 = floor(tile_size_div * yi);
-			sx1 = ceil(sx0 + tile_size_div);
-			sy1 = ceil(sy0 + tile_size_div);
+	Vector<int> p;
+	for (p.x=0; p.x<(int)subtile_mask.size(); p.x++) {
+		for (p.y=0; p.y<(int)subtile_mask[p.x].size(); p.y++) {
+			if (subtile_mask[p.x][p.y] == 1) {
+				// Coordinates in the source image (possibly with different dimensions).
+				sx0 = aabb_buf.vmin.x * img_src.main_geometry.width() + floor(tile_size_div * p.x);
+				sy0 = aabb_buf.vmin.y * img_src.main_geometry.height() + floor(tile_size_div * p.y);
+				sx1 = ceil(sx0 + tile_size_div);
+				sy1 = ceil(sy0 + tile_size_div);
 
-			// It's possible that due to rounding errors, the tile would no longer be square.
-			// For this case, we'll crop the additional row / column of pixels to square the tile once again.
-			if (sx1 - sx0 > sy1 - sy0)
-				sx1 = sx0 + sy1 - sy0;
-			else if (sy1 - sy0 > sx1 - sx0)
-				sy1 = sy0 + sx1 - sx0;
+				// It's possible that due to rounding errors, the tile would no longer be square.
+				// For this case, we'll crop the additional row / column of pixels to square the tile once again.
+				if (sx1 - sx0 > sy1 - sy0)
+					sx1 = sx0 + sy1 - sy0;
+				else if (sy1 - sy0 > sx1 - sx0)
+					sy1 = sy0 + sx1 - sx0;
 
-			// Account for overlap.
-			sx1 += tile_size * f_overlap / div_f;
-			sy1 += tile_size * f_overlap / div_f;
+				// Account for overlap.
+				sx1 += tile_size * f_overlap / div_f;
+				sy1 += tile_size * f_overlap / div_f;
 
-			// Load the source image.
-			img_src.load_subset(path_in, sx0, sy0, sx1, sy1);
+				// Load the source image.
+				img_src.load_subset(path_in, sx0, sy0, sx1, sy1);
 
-			// Remap pixel values from SS2C or FMSC into SCL and then from SCL into the desired classes.
-			// This helps to ensure that there's only a single place in code which is responsible for the mapping
-			// and that the mapping is configurable.
-			if (data_type == ESA_S2_Image_Operator::DT_SS2C) {
-				img_src.remap_values(ESA_S2_Image_Operator::ss2c_scl_value_map, sizeof(ESA_S2_Image_Operator::ss2c_scl_value_map));
-				tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
-			} else if (data_type == ESA_S2_Image_Operator::DT_FMSC) {
-				img_src.remap_values(ESA_S2_Image_Operator::fmsc_scl_value_map, sizeof(ESA_S2_Image_Operator::fmsc_scl_value_map));
-				tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
+				// Remap pixel values from SS2C or FMSC into SCL and then from SCL into the desired classes.
+				// This helps to ensure that there's only a single place in code which is responsible for the mapping
+				// and that the mapping is configurable.
+				if (data_type == ESA_S2_Image_Operator::DT_SS2C) {
+					img_src.remap_values(ESA_S2_Image_Operator::ss2c_scl_value_map, sizeof(ESA_S2_Image_Operator::ss2c_scl_value_map));
+					tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
+				} else if (data_type == ESA_S2_Image_Operator::DT_FMSC) {
+					img_src.remap_values(ESA_S2_Image_Operator::fmsc_scl_value_map, sizeof(ESA_S2_Image_Operator::fmsc_scl_value_map));
+					tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
+				}
+				if (tmp_data_type == ESA_S2_Image_Operator::DT_SCL) {
+					if (scl_value_map != nullptr)
+						img_src.remap_values(scl_value_map, max_scl_value);
+					// Scale with point filter.
+					img_src.set_resampling_filter("point");
+					img_src.scale_to((unsigned int) (tile_size / f_downscale));
+				} else {
+					// Scale other images with sinc filter.
+					img_src.set_resampling_filter(resampling_method_name);
+					img_src.scale_to((unsigned int) (tile_size / f_downscale));
+				}
+
+				if (img_src.subset->rows() != tile_size || img_src.subset->columns() != tile_size) {
+					std::cout << "Invalid geometry " << img_src.subset->rows() << "x" << img_src.subset->columns() << " for subtile " << p.x << ", " << p.y << std::endl;
+				}
+
+				std::ostringstream ss_path_out, ss_path_out_png, ss_path_out_nc;
+
+				ss_path_out << path_dir_out.string() << "/tile_" << p.x << "_" << p.y << "/";
+
+				std::filesystem::create_directories(ss_path_out.str());
+
+
+				// Save PNG.
+				if (store_png) {
+					ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile" << "_" << p.x << "_" << p.y << ".png";
+					img_src.save(ss_path_out_png.str());
+				}
+				// Add to NetCDF.
+				ss_path_out_nc << ss_path_out.str() << extract_index_date(path_in) << "_" << "tile" << "_" << p.x << "_" << p.y << ".nc";
+				img_src.add_to_netcdf(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type]);
+
+				// Potential post-processing of the file.
+				if (!op(ss_path_out.str(), data_type))
+					return false;
 			}
-			if (tmp_data_type == ESA_S2_Image_Operator::DT_SCL) {
-				if (scl_value_map != nullptr)
-					img_src.remap_values(scl_value_map, max_scl_value);
-				// Scale with point filter.
-				img_src.set_resampling_filter("point");
-				img_src.scale_to((unsigned int) (tile_size / f_downscale));
-			} else {
-				// Scale other images with sinc filter.
-				img_src.set_resampling_filter(resampling_method_name);
-				img_src.scale_to((unsigned int) (tile_size / f_downscale));
-			}
-
-			if (img_src.subset->rows() != tile_size || img_src.subset->columns() != tile_size) {
-				std::cout << "Invalid geometry " << img_src.subset->rows() << "x" << img_src.subset->columns() << " for subtile " << xi << ", " << yi << std::endl;
-			}
-
-			std::ostringstream ss_path_out, ss_path_out_png, ss_path_out_nc;
-
-			ss_path_out << path_dir_out.string() << "/tile_" << xi << "_" << yi << "/";
-
-			std::filesystem::create_directories(ss_path_out.str());
-
-
-			// Save PNG.
-			if (store_png) {
-				ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile" << "_" << xi << "_" << yi << ".png";
-				img_src.save(ss_path_out_png.str());
-			}
-			// Add to NetCDF.
-			ss_path_out_nc << ss_path_out.str() << extract_index_date(path_in) << "_" << "tile" << "_" << xi << "_" << yi << ".nc";
-			img_src.add_to_netcdf(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type]);
-
-			// Potential post-processing of the file.
-			if (!op(ss_path_out.str(), data_type))
-				return false;
 		}
 	}
-
-	std::cout << path_in << std::endl;
 
 	return retval;
 }

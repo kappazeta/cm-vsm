@@ -81,8 +81,7 @@ class CMVSMVis(object):
             if band_data.dtype != "uint8":
                 band_data = 255 * (band_data - v_min) / (v_max - v_min)
         root.close()
-        # Flip the rows, to have subtile contents upright.
-        return np.flip(band_data.astype(np.uint8), 0)
+        return band_data
 
     def blit_subtile(self, fpath, band):
         """
