@@ -424,14 +424,16 @@ Polygon<T> proj_coords_to_raster(const OGRGeometry *p_geom, GDALDataset *p_datas
 		double px, py;
 		Vector<T> v;
 
-		OGRPolygon *p_poly = nullptr;
 #if GDAL_VERSION_NUM >= GDAL_COMPUTE_VERSION(2,3,0)
+		const OGRPolygon *p_poly = nullptr;
 		p_poly = p_geom->toPolygon();
+		const OGRLinearRing *p_ext = p_poly->getExteriorRing();
 #else
+		OGRPolygon *p_poly = nullptr;
 		p_poly = (OGRPolygon *) p_geom;
+		OGRLinearRing *p_ext = p_poly->getExteriorRing();
 #endif
 
-		OGRLinearRing *p_ext = p_poly->getExteriorRing();
 		for (int i=0; i<p_ext->getNumPoints(); i++) {
 			p_ext->getPoint(i, &pt);
 			px = pt.getX();
