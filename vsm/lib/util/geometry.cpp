@@ -215,7 +215,7 @@ bool AABB<T>::overlaps(const AABB<T> &aabb) const {
 }
 
 template<class T>
-size_t AABB<T>::size() {
+size_t AABB<T>::size() const {
 	return 2;
 }
 

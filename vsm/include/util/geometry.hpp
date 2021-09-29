@@ -25,10 +25,10 @@
 #include <ogr_geometry.h>
 
 
-extern const float f_epsilon;
+extern const float f_epsilon;	///< A very small value for floating-point comparisons.
 
 /**
- * An integer vector class
+ * @brief A geometric vector class
  */
 template<class T>
 class Vector {
@@ -48,6 +48,9 @@ public:
 	 */
 	~Vector();
 
+	/**
+	 * Initialize with a vector from a different base type.
+	 */
 	template<class U>
 	Vector(const Vector<U> &a) {
 		x = a.x;
@@ -75,6 +78,9 @@ public:
 	 */
 	Vector<T> &operator=(const Vector<T> &a);
 
+	/**
+	 * Assign coordinates from a vector with a different base type.
+	 */
 	template<class U>
 	Vector<T> &operator=(const Vector<U> &a) {
 		x = a.x;
@@ -99,14 +105,23 @@ public:
 	 */
 	Vector<T> &operator/=(float f);
 
+	/**
+	 * Subtract one vector from another.
+	 */
 	friend Vector operator-(const Vector &a, const Vector &b) {
 		return Vector(a.x - b.x, a.y - b.y);
 	}
 
+	/**
+	 * Add one vector to another.
+	 */
 	friend Vector operator+(const Vector &a, const Vector &b) {
 		return Vector(a.x + b.x, a.y + b.y);
 	}
 
+	/**
+	 * Describe the vector for an output stream.
+	 */
 	friend std::ostream &operator<<(std::ostream &os, const Vector &v) {
 		os << "Vector(" << v.x << ", " << v.y << ")";
 		return os;
@@ -124,40 +139,94 @@ public:
 	T x, y;	///< Coordinates.
 };
 
+/**
+ * Add two vectors of same base type.
+ */
 template<class T>
 Vector<T> operator+(const Vector<T> &a, const Vector<T> &b);
 
+/**
+ * Subtract two vectors of same base type.
+ */
 template<class T>
 Vector<T> operator-(const Vector<T> &a, const Vector<T> &b);
 
+/**
+ * Scale a vector by a factor.
+ */
 template<class T>
 Vector<T> operator*(const Vector<T> &a, float f);
 
+/**
+ * Scale a vector by a factor.
+ */
 template<class T>
 Vector<T> operator/(const Vector<T> &a, float f);
 
+/**
+ * Compare two vectors of the same base type.
+ */
 template<class T>
 bool operator==(const Vector<T> &a, const Vector<T> &b);
 
+/**
+ * @brief Axis-aligned bounding box.
+ */
 template<class T>
 class AABB {
 public:
+	/**
+	 * Initialize a degenerate bounding box at (0, 0).
+	 */
 	AABB();
+
+	/**
+	 * Initialize a bounding box between vectors of minimum and maximum coordinates.
+	 * @param[in] vmin Reference to a vector of minimum coordinates (x_min, y_min).
+	 * @param[in] vmax Reference to a vector of maximum coordinates (x_max, y_max).
+	 */
 	AABB(const Vector<T> &vmin, const Vector<T> &vmax);
+
+	/**
+	 * Initialize a bounding box with specified coordinates.
+	 * @param[in] minx Minimum X-coordinate.
+	 * @param[in] miny Minimum Y-coordinate.
+	 * @param[in] maxx Maximum X-coordinate.
+	 * @param[in] maxy Maximum Y-coordinate.
+	 */
 	AABB(T minx, T miny, T maxx, T maxy);
+
+	/**
+	 * Initialize a bounding box from a GraphicsMagick geometry.
+	 */
 	AABB(const Magick::Geometry &geom);
+
+	/**
+	 * Deinitialize the bounding box.
+	 */
 	~AABB();
 
+	/**
+	 * Initialize the bounding box from another one with a different base type.
+	 */
 	template<class U>
 	AABB(const AABB<U> &a) {
 		vmin = a.vmin;
 		vmax = a.vmax;
 	}
 
-	Vector<T> vmin, vmax;
+	Vector<T> vmin;	///< Minimum coordinates (x_min, y_min).
+	Vector<T> vmax;	///< Maximum coordinates (x_max, y_max).
 
+	/**
+	 * Index the bounding box as a list of two vectors.
+	 * @param[in] idx Index, [0, 2).
+	 */
 	Vector<T> &operator[](std::size_t idx);
 
+	/**
+	 * Assign coordinates from another bounding box with a different base type.
+	 */
 	template<class U>
 	AABB<T>& operator=(const AABB<U> &a) {
 		vmin = a.vmin;
@@ -165,6 +234,9 @@ public:
 		return *this;
 	}
 
+	/**
+	 * Describe the bounding box for an output stream.
+	 */
 	friend std::ostream &operator<<(std::ostream &os, const AABB &aabb) {
 		os << "AABB(" << aabb.vmin << ", " << aabb.vmax << ")";
 		return os;
@@ -177,24 +249,67 @@ public:
 	 */
 	AABB<T> buffer(float buf_pixels);
 
+	/**
+	 * @brief Check if the bounding box contains a point.
+	 * @param[in] p Reference to the point to check against the bounding box.
+	 * @return True if the point is inside or on the edge of the bounding box. False otherwise.
+	 */
 	bool contains(const Vector<T> &p) const;
+
+	/**
+	 * @brief Check if the bounding box overlaps another.
+	 * @param[in] aabb Reference to the other bounding box to check against.
+	 * @return True if the bounding boxes are inside each-other, overlap, or touch one another. False otherwise.
+	 */
 	bool overlaps(const AABB<T> &aabb) const;
 
-	size_t size();
+	/**
+	 * @brief Number of vectors in the bounding box.
+	 * @return Always 2.
+	 */
+	size_t size() const;
 };
 
+/**
+ * @brief Simple geometry with an arbitrary number of corners but no cutouts.
+ */
 template<class T>
 class Polygon {
 public:
+	/**
+	 * Initialize the polygon.
+	 */
 	Polygon();
+
+	/**
+	 * Initialize the polygon from a list of vectors of the same base type.
+	 */
 	Polygon(const std::vector<Vector<T>> &poly);
+
+	/**
+	 * Deinitialize the polygon.
+	 */
 	~Polygon();
 
-	std::vector<Vector<T>> v;
+	std::vector<Vector<T>> v;	///< List of polygon vertices.
 
+	/**
+	 * Index a vertex in the polygon.
+	 * @param[in] idx Index of the vertex to request.
+	 * @throw std::out_of_range
+	 */
 	Vector<T> &operator[](std::size_t idx);
+
+	/**
+	 * Index a vertex in the polygon (read-only).
+	 * @param[in] idx Index of the vertex to request.
+	 * @throw std::out_of_range
+	 */
 	const Vector<T> &operator[](std::size_t idx) const;
 
+	/**
+	 * Describe the polygon for an output stream.
+	 */
 	friend std::ostream &operator<<(std::ostream &os, const Polygon &poly) {
 		os << "Polygon(";
 		for (size_t i=0; i<poly.size(); i++) {
@@ -212,10 +327,21 @@ public:
 	 */
 	AABB<T> get_aabb() const;
 
+	/**
+	 * @brief Clip the polygon vertices to a bounding box.
+	 * @param[in] aabb Reference to the bounding box to cut the polygon to.
+	 */
 	void clip_to_aabb(const AABB<T> &aabb);
 
+	/**
+	 * @brief Calculate the central point (mean coordinates) of the polygon.
+	 */
 	Vector<T> center() const;
 
+	/**
+	 * @brief Scale the polygon by a factor, around its center.
+	 * @param[in] Scaling factor, 1.0f to leave the polygon unchanged.
+	 */
 	void scale(float f);
 
 	/**
@@ -225,11 +351,27 @@ public:
 	 */
 	bool contains(const Vector<T> &p) const;
 
+	/**
+	 * @brief Add a vertex after the last point in the polygon.
+	 * @param[in] p Reference to the point to add.
+	 */
 	void push_back(const Vector<T> &p);
+
+	/**
+	 * @brief Remove a vertex at the specified index.
+	 * @param[in] idx Index of the point to remove.
+	 * @return True if the point was removed, otherwise false.
+	 */
 	bool remove(std::size_t idx);
 
+	/**
+	 * @brief Remove all vertices of the polygon.
+	 */
 	void clear();
 
+	/**
+	 * @brief Count polygon vertices.
+	 */
 	size_t size() const;
 };
 
@@ -268,7 +410,7 @@ class GDALOGRException: public std::exception {
 		int ogr_retval;	///< Error code from GDAL OGR operations.
 
 		/**
-		 * Pointer to the full message C string.
+		 * @brief Pointer to the full message C string.
 		 */
 		virtual const char* what() const throw() {
 			return full_message.c_str();
@@ -303,7 +445,7 @@ class GDALCPLException: public std::exception {
 		CPLErrorNum cpl_errnum;	///< Error number from the last GDAL CPL operation;
 
 		/**
-		 * Pointer to the full message C string.
+		 * @brief Pointer to the full message C string.
 		 */
 		virtual const char* what() const throw() {
 			return full_message.c_str();
