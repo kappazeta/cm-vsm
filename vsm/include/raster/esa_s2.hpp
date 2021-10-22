@@ -20,6 +20,8 @@
 #include <filesystem>
 #include <vector>
 
+#include "util/geometry.hpp"
+
 
 /**
  * @brief An operator class for raster or vector layers, which are related to ESA Sentinel-2 images.
@@ -172,6 +174,12 @@ class ESA_S2_Image {
 		void set_num_threads(int num_threads);
 
 		/**
+		 * Set a WKT geometry of the area of interest which limits the sub-tiles.
+		 * @param wkt_geom Reference to the WKT string which outlines the area of interest.
+		 */
+		void set_aoi_geometry(const std::string &wkt_geom);
+
+		/**
 		 * Extract S2 product name from file path.
 		 * @param[in] path Reference to the path to a Sentinel-2 product.
 		 * @return Product name as a string.
@@ -204,6 +212,16 @@ class ESA_S2_Image {
 		bool store_png;	///< Whether to store intermediate output in PNG files or not.
 		bool read_tiled;	///< Whether to read JP2 files in tiles, or to read full images into RAM.
 		int num_threads;	///< Number of threads to parallelize to.
+
+		std::string wkt_geom_aoi;	///< Area of interest as WKT geometry.
+
+		bool geo_extracted;	///< Whether the geo-coordinates have been extracted from at least one of the overlapping rasters.
+		std::string proj_ref;	///< Projection reference, as extracted from the JP2 file.
+		std::vector<std::vector<unsigned char>> subtile_mask;	///< Mask of subtiles to fill.
+		AABB<float> aabb_buf;	///< Buffered axis-aligned bounding box surrounding the area of interest polygon, in relative image coordinates.
+		Polygon<int> aoi_poly;	///< Area of interest polygon in pixel coordinates.
+
+		void extract_geo(const std::filesystem::path &path_in, const AABB<int> &image_aabb, float tile_size_div);
 
 		/**
 		 * Split a JP2 file into sub-tiles.

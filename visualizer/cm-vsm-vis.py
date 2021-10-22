@@ -59,7 +59,7 @@ class CMVSMVis(object):
         """
         m = re.match(r".*tile_(\d+)_(\d+)/(\w+).nc", fpath)
         if m:
-            x, y = int(m.group(1)), int(m.group(2))
+            y, x = int(m.group(1)), int(m.group(2))
             return x, y
         return None, None
 
@@ -81,8 +81,7 @@ class CMVSMVis(object):
             if band_data.dtype != "uint8":
                 band_data = 255 * (band_data - v_min) / (v_max - v_min)
         root.close()
-        # Flip the rows, to have subtile contents upright.
-        return np.flip(band_data.astype(np.uint8), 0)
+        return band_data
 
     def blit_subtile(self, fpath, band):
         """
@@ -99,7 +98,7 @@ class CMVSMVis(object):
         x1 = (tile_x + 1) * self.tile_w
         y0 = tile_y * self.tile_h
         y1 = (tile_y + 1) * self.tile_h
-        self.image[y0:y1, x0:x1] = band_data
+        self.image[x0:x1, y0:y1] = band_data
 
         return self.image
 

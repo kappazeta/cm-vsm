@@ -20,7 +20,7 @@
 //! @brief Library / tool name.
 #define CM_CONVERTER_NAME_STR		"cm-vsm"
 //! @brief Library version.
-#define CM_CONVERTER_VERSION_STR	"0.2.4"
+#define CM_CONVERTER_VERSION_STR	"0.2.6"
 
 /** \page Changelog
  * \par Changelog
@@ -29,6 +29,8 @@
  *
  * Version | Changes
  * --------|--------
+ * 0.2.6   | NetCDF layers no longer flipped.
+ * 0.2.5   | CLI argument `-g` for AOI WKT geometry.
  * 0.2.4   | Support for IPL-UV DL-L8S2-UV rgbiswir classification mask. MAJA classification map update from THEIA MUSCATE format to native Sentinel-2 format.
  * 0.2.3   | Support for NASA GSFC labels.
  * 0.2.2   | Add missing `B07`.

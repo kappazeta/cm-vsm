@@ -76,7 +76,7 @@ std::string CVATXML::cvat_header(const std::vector<std::string> &classes) {
 	return ss.str();
 }
 
-std::string CVATXML::cvat_polygon(unsigned int class_index, const std::vector<FVertex> &coordinates) {
+std::string CVATXML::cvat_polygon(unsigned int class_index, const Polygon<float> &coordinates) {
 	std::ostringstream ss;
 
 	if (class_index >= classes.size())

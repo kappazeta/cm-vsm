@@ -43,7 +43,7 @@ public:
 	//! \todo Support multiple polygons (with cut-outs).
 
 	std::string fid;	///< Index of the feature.
-	std::vector<FVertex> coordinates;	///< A vector of vertices.
+	Polygon<float> coordinates;	///< Polygon coordinates.
 	int dn;	///< Class index.
 	bool inner_boundary;	///< True if the coordinates mark the inner boundary of the polygon.
 };
@@ -97,9 +97,9 @@ public:
 	/**
 	 * @brief Parse a polygon in GML.
 	 * @param[in] content Reference to the XML string.
-	 * @param[out] coordinates Pointer to a vector of polygon coordinates.
+	 * @param[out] coordinates Pointer to the output polygon.
 	 */
-	void parse_polygon(const std::string &content, std::vector<FVertex> *coordinates);
+	void parse_polygon(const std::string &content, Polygon<float> *coordinates);
 
 	/**
 	 * @brief Expat callback for the start of an XML tag.
