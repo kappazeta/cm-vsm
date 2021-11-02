@@ -7,7 +7,7 @@ The following system dependencies are needed:
 * CMake 3.4.3 or later
 * cget (https://github.com/pfultz2/cget)
 * OpenJPEG (`libopenjp2-7-dev`)
-* GDAL (`libgdal-dev`, `gdal-bin`)
+* GDAL (`libgdal-dev`, `gdal-bin`, `gdal-data`)
 * Expat (`libexpat1-dev`)
 * GraphicsMagick++ (`libgraphicsmagick++1-dev`)
 * NetCDF (`libnetcdf-dev`)
@@ -29,6 +29,11 @@ Under CentOS-8, run
 sudo yum install cmake gcc gcc-c++ python3-pip openjpeg2-devel libpng-devel gdal gdal-devel expat-devel GraphicsMagick-c++-devel netcdf-devel libjpeg-turbo-devel jbigkit-libs jbigkit-devel m4
 ```
 
+Make sure that your `GDAL_DATA` environment variable has been set, according to your GDAL version, which is indicated by the placeholder `YOUR_GDAL_VERSION` below:
+
+```
+GDAL_DATA=/usr/share/gdal/YOUR_GDAL_VERSION
+```
 
 ## Building
 
