@@ -35,6 +35,11 @@ macro(vsm_common_init)
 	if(NOT DEFINED CGET_PREFIX)
 		include(${VSM_ROOT}/build/cget/cget/cget.cmake)
 	endif(NOT DEFINED CGET_PREFIX)
+
+	# Default to an install prefix of /usr.
+	IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+		SET(CMAKE_INSTALL_PREFIX /usr CACHE PATH "Default prefix: /usr" FORCE)
+	ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endmacro(vsm_common_init)
 
 # A macro to search for source files
