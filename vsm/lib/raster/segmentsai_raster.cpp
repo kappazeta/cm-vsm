@@ -75,13 +75,21 @@ bool SegmentsAIRaster::load(const std::filesystem::path &mask_path, const std::f
 	Magick::PixelPacket *dpx = subset->getPixels(0, 0, w, h);
 	PixelRGB8 pixel;
 
-	for (unsigned int i=0; i<size; i++) {
-		pixel = PixelRGB8(spx[i]);
-		// Pixel value 0 is always mapped to the background color.
-		if (pixel.r > 0) {
-			col = class_map.at(pixel.r);
-			dpx[i] = Magick::ColorGray(col);
+	try {
+		for (unsigned int i=0; i<size; i++) {
+			pixel = PixelRGB8(spx[i]);
+			// Pixel value 0 is always mapped to the background color.
+			if (pixel.r > 0) {
+				col = class_map.at(pixel.r);
+				dpx[i] = Magick::ColorGray(col);
+			}
 		}
+	} catch(std::out_of_range) {
+		std::ostringstream stream;
+		stream << "Encountered pixel in unrecognized category." << std::endl;
+		stream << "Please ensure that label categories are from the following:" << std::endl;
+		stream << "cloud, cloud_shadow, semi_transparent_cloud, not_defined, invalid";
+		throw std::runtime_error(stream.str());
 	}
 
 	subset->syncPixels();
@@ -100,7 +108,7 @@ bool SegmentsAIRaster::convert(const std::filesystem::path &path_dir) {
 		path_nc = tile_entry.path().string() + "/" + extract_index_date(path_dir) + "_" + extract_tile_id(tile_entry.path().string()) + ".nc";
 
 		if (std::filesystem::exists(path_mask) && std::filesystem::exists(path_classes)) {
-			retval &= load(path_mask, path_classes);
+			retval &= load(std::filesystem::path(path_mask), std::filesystem::path(path_classes));
 			if (retval)
 				retval &= save(path_mask + "_converted.png");
 			if (retval)
