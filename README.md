@@ -5,13 +5,7 @@ A raster conversion and segmentation mask vectorization tool for KappaZeta cloud
 The following system dependencies are needed:
 * g++8 or later
 * CMake 3.4.3 or later
-* cget (https://github.com/pfultz2/cget)
-* OpenJPEG (`libopenjp2-7-dev`)
-* GDAL (`libgdal-dev`, `gdal-bin`, `gdal-data`)
-* Expat (`libexpat1-dev`)
-* GraphicsMagick++ (`libgraphicsmagick++1-dev`)
-* NetCDF (`libnetcdf-dev`)
-* nlohmann's JSON (https://github.com/nlohmann/json)
+* Micromamba ( https://github.com/mamba-org/mamba#micromamba )
 * Doxygen (for documentation only)
 
 On Ubuntu, the following commands could be used to install the dependencies:
@@ -19,8 +13,15 @@ On Ubuntu, the following commands could be used to install the dependencies:
 ```
 sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 sudo apt update
-sudo apt-get install cmake gcc-9 g++-9 python3-pip libgdal-dev gdal-bin libexpat1-dev libgraphicsmagick++1-dev
-pip3 install cget
+sudo apt-get install cmake gcc-9 g++-9 python3-pip
+
+wget -qO- https://micromamba.snakepit.net/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
+./bin/micromamba shell init -s bash -p ~/micromamba
+source ~/.bashrc
+micromamba activate
+
+micromamba env create -f vsm/environment.yml
+micromamba activate cm-vsm
 ```
 
 Under CentOS-8, run
@@ -42,8 +43,8 @@ Ensure that there is no active Conda environment (except `base`) while building 
 A release version of the tool can be built as follows:
 
 ```
+micromamba activate cm-vsm
 cd vsm/build
-cget install
 cmake .. -DCMAKE_CXX_COMPILER=g++-9
 make
 sudo make install
@@ -52,8 +53,8 @@ sudo make install
 Similarly, a debug version can be built as follows:
 
 ```
+micromamba activate cm-vsm
 cd vsm/build
-cget install
 cmake .. -DCMAKE_CXX_COMPILER=g++-9 -DCMAKE_BUILD_TYPE=Debug
 make
 sudo make install
@@ -67,10 +68,12 @@ make doc
 ```
 
 ## Building in Visual Studio Code (Ubuntu Linux)
-For the program to run additional packages from the "Extensions" tab are requred:
+For the program to run additional packages from the "Extensions" tab are required:
 * C/C++ (Microsoft)
 * CMake Tools (Microsoft)
 * CMake (twxs)
+
+TODO:: Adapt to the build instructions for Micromamba / Conda environment.
 
 Using terminal navigate to `~/cm-vsm/vsm/build` and run:
 ```

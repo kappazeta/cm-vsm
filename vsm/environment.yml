@@ -1,0 +1,10 @@
+name: cm-vsm
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.5
+  - pip
+  - gdal<3.0.0
+  - conda-forge::graphicsmagick
+  - conda-forge::nlohmann_json

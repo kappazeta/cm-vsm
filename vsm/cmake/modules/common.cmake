@@ -15,6 +15,62 @@ endmacro(check_out_of_source)
 
 # Common project initialization routines
 macro(vsm_common_init)
+	# Use Conda for dependency management
+	set(CONDA_DIR $ENV{CONDA_PREFIX})
+	if(EXISTS ${CONDA_DIR})
+		message(STATUS "Found Conda from ${CONDA_DIR}")
+	else()
+		message(FATAL_ERROR "Could not find Conda from '${CONDA_DIR}'")
+	endif()
+
+	set(CONDA_INCLUDE_DIRS ${CONDA_DIR}/include)
+	set(MAGICK_INCLUDE_DIR ${CONDA_DIR}/include/GraphicsMagick)
+	file(GLOB OPENJP2_INCLUDE_DIRS ${CONDA_DIR}/include/openjpeg-*)
+
+	set(GDAL_LIB ${CONDA_DIR}/lib/libgdal.so)
+	set(MAGICK_LIB ${CONDA_DIR}/lib/libGraphicsMagick++.so)
+	set(OPENJP2_LIB ${CONDA_DIR}/lib/libopenjp2.so)
+	set(NETCDF_LIB ${CONDA_DIR}/lib/libnetcdf.so)
+	set(STDCXX_LIB ${CONDA_DIR}/lib/libstdc++.so)
+	set(EXPAT_LIB ${CONDA_DIR}/lib/libexpat.so)
+
+	if(EXISTS ${GDAL_LIB})
+		message(STATUS "Found GDAL from ${GDAL_LIB}")
+	else()
+		message(FATAL_ERROR "Could not find GDAL from '${GDAL_LIB}'")
+	endif()
+
+	if(EXISTS ${MAGICK_LIB})
+		message(STATUS "Found GraphicsMagick++ from ${MAGICK_LIB}")
+	else()
+		message(FATAL_ERROR "Could not find GraphicsMagick++ from '${MAGICK_LIB}'")
+	endif()
+
+	if(EXISTS ${NETCDF_LIB})
+		message(STATUS "Found NetCDF from ${NETCDF_LIB}")
+	else()
+		message(FATAL_ERROR "Could not find NetCDF from '${NETCDF_LIB}'")
+	endif()
+
+	if(EXISTS ${OPENJP2_LIB})
+		message(STATUS "Found OpenJP2 from ${OPENJP2_LIB}")
+	else()
+		message(FATAL_ERROR "Could not find OpenJP2 from '${OPENJP2_LIB}'")
+	endif()
+
+	if(EXISTS ${STDCXX_LIB})
+		message(STATUS "Found stdc++ from ${STDCXX_LIB}")
+	else()
+		message(FATAL_ERROR "Could not find stdc++ from '${STDCXX_LIB}'")
+	endif()
+
+	if(EXISTS ${EXPAT_LIB})
+		message(STATUS "Found expat from ${EXPAT_LIB}")
+	else()
+		message(FATAL_ERROR "Could not find expat from '${EXPAT_LIB}'")
+	endif()
+
+
 	# Path to our CMake modules
 	set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${VSM_ROOT}/cmake/modules)
 
@@ -30,11 +86,6 @@ macro(vsm_common_init)
 		"-Wall" "-Wpedantic" "-Wextra" "-fexceptions"
 		"$<$<CONFIG:DEBUG>:-O0;-g3;-ggdb>"
 	)
-
-	# Load cget modules.
-	if(NOT DEFINED CGET_PREFIX)
-		include(${VSM_ROOT}/build/cget/cget/cget.cmake)
-	endif(NOT DEFINED CGET_PREFIX)
 
 	# Default to an install prefix of /usr.
 	IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)

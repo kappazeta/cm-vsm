@@ -1,4 +1,4 @@
 #!/bin/bash
 
-rm -Rf CMakeFiles lib vsm CMakeCache.txt
+rm -Rf CMakeFiles lib vsm bin CMakeCache.txt
 

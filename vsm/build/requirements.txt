@@ -1,3 +1,0 @@
-nlohmann/json
-uclouvain/openjpeg
-Unidata/netcdf-c
