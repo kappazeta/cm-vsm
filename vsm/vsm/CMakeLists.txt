@@ -17,7 +17,7 @@
 vsm_set_source_files(${CMAKE_CURRENT_SOURCE_DIR} VSM)
 
 add_executable(cm_vsm ${VSM_SRC} ${VSM_INC})
-target_link_libraries(cm_vsm vsm ${OPENJP2_LIB} ${EXPAT_LIB} ${STDCXX_LIB} stdc++fs ${MAGICK_LIB} ${NETCDF_LIB} ${GDAL_LIB})
+target_link_libraries(cm_vsm vsm stdc++fs ${OPENJP2_LIB} ${EXPAT_LIB} ${STDCXX_LIB} ${MAGICK_LIB} ${NETCDF_LIB} ${GDAL_LIB})
 set_target_properties(cm_vsm PROPERTIES CXX_STANDARD 17)
 
 install(TARGETS cm_vsm DESTINATION bin)

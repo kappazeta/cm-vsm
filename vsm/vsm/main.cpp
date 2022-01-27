@@ -1,6 +1,6 @@
 // ESA S2 product converter for cloud mask labeling and processing
 //
-// Copyright 2021 KappaZeta Ltd.
+// Copyright 2022 KappaZeta Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -141,9 +141,7 @@ int main(int argc, char* argv[]) {
 		ESA_S2_Image img;
 		EmptyImageOperator img_op;
 
-		std::filesystem::path path_dir_in(arg_path_s2_dir);
-		if (!path_dir_in.is_absolute())
-			path_dir_in = std::filesystem::absolute(arg_path_s2_dir);
+		std::filesystem::path path_dir_in = std::filesystem::canonical(arg_path_s2_dir);
 
 		std::string str_path_dir_out;
 		if (arg_path_out.empty())
@@ -187,14 +185,8 @@ int main(int argc, char* argv[]) {
 	if (arg_path_rasterize.length() > 0) {
 		CVATRasterizer rasterizer;
 
-		std::filesystem::path path_in(arg_path_rasterize);
-		if (!path_in.is_absolute()) {
-			path_in = std::filesystem::absolute(arg_path_rasterize);
-		}
-		std::filesystem::path path_out_nc(arg_path_nc);
-		if (!path_out_nc.is_absolute()) {
-			path_out_nc = std::filesystem::absolute(arg_path_nc);
-		}
+		std::filesystem::path path_in = std::filesystem::canonical(arg_path_rasterize);
+		std::filesystem::path path_out_nc = std::filesystem::canonical(arg_path_nc);
 
 		rasterizer.image.set_deflate_level(deflatelevel);
 
@@ -216,14 +208,8 @@ int main(int argc, char* argv[]) {
 	} else if (arg_path_supervisely.length() > 0) {
 		SuperviselyRasterizer r;
 
-		std::filesystem::path path_in(arg_path_supervisely);
-		if (!path_in.is_absolute()) {
-			path_in = std::filesystem::absolute(arg_path_supervisely);
-		}
-		std::filesystem::path path_out_nc(arg_path_nc);
-		if (!path_out_nc.is_absolute()) {
-			path_out_nc = std::filesystem::absolute(arg_path_nc);
-		}
+		std::filesystem::path path_in = std::filesystem::canonical(arg_path_supervisely);
+		std::filesystem::path path_out_nc = std::filesystem::canonical(arg_path_nc);
 
 		r.image.set_deflate_level(deflatelevel);
 
@@ -238,10 +224,7 @@ int main(int argc, char* argv[]) {
 	} else if (arg_path_cvat_sai_dir.length() > 0) {
 		SegmentsAIRaster r;
 
-		std::filesystem::path path_in(arg_path_cvat_sai_dir);
-		if (!path_in.is_absolute()) {
-			path_in = std::filesystem::absolute(arg_path_cvat_sai_dir);
-		}
+		std::filesystem::path path_in = std::filesystem::canonical(arg_path_cvat_sai_dir);
 
 		r.set_deflate_level(deflatelevel);
 

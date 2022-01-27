@@ -1,7 +1,7 @@
 //! @file
 //! @brief Version macros and changelog
 //
-// Copyright 2021 KappaZeta Ltd.
+// Copyright 2022 KappaZeta Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 //! @brief Library / tool name.
 #define CM_CONVERTER_NAME_STR		"cm-vsm"
 //! @brief Library version.
-#define CM_CONVERTER_VERSION_STR	"0.2.7"
+#define CM_CONVERTER_VERSION_STR	"0.2.8"
 
 /** \page Changelog
  * \par Changelog
@@ -29,6 +29,7 @@
  *
  * Version | Changes
  * --------|--------
+ * 0.2.8   | Dependencies are now handled via Conda.
  * 0.2.7   | Improve error logging in conversion of Segments.AI annotations.
  * 0.2.6   | NetCDF layers no longer flipped.
  * 0.2.5   | CLI argument `-g` for AOI WKT geometry.
