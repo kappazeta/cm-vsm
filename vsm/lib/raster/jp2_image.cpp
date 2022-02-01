@@ -444,6 +444,10 @@ bool JP2_Image::subset_whole(int da_x0, int da_y0, int da_x1, int da_y1) {
 	unsigned long h = da_y1 - da_y0;
 	unsigned long w_clamped = w, h_clamped = h;
 
+	// Region of interest outside the image?
+	if (da_x0 > f_geom.width() || da_y0 > f_geom.height())
+		return false;
+
 	if (da_x0 + w >= f_geom.width())
 		w_clamped = f_geom.width() - da_x0;
 	if (da_y0 + h >= f_geom.height())

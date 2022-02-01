@@ -59,6 +59,7 @@ int main(int argc, char* argv[]) {
 		<< " " << nlohmann::json::meta()["name"] << " " << nlohmann::json::meta()["version"]["string"] << std::endl
 		<< " OpenJPEG " << opj_version() << std::endl
 		<< " MagickLib " << MagickLibVersionText << std::endl
+		<< " NetCDF \"" << nc_inq_libvers() << "\"" << std::endl
 		<< std::endl;
 
 	if (argc < 2) {
