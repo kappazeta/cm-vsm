@@ -1,0 +1,17 @@
+name: cm-vsm-build
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.5
+  - conda-forge::gdal<3.0.0
+  - conda-forge::libgdal
+  - conda-forge::cxx-compiler
+  - conda-forge::openjpeg
+  - conda-forge::graphicsmagick
+  - conda-forge::doxygen
+  - pip
+  - pip:
+    - cget
+    - cmake
+    - s3cmd
