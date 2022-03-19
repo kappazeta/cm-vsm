@@ -162,8 +162,6 @@ void KZ_S2_TIF_Image::extract_geo(const std::filesystem::path &path_in, const AA
 	GDALClose(p_dataset);
 }
 
-// std::vector<std::string> split_str(std::string const &text, char delim) {
-//! \todo Generalize the splitting logic, to deduplicate code.
 bool KZ_S2_TIF_Image::process(const std::filesystem::path &path_in, const std::filesystem::path &path_dir_out, KZ_S2_TIF_Image_Operator &op, std::vector<std::string> bands) {
 	std::vector<unsigned int> band_ids;
 	bool retval = true;
@@ -244,6 +242,8 @@ bool KZ_S2_TIF_Image::split_tiff(const std::filesystem::path &path_in, const std
 				else if (sy1 - sy0 > sx1 - sx0)
 					sy1 = sy0 + sx1 - sx0;
 
+				// std::cout << "tile_" << p.x << "_" << p.y << ": " << sx0 << ", " << sy0 << ", " << sx1 << ", " << sy1 << std::endl;
+
 				// Account for overlap.
 				sx1 += tile_size * f_overlap / div_f;
 				sy1 += tile_size * f_overlap / div_f;
@@ -255,12 +255,17 @@ bool KZ_S2_TIF_Image::split_tiff(const std::filesystem::path &path_in, const std
 						c = 0;
 
 					// Load the source image.
-					img_src.load_subset_channel(path_in, sx0, sy0, sx1, sy1, c);
+					retval = img_src.load_subset_channel(path_in, sx0, sy0, sx1, sy1, c);
+					if (!retval) {
+						std::cerr << "Failed to load subset " << "tile_" << p.x << "_" << p.y << ": " << sx0 << ", " << sy0 << ", " << sx1 << ", " << sy1 << std::endl;
+						continue;
+					}
+
 					// "Normalize" the image.
 					img_src.multiply(1.0f / KZ_S2_TIF_Image_Operator::scale_max[c]);
 
 					if (img_src.subset->rows() != tile_size || img_src.subset->columns() != tile_size) {
-						std::cout << "Invalid geometry " << img_src.subset->rows() << "x" << img_src.subset->columns() << " for subtile " << p.x << ", " << p.y << std::endl;
+						std::cerr << "Invalid geometry " << img_src.subset->rows() << "x" << img_src.subset->columns() << " for subtile " << p.x << ", " << p.y << std::endl;
 					}
 
 					std::ostringstream ss_path_out, ss_path_out_png, ss_path_out_nc;

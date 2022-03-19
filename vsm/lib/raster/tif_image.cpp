@@ -101,7 +101,7 @@ bool TIF_Image::load_subset_channel(const std::filesystem::path &path, unsigned 
 	// Make sure that we won't ask for out of range pixels from libtiff.
 	if (channel > num_tiff_channels)
 		return false;
-	if (da_x0 > main_geometry.width() || da_y0 > main_geometry.width())
+	if (da_x0 > main_geometry.width() || da_y0 > main_geometry.height())
 		return false;
 	if (da_x1 > main_geometry.width())
 		da_x1c = main_geometry.width();
