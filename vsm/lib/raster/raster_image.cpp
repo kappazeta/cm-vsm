@@ -231,6 +231,27 @@ void RasterImage::remap_values(const unsigned char *values, unsigned char max_va
 	}
 }
 
+bool RasterImage::multiply(float f) {
+	if (subset != nullptr) {
+		unsigned int w = subset->columns();
+		unsigned int h = subset->rows();
+		unsigned int size = w * h;
+
+		Magick::PixelPacket *px = subset->getPixels(0, 0, w, h);
+
+		float src_val, dst_val;
+
+		for (unsigned int i=0; i<size; i++) {
+			src_val = Magick::ColorGray(px[i]).shade();
+			px[i] = Magick::ColorGray(src_val * f);
+		}
+
+		subset->syncPixels();
+		return true;
+	}
+	return false;
+}
+
 int RasterImage::add_layer_to_netcdf(int ncid, const std::filesystem::path &path, const std::string &name_in_netcdf, unsigned int w, unsigned int h, const int *dimids, unsigned char nd, const void *dst_px) {
 	int varid = 0;
 	int retval;

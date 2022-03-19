@@ -20,7 +20,7 @@
 //! @brief Library / tool name.
 #define CM_CONVERTER_NAME_STR		"cm-vsm"
 //! @brief Library version.
-#define CM_CONVERTER_VERSION_STR	"0.2.9"
+#define CM_CONVERTER_VERSION_STR	"0.3.0"
 
 /** \page Changelog
  * \par Changelog
@@ -29,6 +29,7 @@
  *
  * Version | Changes
  * --------|--------
+ * 0.3.0   | Support splitting of KappaZeta rasters.
  * 0.2.9   | Fix issue for cropped S2 products. Default to sinc resampling unless specified. Display NetCDF version.
  * 0.2.7   | Improve error logging in conversion of Segments.AI annotations.
  * 0.2.6   | NetCDF layers no longer flipped.

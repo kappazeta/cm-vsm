@@ -55,6 +55,24 @@ class TIF_Image: public RasterImage {
 		 * @param da_y1 \f$y_1\f$ coordinate (bottom side) of the image to load.
 		 * @return True on success, False otherwise.
 		 */
-		bool load_subset(const std::filesystem::path &path, int da_x0, int da_y0, int da_x1, int da_y1);
+		bool load_subset(const std::filesystem::path &path, unsigned int da_x0, unsigned int da_y0, unsigned int da_x1, unsigned int da_y1);
+
+		/**
+		 * Load a specific channel of a subset of the TIF file.
+		 * The top-left corner of the subset is specified by \f$x_0, y_0\f$
+		 * and the bottom-right corner is specified by \f$x_1, y_1\f$.
+		 * @param[in] path Reference to the PNG file path.
+		 * @param da_x0 \f$x_0\f$ coordinate (left side) of the image to load.
+		 * @param da_y0 \f$y_0\f$ coordinate (top side) of the image to load.
+		 * @param da_x1 \f$x_1\f$ coordinate (right side) of the image to load.
+		 * @param da_y1 \f$y_1\f$ coordinate (bottom side) of the image to load.
+		 * @param channel Channel index within the image.
+		 * @return True on success, False otherwise.
+		 */
+		bool load_subset_channel(const std::filesystem::path &path, unsigned int da_x0, unsigned int da_y0, unsigned int da_x1, unsigned int da_y1, unsigned int channel);
+
+	protected:
+		unsigned int num_tiff_channels; 	///< Number of channels in the TIFF file.
+
 };
 

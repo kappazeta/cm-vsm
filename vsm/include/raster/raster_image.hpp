@@ -299,6 +299,13 @@ class RasterImage {
 		bool scale_to(unsigned int size);
 
 		/**
+		 * Multiply pixels by a factor.
+		 * @param f Factor to multiply with.
+		 * @return True on success, false on failure.
+		 */
+		bool multiply(float f);
+
+		/**
 		 * Remap pixel values (assuming a classification mask).
 		 * @param values Pointer to an array of new pixel values. Current pixel values are taken as index. Last value is used for out of range indices.
 		 * @param max_value Maximum pixel value supported by the values argument. Assumes that any pixel values exceeding this value is remapped to the last value in the values argument.
