@@ -93,7 +93,6 @@ bool TIF_Image::load_subset_channel(const std::filesystem::path &path, unsigned 
 	unsigned int da_x1c = da_x1;
 	unsigned int da_y1c = da_y1;
 	unsigned int x, y, yi;
-	unsigned int sx, sy;
 	unsigned int rows_per_strip = 0;
 	unsigned short planar_cfg = 0;
 	float dst_val;
@@ -148,7 +147,6 @@ bool TIF_Image::load_subset_channel(const std::filesystem::path &path, unsigned 
 			}
 		} else {
 			TIFFGetField(ptif, TIFFTAG_ROWSPERSTRIP, &rows_per_strip);
-			unsigned int num_strips = TIFFNumberOfStrips(ptif);
 
 			tile_w = main_geometry.width();
 			tile_h = rows_per_strip;
@@ -192,6 +190,6 @@ bool TIF_Image::load_subset_channel(const std::filesystem::path &path, unsigned 
 		TIFFClose(ptif);
 	}
 
-	return true;
+	return retval;
 }
 

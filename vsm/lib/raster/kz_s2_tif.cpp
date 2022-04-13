@@ -37,7 +37,7 @@ const std::string KZ_S2_TIF_Image_Operator::data_type_name[KZ_S2_TIF_Image_Opera
 	"NDWI", "NDVIRE", "TCW", "TCV", "TCB", "YEL", "PSRI", "WRI", "Label"
 };
 const float KZ_S2_TIF_Image_Operator::scale_max[KZ_S2_TIF_Image_Operator::DT_KZ_S2_COUNT] = {
-	0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+	0.25f, 0.25f, 0.25f, 0.5f, 0.25f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
 };
 
 KZ_S2_TIF_Image::KZ_S2_TIF_Image():
