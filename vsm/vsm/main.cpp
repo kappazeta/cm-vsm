@@ -55,11 +55,14 @@ unsigned char new_class_map[] = {
 int main(int argc, char* argv[]) {
 	std::cout << "Vectorization and splitting tool for the KappaZeta Cloudmask project." << std::endl;
 	std::cout << " Version: " << CM_CONVERTER_VERSION_STR << std::endl;
+	std::cout << "Built with the following dependencies:" << std::endl
+		<< " MagickLib " << MagickLibVersionText << std::endl
+		<< " GDAL " << GDAL_RELEASE_NAME << std::endl;
 	std::cout << "Running with the following dependencies:" << std::endl
 		<< " " << nlohmann::json::meta()["name"] << " " << nlohmann::json::meta()["version"]["string"] << std::endl
 		<< " OpenJPEG " << opj_version() << std::endl
-		<< " MagickLib " << MagickLibVersionText << std::endl
 		<< " NetCDF \"" << nc_inq_libvers() << "\"" << std::endl
+		<< " GDAL " << GDALVersionInfo("RELEASE_NAME") << std::endl
 		<< std::endl;
 
 	if (argc < 2) {

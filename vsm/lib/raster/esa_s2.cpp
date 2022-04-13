@@ -511,14 +511,18 @@ void ESA_S2_Image::extract_geo(const std::filesystem::path &path_in, const AABB<
 
 		if (aoi_poly.size() > 0) {
 			subtile_mask = fill_poly_overlap(aoi_poly, tile_size_div);
+			if (subtile_mask.empty())
+				throw RasterException("No subtiles for the overlap between the area of interest polygon and raster", path_in);
 		} else {
 			GDALClose(p_dataset);
-			throw RasterException(path_in, "No overlap between the area of interest polygon and raster");
+			throw RasterException("No overlap between the area of interest polygon and raster", path_in);
 		}
 	// Otherwise take all the subtiles.
 	} else {
 		aabb_buf = AABB<float>(0, 0, 1, 1);
 		subtile_mask = fill_whole(image_aabb, tile_size_div);
+		if (subtile_mask.empty())
+			throw RasterException("No subtiles for the raster", path_in);
 	}
 	GDALClose(p_dataset);
 }
