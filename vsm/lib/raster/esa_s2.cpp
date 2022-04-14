@@ -380,6 +380,7 @@ std::vector<std::vector<unsigned char>> fill_poly_overlap(Polygon<int> &poly, fl
 	//   http://alienryderflex.com/polygon_fill/
 	int i, j;
 	float xf;
+	const float epsilon = 1E-3;
 	std::vector<int> node_x;
 	Vector<int> pixel;
 	Vector<float> local_a, local_b;
@@ -406,10 +407,10 @@ std::vector<std::vector<unsigned char>> fill_poly_overlap(Polygon<int> &poly, fl
 			local_b.x = ((float) poly[j].x - poly_aabb.vmin.x) / pixel_size_div;
 			local_b.y = ((float) poly[j].y - poly_aabb.vmin.y) / pixel_size_div;
 
-			if ((local_a.y < (float) pixel.y && local_b.y >= (float) pixel.y)
-				|| (local_b.y < (float) pixel.y && local_a.y >= (float) pixel.y)) {
+			if ((local_a.y <= (float) pixel.y && local_b.y >= (float) pixel.y)
+				|| (local_b.y <= (float) pixel.y && local_a.y >= (float) pixel.y)) {
 				// Calculate the x-coordinate of the intersection between AB and y = pixel.y.
-				xf = local_a.x + (pixel.y - local_a.y) / (local_b.y - local_a.y) * (local_b.x - local_a.x);
+				xf = local_a.x + (pixel.y - local_a.y) / (local_b.y - local_a.y + epsilon) * (local_b.x - local_a.x + epsilon);
 				node_x.push_back((int) xf);
 			}
 			j = i;
@@ -433,11 +434,11 @@ std::vector<std::vector<unsigned char>> fill_poly_overlap(Polygon<int> &poly, fl
 					// Also fill the immediate surrounding pixels.
 					if (pixel.x > 0)
 						subtile_mask[pixel.x-1][pixel.y] = 1;
-					if (pixel.x < local_aabb.vmax.x)
+					if (pixel.x + 1 < local_aabb.vmax.x)
 						subtile_mask[pixel.x+1][pixel.y] = 1;
 					if (pixel.y > 0)
 						subtile_mask[pixel.x][pixel.y-1] = 1;
-					if (pixel.y < local_aabb.vmax.y)
+					if (pixel.y + 1 < local_aabb.vmax.y)
 						subtile_mask[pixel.x][pixel.y+1] = 1;
 				}
 			}
@@ -511,8 +512,19 @@ void ESA_S2_Image::extract_geo(const std::filesystem::path &path_in, const AABB<
 
 		if (aoi_poly.size() > 0) {
 			subtile_mask = fill_poly_overlap(aoi_poly, tile_size_div);
-			if (subtile_mask.empty())
+
+			// Ensure that we have at least one subtile to process.
+			Vector<int> p;
+			unsigned int num_subtiles = 0;
+			for (p.x=0; p.x<(int)subtile_mask.size(); p.x++) {
+				for (p.y=0; p.y<(int)subtile_mask[p.x].size(); p.y++) {
+					num_subtiles += subtile_mask[p.x][p.y];
+				}
+			}
+			if (!num_subtiles)
 				throw RasterException("No subtiles for the overlap between the area of interest polygon and raster", path_in);
+			else
+				std::cout << "Number of subtiles in the area of interest polygon: " << num_subtiles << std::endl;
 		} else {
 			GDALClose(p_dataset);
 			throw RasterException("No overlap between the area of interest polygon and raster", path_in);

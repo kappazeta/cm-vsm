@@ -4,7 +4,7 @@ channels:
   - defaults
 dependencies:
   - python>=3.5
-  - conda-forge::gdal<3.0.0
+  - conda-forge::gdal
   - conda-forge::libgdal
   - conda-forge::cxx-compiler
   - conda-forge::openjpeg
