@@ -12,6 +12,7 @@ The following system dependencies are needed:
 * GraphicsMagick++ (`libgraphicsmagick++1-dev`)
 * NetCDF (`libnetcdf-dev`)
 * nlohmann's JSON (https://github.com/nlohmann/json)
+* CppUnit (`libcppunit-dev`)
 * Doxygen (for documentation only)
 
 On Ubuntu, the following commands could be used to install the dependencies:
@@ -19,7 +20,7 @@ On Ubuntu, the following commands could be used to install the dependencies:
 ```
 sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 sudo apt update
-sudo apt-get install cmake gcc-9 g++-9 python3-pip libgdal-dev gdal-bin libexpat1-dev libgraphicsmagick++1-dev
+sudo apt-get install cmake gcc-9 g++-9 python3-pip libgdal-dev gdal-bin libexpat1-dev libgraphicsmagick++1-dev libcppunit-dev
 pip3 install cget
 ```
 
