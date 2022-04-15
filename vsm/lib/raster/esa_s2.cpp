@@ -374,9 +374,10 @@ bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::
  * @param[in] image_aabb Reference to the axis-aligned bounding box of the whole product.
  * @param[in] poly Reference to the polygon to fill onto the mask.
  * @param[in] pixel_size_div Effective pixel size, accounting the overlap.
+ * @param[in] buffer_out Buffer by filling surrounding pixels.
  * @return 2D array of values (0 - skipped, 1 - sub-tile within area of interest).
  */
-std::vector<std::vector<unsigned char>> fill_poly_overlap(const AABB<int> &image_aabb, Polygon<int> &poly, float pixel_size_div) {
+std::vector<std::vector<unsigned char>> fill_poly_overlap(const AABB<int> &image_aabb, Polygon<int> &poly, float pixel_size_div, bool buffer_out) {
 	// Inspired by
 	//   http://alienryderflex.com/polygon_fill/
 	int i, j;
@@ -412,6 +413,14 @@ std::vector<std::vector<unsigned char>> fill_poly_overlap(const AABB<int> &image
 				// Calculate the x-coordinate of the intersection between AB and y = pixel.y.
 				xf = local_a.x + (pixel.y - local_a.y) / (local_b.y - local_a.y + epsilon) * (local_b.x - local_a.x + epsilon);
 				node_x.push_back((int) xf);
+			} else if (pixel.y == (int) local_a.y && (int) local_a.y == (int) local_b.y) {
+				if (local_a.x < local_b.x) {
+					node_x.push_back((int) local_a.x);
+					node_x.push_back((int) local_b.x);
+				} else {
+					node_x.push_back((int) local_b.x);
+					node_x.push_back((int) local_a.x);
+				}
 			}
 			j = i;
 		}
@@ -432,14 +441,16 @@ std::vector<std::vector<unsigned char>> fill_poly_overlap(const AABB<int> &image
 					// Fill the pixel covered by the polygon.
 					subtile_mask[pixel.x][pixel.y] = 1;
 					// Also fill the immediate surrounding pixels.
-					if (pixel.x > 0)
-						subtile_mask[pixel.x-1][pixel.y] = 1;
-					if (pixel.x + 1 < local_aabb.vmax.x)
-						subtile_mask[pixel.x+1][pixel.y] = 1;
-					if (pixel.y > 0)
-						subtile_mask[pixel.x][pixel.y-1] = 1;
-					if (pixel.y + 1 < local_aabb.vmax.y)
-						subtile_mask[pixel.x][pixel.y+1] = 1;
+					if (buffer_out) {
+						if (pixel.x > 0)
+							subtile_mask[pixel.x-1][pixel.y] = 1;
+						if (pixel.x + 1 < local_aabb.vmax.x)
+							subtile_mask[pixel.x+1][pixel.y] = 1;
+						if (pixel.y > 0)
+							subtile_mask[pixel.x][pixel.y-1] = 1;
+						if (pixel.y + 1 < local_aabb.vmax.y)
+							subtile_mask[pixel.x][pixel.y+1] = 1;
+					}
 				}
 			}
 		}
@@ -506,7 +517,7 @@ void ESA_S2_Image::extract_geo(const std::filesystem::path &path_in, const AABB<
 		//! \todo Use GDAL for reading raster data, too.
 
 		if (aoi_poly.size() > 0) {
-			subtile_mask = fill_poly_overlap(image_aabb, aoi_poly, tile_size_div);
+			subtile_mask = fill_poly_overlap(image_aabb, aoi_poly, tile_size_div, true);
 
 			// Ensure that we have at least one subtile to process.
 			Vector<int> p;
