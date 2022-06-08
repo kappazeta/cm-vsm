@@ -12,6 +12,7 @@ The following system dependencies are needed:
 * GraphicsMagick++ (`libgraphicsmagick++1-dev`)
 * NetCDF (`libnetcdf-dev`)
 * nlohmann's JSON (https://github.com/nlohmann/json)
+* CppUnit (`libcppunit-dev`)
 * Doxygen (for documentation only)
 
 On Ubuntu, the following commands could be used to install the dependencies:
