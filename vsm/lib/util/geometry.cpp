@@ -140,6 +140,17 @@ Vector<float> &Vector<float>::from_geo_coords(const double *padfTransform, doubl
 }
 
 template<class T>
+double Vector<T>::length() const {
+	return sqrt(x*x + y*y);
+}
+
+template<class T>
+T cross_product(const Vector<T> &a, const Vector<T> &b) {
+	return a.x*b.y - a.y*b.x;
+}
+
+
+template<class T>
 AABB<T>::AABB() {}
 
 template<class T>
@@ -268,23 +279,16 @@ AABB<T> Polygon<T>::get_aabb() const {
 
 template<class T>
 void Polygon<T>::clip_to_aabb(const AABB<T> &aabb) {
-	int num_points_in_raster = 0;
 	for (size_t i=0; i<v.size(); i++) {
-		if (aabb.contains(v[i])) {
-			num_points_in_raster++;
-		} else {
-			if (v[i].x < aabb.vmin.x)
-				v[i].x = aabb.vmin.x;
-			if (v[i].y < aabb.vmin.y)
-				v[i].y = aabb.vmin.y;
-			if (v[i].x > aabb.vmax.x)
-				v[i].x = aabb.vmax.x;
-			if (v[i].y > aabb.vmax.y)
-				v[i].y = aabb.vmax.y;
-		}
+		if (v[i].x < aabb.vmin.x)
+			v[i].x = aabb.vmin.x;
+		if (v[i].y < aabb.vmin.y)
+			v[i].y = aabb.vmin.y;
+		if (v[i].x > aabb.vmax.x)
+			v[i].x = aabb.vmax.x;
+		if (v[i].y > aabb.vmax.y)
+			v[i].y = aabb.vmax.y;
 	}
-	if (num_points_in_raster == 0)
-		v.clear();
 }
 
 template<class T>
@@ -342,6 +346,22 @@ void Polygon<T>::clear() {
 template<class T>
 size_t Polygon<T>::size() const {
 	return v.size();
+}
+
+template<class T>
+double Polygon<T>::area() const {
+	// https://stackoverflow.com/a/451482/1692112
+	double area = 0.0;
+	for (size_t i=0, j=0; i<size(); i++) {
+		if (i == size() - 1)
+			j = 0;
+		else
+			j = i + 1;
+		// Skip degenerate edges.
+		if ((v[j] - v[i]).length() > f_epsilon)
+			area += cross_product(v[i], v[j]);
+	}
+	return 0.5 * abs(area);
 }
 
 template<class T>

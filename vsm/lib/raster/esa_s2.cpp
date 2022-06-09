@@ -1,6 +1,6 @@
 // Processing of ESA S2 L2A products
 //
-// Copyright 2021 KappaZeta Ltd.
+// Copyright 2021 - 2022 KappaZeta Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -371,26 +371,28 @@ bool ESA_S2_Image::process(const std::filesystem::path &path_dir_in, const std::
 
 /**
  * @brief Polygon-fill the subtile mask. Each pixel of the subtile mask corresponds to a sub-tile of the whole product.
+ * @param[in] image_aabb Reference to the axis-aligned bounding box of the whole product.
  * @param[in] poly Reference to the polygon to fill onto the mask.
  * @param[in] pixel_size_div Effective pixel size, accounting the overlap.
+ * @param[in] buffer_out Buffer by filling surrounding pixels.
  * @return 2D array of values (0 - skipped, 1 - sub-tile within area of interest).
  */
-std::vector<std::vector<unsigned char>> fill_poly_overlap(Polygon<int> &poly, float pixel_size_div) {
+std::vector<std::vector<unsigned char>> fill_poly_overlap(const AABB<int> &image_aabb, Polygon<int> &poly, float pixel_size_div, bool buffer_out) {
 	// Inspired by
 	//   http://alienryderflex.com/polygon_fill/
 	int i, j;
 	float xf;
+	const float epsilon = 1E-3;
 	std::vector<int> node_x;
 	Vector<int> pixel;
 	Vector<float> local_a, local_b;
 
-	AABB<int> poly_aabb = poly.get_aabb();
-	Vector<int> poly_dim = poly_aabb.vmax - poly_aabb.vmin;
-	// Axis-aligned bounding box in the local reference frame.
+	Vector<int> img_dim = image_aabb.vmax - image_aabb.vmin;
+	// Axis-aligned bounding box for the image.
 	AABB<int> local_aabb(
 		Vector<int>(0, 0),
-		Vector<int>(ceil(((float) poly_dim.x) / pixel_size_div),
-			ceil(((float) poly_dim.y) / pixel_size_div))
+		Vector<int>(ceil(((float) img_dim.x) / pixel_size_div),
+			ceil(((float) img_dim.y) / pixel_size_div))
 	);
 
 	// Initialize the subtile mask.
@@ -401,16 +403,24 @@ std::vector<std::vector<unsigned char>> fill_poly_overlap(Polygon<int> &poly, fl
 		// Build a list of nodes.
 		j = poly.size() - 1;
 		for (i=0; i<(int)poly.size(); i++) {
-			local_a.x = ((float) poly[i].x - poly_aabb.vmin.x) / pixel_size_div;
-			local_a.y = ((float) poly[i].y - poly_aabb.vmin.y) / pixel_size_div;
-			local_b.x = ((float) poly[j].x - poly_aabb.vmin.x) / pixel_size_div;
-			local_b.y = ((float) poly[j].y - poly_aabb.vmin.y) / pixel_size_div;
+			local_a.x = ((float) poly[i].x) / pixel_size_div;
+			local_a.y = ((float) poly[i].y) / pixel_size_div;
+			local_b.x = ((float) poly[j].x) / pixel_size_div;
+			local_b.y = ((float) poly[j].y) / pixel_size_div;
 
-			if ((local_a.y < (float) pixel.y && local_b.y >= (float) pixel.y)
-				|| (local_b.y < (float) pixel.y && local_a.y >= (float) pixel.y)) {
+			if ((local_a.y <= (float) pixel.y && local_b.y >= (float) pixel.y)
+				|| (local_b.y <= (float) pixel.y && local_a.y >= (float) pixel.y)) {
 				// Calculate the x-coordinate of the intersection between AB and y = pixel.y.
-				xf = local_a.x + (pixel.y - local_a.y) / (local_b.y - local_a.y) * (local_b.x - local_a.x);
+				xf = local_a.x + (pixel.y - local_a.y) / (local_b.y - local_a.y + epsilon) * (local_b.x - local_a.x + epsilon);
 				node_x.push_back((int) xf);
+			} else if (pixel.y == (int) local_a.y && (int) local_a.y == (int) local_b.y) {
+				if (local_a.x < local_b.x) {
+					node_x.push_back((int) local_a.x);
+					node_x.push_back((int) local_b.x);
+				} else {
+					node_x.push_back((int) local_b.x);
+					node_x.push_back((int) local_a.x);
+				}
 			}
 			j = i;
 		}
@@ -431,14 +441,16 @@ std::vector<std::vector<unsigned char>> fill_poly_overlap(Polygon<int> &poly, fl
 					// Fill the pixel covered by the polygon.
 					subtile_mask[pixel.x][pixel.y] = 1;
 					// Also fill the immediate surrounding pixels.
-					if (pixel.x > 0)
-						subtile_mask[pixel.x-1][pixel.y] = 1;
-					if (pixel.x < local_aabb.vmax.x)
-						subtile_mask[pixel.x+1][pixel.y] = 1;
-					if (pixel.y > 0)
-						subtile_mask[pixel.x][pixel.y-1] = 1;
-					if (pixel.y < local_aabb.vmax.y)
-						subtile_mask[pixel.x][pixel.y+1] = 1;
+					if (buffer_out) {
+						if (pixel.x > 0)
+							subtile_mask[pixel.x-1][pixel.y] = 1;
+						if (pixel.x + 1 < local_aabb.vmax.x)
+							subtile_mask[pixel.x+1][pixel.y] = 1;
+						if (pixel.y > 0)
+							subtile_mask[pixel.x][pixel.y-1] = 1;
+						if (pixel.y + 1 < local_aabb.vmax.y)
+							subtile_mask[pixel.x][pixel.y+1] = 1;
+					}
 				}
 			}
 		}
@@ -484,6 +496,8 @@ void ESA_S2_Image::extract_geo(const std::filesystem::path &path_in, const AABB<
 		std::cout << "Projection: " << p_dataset->GetProjectionRef() << std::endl;
 	}
 
+	aabb_buf = AABB<float>(0, 0, 1, 1);
+
 	// If there's an area of interest polygon, then fill the subtile mask with the polygon.
 	subtile_mask.clear();
 	if (wkt_geom_aoi.length() > 0) {
@@ -500,25 +514,32 @@ void ESA_S2_Image::extract_geo(const std::filesystem::path &path_in, const AABB<
 		// Only keep the part of the polygon which is inside the raster.
 		aoi_poly.clip_to_aabb(image_aabb);
 
-		AABB<int> aabb = aoi_poly.get_aabb();
-		aabb_buf = aabb.buffer(tile_size * f_overlap);
-		aabb_buf.vmin.x /= image_aabb.vmax.x;
-		aabb_buf.vmin.y /= image_aabb.vmax.y;
-		aabb_buf.vmax.x /= image_aabb.vmax.x;
-		aabb_buf.vmax.y /= image_aabb.vmax.y;
-
 		//! \todo Use GDAL for reading raster data, too.
 
-		if (aoi_poly.size() > 0) {
-			subtile_mask = fill_poly_overlap(aoi_poly, tile_size_div);
+		if (aoi_poly.area() > 0.00001) {
+			subtile_mask = fill_poly_overlap(image_aabb, aoi_poly, tile_size_div, true);
+
+			// Ensure that we have at least one subtile to process.
+			Vector<int> p;
+			unsigned int num_subtiles = 0;
+			for (p.x=0; p.x<(int)subtile_mask.size(); p.x++) {
+				for (p.y=0; p.y<(int)subtile_mask[p.x].size(); p.y++) {
+					num_subtiles += subtile_mask[p.x][p.y];
+				}
+			}
+			if (!num_subtiles)
+				throw RasterException("No subtiles for the overlap between the area of interest polygon and raster", path_in);
+			else
+				std::cout << "Number of subtiles in the area of interest polygon: " << num_subtiles << std::endl;
 		} else {
 			GDALClose(p_dataset);
-			throw RasterException(path_in, "No overlap between the area of interest polygon and raster");
+			throw RasterException("No overlap between the area of interest polygon and raster", path_in);
 		}
 	// Otherwise take all the subtiles.
 	} else {
-		aabb_buf = AABB<float>(0, 0, 1, 1);
 		subtile_mask = fill_whole(image_aabb, tile_size_div);
+		if (subtile_mask.empty())
+			throw RasterException("No subtiles for the raster", path_in);
 	}
 	GDALClose(p_dataset);
 }

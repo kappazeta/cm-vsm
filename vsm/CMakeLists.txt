@@ -38,5 +38,6 @@ include_directories(${OPENJPEG_INCLUDE_DIR} ${PNG_INCLUDE_DIRS} ${GDAL_INCLUDE_D
 
 add_subdirectory(lib)
 add_subdirectory(vsm)
+add_subdirectory(test)
 
 vsm_doc_target()
