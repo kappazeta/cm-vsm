@@ -15,6 +15,7 @@
 // limitations under the License.
 
 #include "vector/supervisely_rasterizer.hpp"
+#include "raster/netcdf_interface.hpp"
 
 #include <string.h>
 
@@ -79,6 +80,7 @@ SuperviselyRasterizer::~SuperviselyRasterizer() {
 }
 
 bool SuperviselyRasterizer::convert(const std::filesystem::path &path_dir_in, const std::string &product_tile_name, const std::filesystem::path &path_out_nc, const std::filesystem::path &path_out_png) {
+	NetCDFInterface nci;
 	bool retval = true;
 
 	const std::string vector_filepath = path_dir_in.string() + "/ds0/ann/" + product_tile_name + ".png.json";
@@ -114,7 +116,7 @@ bool SuperviselyRasterizer::convert(const std::filesystem::path &path_dir_in, co
 		if (path_out_png.string().length() > 0)
 			retval &= image.save(path_out_png);
 		if (path_out_nc.string().length() > 0)
-			retval &= image.add_to_netcdf(path_out_nc, "Label");
+			retval &= nci.add_to_file(path_out_nc, "Label", image);
 
 	} catch(std::exception &e) {
 		retval = false;

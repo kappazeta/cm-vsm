@@ -187,6 +187,12 @@ class ESA_S2_Image {
 		static std::string get_product_name_from_path(const std::filesystem::path &path);
 
 		/**
+		 * Whether to overwrite already existing subtiles (true) or not (false).
+		 * @param[in] overwrite_subtiles True to overwrite, false to skip sub-tiles for which the bands have already been processed before.
+		 */
+		void set_overwrite(bool overwrite_subtiles);
+
+		/**
 		 * Process a Sentinel-2 L1C or L2A image.
 		 * @param path_dir_in Path to the .SAFE directory.
 		 * @param path_dir_out Path to the output directory.
@@ -212,6 +218,8 @@ class ESA_S2_Image {
 		bool store_png;	///< Whether to store intermediate output in PNG files or not.
 		bool read_tiled;	///< Whether to read JP2 files in tiles, or to read full images into RAM.
 		int num_threads;	///< Number of threads to parallelize to.
+
+		bool overwrite_subtiles;	///< Whether to overwrite subtiles which already exist.
 
 		std::string wkt_geom_aoi;	///< Area of interest as WKT geometry.
 

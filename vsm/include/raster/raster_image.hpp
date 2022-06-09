@@ -57,41 +57,6 @@ class RasterException: public std::exception {
 };
 
 /**
- * @brief Class for exceptions related to NetCDF files.
- */
-class NCException: public std::exception {
-	public:
-		/**
-		 * @param[in] msg Reference to the error message.
-		 * @param[in] path Reference to the path of the NetCDF file which this error relates to.
-		 * @param[in] retval Error code from the NetCDF library.
-		 */
-		NCException(const std::string &msg, const std::filesystem::path &path, int retval) {
-			message = msg;
-			nc_path = path;
-			nc_retval = retval;
-
-			std::ostringstream ss;
-			ss << "NetCDF file " << nc_path << ": " << message << ", " << nc_strerror(nc_retval);
-			full_message.assign(ss.str());
-		}
-
-		std::string message;	///< Error message.
-		std::filesystem::path nc_path;	///< Path to the NetCDF file which this error relates to.
-		int nc_retval;	///< Error code from the NetCDF library.
-
-		/**
-		 * Pointer to the full message C string.
-		 */
-		virtual const char* what() const throw() {
-			return full_message.c_str();
-		}
-
-	protected:
-		std::string full_message;	///< Full human-readable message.
-};
-
-/**
  * @brief An 8-bit RGB pixel class.
  */
 class PixelRGB8 {
@@ -263,6 +228,7 @@ class RasterImage {
 		unsigned char main_num_components;	///< Number of channels (1 for grayscale, 3 for RGB) in the raster image.
 
 		float f_overlap;	///< Overlap factor [0.0f, 0.5f], for NetCDF metadata.
+		float scaling_factor;	///< Scaling factor used for resampling the image for storage in NetCDF.
 
 		/**
 		 * Set the deflate level to use for NetCDF storage.
@@ -311,7 +277,6 @@ class RasterImage {
 	private:
 		Magick::FilterTypes resampling_filter;	///< Enum index of the resampling filter used.
 		unsigned int deflate_level;	///< Deflate level [0, 9] for the NetCDF variable.
-		float scaling_factor;	///< Scaling factor used for resampling the image for storage in NetCDF.
 
 		/**
 		 * Add a layer to an open NetCDF file.
