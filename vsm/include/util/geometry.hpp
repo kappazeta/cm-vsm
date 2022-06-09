@@ -136,6 +136,11 @@ public:
 	 */
 	Vector<T> &from_geo_coords(const double *padfTransform, double gx, double gy);
 
+	/**
+	 * @Brief Vector magnitude or length.
+	 */
+	double length() const;
+
 	T x, y;	///< Coordinates.
 };
 
@@ -168,6 +173,14 @@ Vector<T> operator/(const Vector<T> &a, float f);
  */
 template<class T>
 bool operator==(const Vector<T> &a, const Vector<T> &b);
+
+/**
+ * "Cross product" between two 2D vectors.
+ * https://stackoverflow.com/a/243984/1692112
+ */
+template<class T>
+T cross_product(const Vector<T> &a, const Vector<T> &b);
+
 
 /**
  * @brief Axis-aligned bounding box.
@@ -373,6 +386,8 @@ public:
 	 * @brief Count polygon vertices.
 	 */
 	size_t size() const;
+
+	double area() const;
 };
 
 /**

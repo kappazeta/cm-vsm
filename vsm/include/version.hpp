@@ -1,7 +1,7 @@
 //! @file
 //! @brief Version macros and changelog
 //
-// Copyright 2021 KappaZeta Ltd.
+// Copyright 2021 - 2022 KappaZeta Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 //! @brief Library / tool name.
 #define CM_CONVERTER_NAME_STR		"cm-vsm"
 //! @brief Library version.
-#define CM_CONVERTER_VERSION_STR	"0.2.11"
+#define CM_CONVERTER_VERSION_STR	"0.2.12"
 
 /** \page Changelog
  * \par Changelog
@@ -29,6 +29,7 @@
  *
  * Version | Changes
  * --------|--------
+ * 0.2.12  | Fix an issue in area of interest geometry clipping.
  * 0.2.11  | Improved polyfill for tiny polygons. Error when no subtiles.
  * 0.2.10  | Minor improvements to error logging.
  * 0.2.9   | Fix issue for cropped S2 products. Default to sinc resampling unless specified. Display NetCDF version.

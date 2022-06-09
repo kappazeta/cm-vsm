@@ -1,6 +1,6 @@
 // Processing of ESA S2 L2A products
 //
-// Copyright 2021 KappaZeta Ltd.
+// Copyright 2021 - 2022 KappaZeta Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -516,7 +516,7 @@ void ESA_S2_Image::extract_geo(const std::filesystem::path &path_in, const AABB<
 
 		//! \todo Use GDAL for reading raster data, too.
 
-		if (aoi_poly.size() > 0) {
+		if (aoi_poly.area() > 0.00001) {
 			subtile_mask = fill_poly_overlap(image_aabb, aoi_poly, tile_size_div, true);
 
 			// Ensure that we have at least one subtile to process.

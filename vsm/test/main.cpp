@@ -1,6 +1,6 @@
 // ESA S2 product converter for cloud mask labeling and processing
 //
-// Copyright 2021 KappaZeta Ltd.
+// Copyright 2021 - 2022 KappaZeta Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -176,10 +176,182 @@ CPPUNIT_TEST_SUITE_END();
 };
 
 
+class ClipAABBTest: public CppUnit::TestFixture {
+CPPUNIT_TEST_SUITE(ClipAABBTest);
+CPPUNIT_TEST(testSubset01);
+CPPUNIT_TEST(testSubset02);
+CPPUNIT_TEST(testSubset03);
+CPPUNIT_TEST(testAll);
+CPPUNIT_TEST(testNone);
+CPPUNIT_TEST_SUITE_END();
+
+	public:
+		void setUp() {
+		}
+
+		void tearDown() {
+		}
+
+		void compareIPolys(Polygon<int> &poly_expected, Polygon<int> &poly) {
+			CPPUNIT_ASSERT(poly.size() == poly_expected.size());
+			for (size_t i=0; i<poly.size(); i++) {
+				CPPUNIT_ASSERT(poly[i] == poly_expected[i]);
+			}
+		}
+
+		void testSubset01() {
+			// Small AABB inside a large polygon.
+			AABB<int> clip_aabb(50, 50, 80, 80);
+			Polygon<int> poly({
+				Vector<int>(0, 0),
+				Vector<int>(100, 2),
+				Vector<int>(100, 104),
+				Vector<int>(0, 104)
+			});
+			Polygon<int> poly_expected({
+				Vector<int>(50, 50),
+				Vector<int>(80, 50),
+				Vector<int>(80, 80),
+				Vector<int>(50, 80)
+			});
+
+			poly.clip_to_aabb(clip_aabb);
+
+			compareIPolys(poly_expected, poly);
+		}
+
+		void testSubset02() {
+			// Small AABB on the edge of a large polygon.
+			AABB<int> clip_aabb(80, 30, 120, 120);
+			Polygon<int> poly({
+				Vector<int>(0, 0),
+				Vector<int>(100, 2),
+				Vector<int>(100, 104),
+				Vector<int>(0, 104)
+			});
+			Polygon<int> poly_expected({
+				Vector<int>(80, 30),
+				Vector<int>(100, 30),
+				Vector<int>(100, 104),
+				Vector<int>(80, 104)
+			});
+
+			poly.clip_to_aabb(clip_aabb);
+
+			compareIPolys(poly_expected, poly);
+		}
+
+		void testSubset03() {
+			// Small AABB on the corner of a large polygon.
+			AABB<int> clip_aabb(80, 80, 140, 140);
+			Polygon<int> poly({
+				Vector<int>(0, 0),
+				Vector<int>(100, 2),
+				Vector<int>(100, 104),
+				Vector<int>(0, 104)
+			});
+			Polygon<int> poly_expected({
+				Vector<int>(80, 80),
+				Vector<int>(100, 80),
+				Vector<int>(100, 104),
+				Vector<int>(80, 104)
+			});
+
+			poly.clip_to_aabb(clip_aabb);
+
+			compareIPolys(poly_expected, poly);
+		}
+
+		void testAll() {
+			// Polygon is already inside the AABB.
+			AABB<int> clip_aabb(0, 0, 140, 140);
+			Polygon<int> poly({
+				Vector<int>(0, 0),
+				Vector<int>(100, 2),
+				Vector<int>(100, 104),
+				Vector<int>(0, 104)
+			});
+			Polygon<int> poly_expected({
+				Vector<int>(0, 0),
+				Vector<int>(100, 2),
+				Vector<int>(100, 104),
+				Vector<int>(0, 104)
+			});
+
+			poly.clip_to_aabb(clip_aabb);
+
+			compareIPolys(poly_expected, poly);
+		}
+
+		void testNone() {
+			// Polygon is outside the AABB.
+			AABB<int> clip_aabb(140, 140, 150, 150);
+			Polygon<int> poly({
+				Vector<int>(0, 0),
+				Vector<int>(100, 2),
+				Vector<int>(100, 104),
+				Vector<int>(0, 104)
+			});
+
+			poly.clip_to_aabb(clip_aabb);
+			std::cout << poly << " " << poly.area() << std::endl;
+
+			CPPUNIT_ASSERT(poly.area() <= 0.001);
+		}
+};
+
+class PolyAreaTest: public CppUnit::TestFixture {
+CPPUNIT_TEST_SUITE(PolyAreaTest);
+CPPUNIT_TEST(testSimple01);
+CPPUNIT_TEST(testPoint01);
+CPPUNIT_TEST(testEmpty);
+CPPUNIT_TEST_SUITE_END();
+
+	public:
+		void setUp() {
+		}
+
+		void tearDown() {
+		}
+
+		void testSimple01() {
+			Polygon<int> poly({
+				Vector<int>(0, 0),
+				Vector<int>(100, 0),
+				Vector<int>(100, 100),
+				Vector<int>(0, 100)
+			});
+			std::cout << poly << " " << poly.area() << std::endl;
+
+			CPPUNIT_ASSERT(poly.area() == 10000);
+		}
+
+		void testPoint01() {
+			Polygon<int> poly({
+				Vector<int>(10, 10),
+				Vector<int>(10, 10),
+				Vector<int>(10, 10),
+				Vector<int>(10, 10)
+			});
+			std::cout << poly << " " << poly.area() << std::endl;
+
+			CPPUNIT_ASSERT(poly.area() <= 0.001);
+		}
+
+		void testEmpty() {
+			Polygon<int> poly;
+			std::cout << poly << " " << poly.area() << std::endl;
+
+			CPPUNIT_ASSERT(poly.area() <= 0.001);
+		}
+};
+
 int main(int argc, char* argv[]) {
 	CppUnit::TextUi::TestRunner runner;
 
 	runner.addTest(PolyFillTest::suite());
+	runner.addTest(ClipAABBTest::suite());
+	runner.addTest(PolyAreaTest::suite());
 	runner.run();
 
 	return 0;
