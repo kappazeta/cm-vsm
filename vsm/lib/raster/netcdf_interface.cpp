@@ -43,21 +43,11 @@ bool NetCDFInterface::has_layer(const std::filesystem::path &path, const std::st
 	int ncid = 0, varid = 0;
 	bool layer_exists = false;
 
-	try {
-		if ((retval = nc_open(path.string().c_str(), NC_WRITE, &ncid)))
-			throw NCException("failed to open", path, retval);
-
+	if (nc_open(path.string().c_str(), NC_WRITE, &ncid)) {
 		if (nc_inq_varid(ncid, name_in_netcdf.c_str(), &varid) == NC_NOERR)
 			layer_exists = true;
-	} catch (NCException &e) {
-		if (e.nc_retval != NC_ENAMEINUSE)
-			std::cerr << e.what() << std::endl;
-	}
 
-	// Close the file.
-	if ((retval = nc_close(ncid))) {
-		std::cerr << "Failed to close NetCDF file \"" << path << "\", error " << retval << std::endl;
-		return false;
+		nc_close(ncid);
 	}
 
 	return layer_exists;
