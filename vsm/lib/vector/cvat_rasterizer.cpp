@@ -15,6 +15,7 @@
 // limitations under the License.
 
 #include "vector/cvat_rasterizer.hpp"
+#include "raster/netcdf_interface.hpp"
 
 #include <string.h>
 
@@ -180,6 +181,7 @@ void XMLCALL CVATRasterizer::tag_end_handler(void *user_data, const XML_Char *el
 }
 
 bool CVATRasterizer::convert(const std::filesystem::path &path_in, const std::filesystem::path &path_out_nc, const std::filesystem::path &path_out_png) {
+	NetCDFInterface nci;
 	XML_Parser p = nullptr;
 	bool retval = true;
 	const int buffer_size = 100 * 1024;
@@ -213,7 +215,7 @@ bool CVATRasterizer::convert(const std::filesystem::path &path_in, const std::fi
 		if (path_out_png.string().length() > 0)
 			retval &= image.save(path_out_png);
 		if (path_out_nc.string().length() > 0)
-			retval &= image.add_to_netcdf(path_out_nc, "Label");
+			retval &= nci.add_to_file(path_out_nc, "Label", image);
 
 	} catch(std::exception &e) {
 		retval = false;

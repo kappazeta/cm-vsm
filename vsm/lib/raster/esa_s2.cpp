@@ -20,6 +20,7 @@
 #include "raster/bhc_tif.hpp"
 #include "raster/cnes_maja_clm_tif.hpp"
 #include "raster/png_image.hpp"
+#include "raster/netcdf_interface.hpp"
 
 #include "util/text.hpp"
 #include <algorithm>
@@ -145,6 +146,10 @@ void ESA_S2_Image::set_num_threads(int num_threads) {
 
 void ESA_S2_Image::set_aoi_geometry(const std::string &wkt_geom) {
 	wkt_geom_aoi = wkt_geom;
+}
+
+void ESA_S2_Image::set_overwrite(bool overwrite_subtiles) {
+	this->overwrite_subtiles = overwrite_subtiles;
 }
 
 std::string ESA_S2_Image::get_product_name_from_path(const std::filesystem::path &path) {
@@ -548,6 +553,7 @@ void ESA_S2_Image::extract_geo(const std::filesystem::path &path_in, const AABB<
 
 bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op, ESA_S2_Image_Operator::data_type_t data_type, ESA_S2_Image_Operator::data_resolution_t data_resolution) {
 	ESA_S2_Band_JP2_Image img_src;
+	NetCDFInterface nci;
 	bool retval = true;
 
 	float div_f = 1.0f;
@@ -561,6 +567,7 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 
 	img_src.set_deflate_level(deflate_factor);
 	img_src.set_num_threads(num_threads);
+	nci.set_deflate_level(deflate_factor);
 
 	// Propagate overlap factor for NetCDF metadata.
 	img_src.f_overlap = f_overlap;
@@ -589,6 +596,17 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 	for (p.x=0; p.x<(int)subtile_mask.size(); p.x++) {
 		for (p.y=0; p.y<(int)subtile_mask[p.x].size(); p.y++) {
 			if (subtile_mask[p.x][p.y] == 1) {
+				std::ostringstream ss_path_out, ss_path_out_png, ss_path_out_nc;
+				ss_path_out << path_dir_out.string() << "/tile_" << p.x << "_" << p.y << "/";
+				ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile" << "_" << p.x << "_" << p.y << ".png";
+				ss_path_out_nc << ss_path_out.str() << extract_index_date(path_in) << "_" << "tile" << "_" << p.x << "_" << p.y << ".nc";
+
+				std::filesystem::create_directories(ss_path_out.str());
+
+				// Skip the subtile if it's already stored in the NetCDF file and we haven't been asked to overwrite subtiles.
+				if (nci.has_layer(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type]) && !overwrite_subtiles)
+					continue;
+
 				// Coordinates in the source image (possibly with different dimensions).
 				int sx0 = aabb_buf.vmin.x * img_src.main_geometry.width() + floor(tile_size_div * p.x);
 				int sy0 = aabb_buf.vmin.y * img_src.main_geometry.height() + floor(tile_size_div * p.y);
@@ -629,20 +647,11 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 					std::cout << "Invalid geometry " << img_src.subset->rows() << "x" << img_src.subset->columns() << " for subtile " << p.x << ", " << p.y << std::endl;
 				}
 
-				std::ostringstream ss_path_out, ss_path_out_png, ss_path_out_nc;
-
-				ss_path_out << path_dir_out.string() << "/tile_" << p.x << "_" << p.y << "/";
-
-				std::filesystem::create_directories(ss_path_out.str());
-
 				// Save PNG.
-				if (store_png) {
-					ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile" << "_" << p.x << "_" << p.y << ".png";
+				if (store_png)
 					img_src.save(ss_path_out_png.str());
-				}
 				// Add to NetCDF.
-				ss_path_out_nc << ss_path_out.str() << extract_index_date(path_in) << "_" << "tile" << "_" << p.x << "_" << p.y << ".nc";
-				img_src.add_to_netcdf(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type]);
+				nci.add_to_file(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type], img_src);
 
 				// Potential post-processing of the file.
 				if (!op(ss_path_out.str(), data_type))
@@ -657,6 +666,7 @@ bool ESA_S2_Image::splitJP2(const std::filesystem::path &path_in, const std::fil
 bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op, ESA_S2_Image_Operator::data_type_t data_type, ESA_S2_Image_Operator::data_resolution_t data_resolution) {
 	ESA_S2_Image_Operator::data_type_t tmp_data_type = data_type;
 	TIF_Image img_src;
+	NetCDFInterface nci;
 	bool retval = true;
 
 	float div_f = 1.0f;
@@ -669,6 +679,7 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 
 	img_src.set_deflate_level(deflate_factor);
 	img_src.set_num_threads(num_threads);
+	nci.set_deflate_level(deflate_factor);
 
 	// Propagate overlap factor for NetCDF metadata.
 	img_src.f_overlap = f_overlap;
@@ -686,6 +697,17 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 	for (p.x=0; p.x<(int)subtile_mask.size(); p.x++) {
 		for (p.y=0; p.y<(int)subtile_mask[p.x].size(); p.y++) {
 			if (subtile_mask[p.x][p.y] == 1) {
+				std::ostringstream ss_path_out, ss_path_out_png, ss_path_out_nc;
+				ss_path_out << path_dir_out.string() << "/tile_" << p.x << "_" << p.y << "/";
+				ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile" << "_" << p.x << "_" << p.y << ".png";
+				ss_path_out_nc << ss_path_out.str() << extract_index_date(path_in) << "_" << "tile" << "_" << p.x << "_" << p.y << ".nc";
+
+				std::filesystem::create_directories(ss_path_out.str());
+
+				// Skip the subtile if it's already stored in the NetCDF file and we haven't been asked to overwrite subtiles.
+				if (nci.has_layer(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type]) && !overwrite_subtiles)
+					continue;
+
 				// Coordinates in the source image (possibly with different dimensions).
 				sx0 = aabb_buf.vmin.x * img_src.main_geometry.width() + floor(tile_size_div * p.x);
 				sy0 = aabb_buf.vmin.y * img_src.main_geometry.height() + floor(tile_size_div * p.y);
@@ -741,20 +763,11 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 					std::cout << "Invalid geometry " << img_src.subset->rows() << "x" << img_src.subset->columns() << " for subtile " << p.x << ", " << p.y << std::endl;
 				}
 
-				std::ostringstream ss_path_out, ss_path_out_png, ss_path_out_nc;
-
-				ss_path_out << path_dir_out.string() << "/tile_" << p.x << "_" << p.y << "/";
-
-				std::filesystem::create_directories(ss_path_out.str());
-
 				// Save PNG.
-				if (store_png) {
-					ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile" << "_" << p.x << "_" << p.y << ".png";
+				if (store_png)
 					img_src.save(ss_path_out_png.str());
-				}
 				// Add to NetCDF.
-				ss_path_out_nc << ss_path_out.str() << extract_index_date(path_in) << "_" << "tile" << "_" << p.x << "_" << p.y << ".nc";
-				img_src.add_to_netcdf(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type]);
+				nci.add_to_file(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type], img_src);
 
 				// Potential post-processing of the file.
 				if (!op(ss_path_out.str(), data_type))
@@ -769,6 +782,7 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 bool ESA_S2_Image::splitPNG(const std::filesystem::path &path_in, const std::filesystem::path &path_dir_out, ESA_S2_Image_Operator &op, ESA_S2_Image_Operator::data_type_t data_type, ESA_S2_Image_Operator::data_resolution_t data_resolution) {
 	ESA_S2_Image_Operator::data_type_t tmp_data_type = data_type;
 	PNG_Image img_src;
+	NetCDFInterface nci;
 	bool retval = true;
 
 	float div_f = 1.0f;
@@ -784,6 +798,7 @@ bool ESA_S2_Image::splitPNG(const std::filesystem::path &path_in, const std::fil
 
 	img_src.set_deflate_level(deflate_factor);
 	img_src.set_num_threads(num_threads);
+	nci.set_deflate_level(deflate_factor);
 
 	// Get image dimensions.
 	retval &= img_src.load_header(path_in);
@@ -798,6 +813,17 @@ bool ESA_S2_Image::splitPNG(const std::filesystem::path &path_in, const std::fil
 	for (p.x=0; p.x<(int)subtile_mask.size(); p.x++) {
 		for (p.y=0; p.y<(int)subtile_mask[p.x].size(); p.y++) {
 			if (subtile_mask[p.x][p.y] == 1) {
+				std::ostringstream ss_path_out, ss_path_out_png, ss_path_out_nc;
+				ss_path_out << path_dir_out.string() << "/tile_" << p.x << "_" << p.y << "/";
+				ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile" << "_" << p.x << "_" << p.y << ".png";
+				ss_path_out_nc << ss_path_out.str() << extract_index_date(path_in) << "_" << "tile" << "_" << p.x << "_" << p.y << ".nc";
+
+				std::filesystem::create_directories(ss_path_out.str());
+
+				// Skip the subtile if it's already stored in the NetCDF file and we haven't been asked to overwrite subtiles.
+				if (nci.has_layer(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type]) && !overwrite_subtiles)
+					continue;
+
 				// Coordinates in the source image (possibly with different dimensions).
 				sx0 = aabb_buf.vmin.x * img_src.main_geometry.width() + floor(tile_size_div * p.x);
 				sy0 = aabb_buf.vmin.y * img_src.main_geometry.height() + floor(tile_size_div * p.y);
@@ -844,21 +870,11 @@ bool ESA_S2_Image::splitPNG(const std::filesystem::path &path_in, const std::fil
 					std::cout << "Invalid geometry " << img_src.subset->rows() << "x" << img_src.subset->columns() << " for subtile " << p.x << ", " << p.y << std::endl;
 				}
 
-				std::ostringstream ss_path_out, ss_path_out_png, ss_path_out_nc;
-
-				ss_path_out << path_dir_out.string() << "/tile_" << p.x << "_" << p.y << "/";
-
-				std::filesystem::create_directories(ss_path_out.str());
-
-
 				// Save PNG.
-				if (store_png) {
-					ss_path_out_png << ss_path_out.str() << path_in.stem().string() << "_" << "tile" << "_" << p.x << "_" << p.y << ".png";
+				if (store_png)
 					img_src.save(ss_path_out_png.str());
-				}
 				// Add to NetCDF.
-				ss_path_out_nc << ss_path_out.str() << extract_index_date(path_in) << "_" << "tile" << "_" << p.x << "_" << p.y << ".nc";
-				img_src.add_to_netcdf(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type]);
+				nci.add_to_file(ss_path_out_nc.str(), ESA_S2_Image_Operator::data_type_name[data_type], img_src);
 
 				// Potential post-processing of the file.
 				if (!op(ss_path_out.str(), data_type))

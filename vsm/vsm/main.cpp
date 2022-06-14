@@ -1,6 +1,6 @@
 // ESA S2 product converter for cloud mask labeling and processing
 //
-// Copyright 2021 KappaZeta Ltd.
+// Copyright 2021 - 2022 KappaZeta Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ int main(int argc, char* argv[]) {
 
 	if (argc < 2) {
 		std::cerr << "Usage: " << CM_CONVERTER_NAME_STR
-			<< " [-d S2_PATH] [-D CVAT_PATH] [-O OUT_PATH] [-r CVAT_XML -n NETCDF] [-b BANDS] [-R SUPERVISELY_DIR -t TILENAME -n NETCDF] [-A CVAT_SAI_PATH] [-S TILESIZE [-s SHRINK]] [-f DEFLATE_LEVEL] [-m RESAMPLING_METHOD] [-o OVERLAP] [--png] [--tiled] [-j JOBS] [-g EWKT]" << std::endl
+			<< " [-d S2_PATH] [-D CVAT_PATH] [-O OUT_PATH] [-r CVAT_XML -n NETCDF] [-b BANDS] [-R SUPERVISELY_DIR -t TILENAME -n NETCDF] [-A CVAT_SAI_PATH] [-S TILESIZE [-s SHRINK]] [-f DEFLATE_LEVEL] [-m RESAMPLING_METHOD] [-o OVERLAP] [--png] [--tiled] [-j JOBS] [-g EWKT] [--overwrite]" << std::endl
 			<< "\twhere S2_PATH points to the .SAFE directory of an ESA S2 L2A or L1C product." << std::endl
 			<< "\tCVAT_PATH points to the .CVAT directory (pre-processed ESA S2 product)." << std::endl
 			<< "\tOUT_PATH points to the directory to store the output files (.CVAT directory, right next to the input .SAFE, by default)." << std::endl
@@ -101,6 +101,7 @@ int main(int argc, char* argv[]) {
 	float overlap = 0.0f;
 	bool output_png = false;
 	bool tiled_input = false;
+	bool overwrite_subtiles = false;
 	int num_jobs = 0;
 	for (int i=0; i<argc; i++) {
 		if (!strncmp(argv[i], "-d", 2))
@@ -135,6 +136,8 @@ int main(int argc, char* argv[]) {
 			output_png = true;
 		else if (!strncmp(argv[i], "--tiled", 7))
 			tiled_input = true;
+		else if (!strncmp(argv[i], "--overwrite", 11))
+			overwrite_subtiles = true;
 		else if (!strncmp(argv[i], "-j", 2))
 			num_jobs = std::atoi(argv[i + 1]);
 		else if (!strncmp(argv[i], "-g", 2))
@@ -178,6 +181,7 @@ int main(int argc, char* argv[]) {
 		img.set_tiled_input(tiled_input);
 		img.set_num_threads(num_jobs);
 		img.set_aoi_geometry(arg_wkt_geom);
+		img.set_overwrite(overwrite_subtiles);
 
 		img.process(path_dir_in, path_dir_out, img_op, bands);
 

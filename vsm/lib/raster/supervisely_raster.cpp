@@ -14,6 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "raster/netcdf_interface.hpp"
 #include "raster/supervisely_raster.hpp"
 #include "vector/cvat_rasterizer.hpp"
 #include "util/text.hpp"
@@ -88,6 +89,7 @@ bool SuperviselyRaster::load(const std::filesystem::path &path_dir_in, const std
 }
 
 bool SuperviselyRaster::convert(const std::filesystem::path &path_dir, const std::string &tile_name, const std::filesystem::path &path_nc) {
+	NetCDFInterface nci;
 	bool retval = true;
 
 	std::filesystem::path path_out_png(path_dir.parent_path().string() + "/supervisely_raster_" + tile_name + ".png");
@@ -97,7 +99,7 @@ bool SuperviselyRaster::convert(const std::filesystem::path &path_dir, const std
 	if (retval)
 		retval &= save(path_out_png);
 	if (retval)
-		retval &= add_to_netcdf(path_nc, "Label");
+		retval &= nci.add_to_file(path_nc, "Label", *this);
 
 	return retval;
 }

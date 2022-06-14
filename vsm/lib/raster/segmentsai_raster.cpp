@@ -14,6 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "raster/netcdf_interface.hpp"
 #include "raster/segmentsai_raster.hpp"
 #include "vector/cvat_rasterizer.hpp"
 #include "util/text.hpp"
@@ -98,6 +99,7 @@ bool SegmentsAIRaster::load(const std::filesystem::path &mask_path, const std::f
 }
 
 bool SegmentsAIRaster::convert(const std::filesystem::path &path_dir) {
+	NetCDFInterface nci;
 	bool retval = true;
 	std::string path_mask = "", path_classes = "", path_nc = "";
 
@@ -112,7 +114,7 @@ bool SegmentsAIRaster::convert(const std::filesystem::path &path_dir) {
 			if (retval)
 				retval &= save(path_mask + "_converted.png");
 			if (retval)
-				retval &= add_to_netcdf(path_nc, "Label");
+				retval &= nci.add_to_file(path_nc, "Label", *this);
 			std::cout << tile_entry << std::endl;
 		}
 	}
