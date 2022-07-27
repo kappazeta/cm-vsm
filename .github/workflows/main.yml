@@ -49,3 +49,9 @@ jobs:
       run: |
         cd vsm/build
         make
+
+    # Run tests
+    - name: Running tests
+      run: |
+        cd vsm/build/bin
+        ./cm_vsm_test

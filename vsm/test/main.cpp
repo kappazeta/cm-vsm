@@ -294,7 +294,6 @@ CPPUNIT_TEST_SUITE_END();
 			});
 
 			poly.clip_to_aabb(clip_aabb);
-			std::cout << poly << " " << poly.area() << std::endl;
 
 			CPPUNIT_ASSERT(poly.area() <= 0.001);
 		}
@@ -321,7 +320,6 @@ CPPUNIT_TEST_SUITE_END();
 				Vector<int>(100, 100),
 				Vector<int>(0, 100)
 			});
-			std::cout << poly << " " << poly.area() << std::endl;
 
 			CPPUNIT_ASSERT(poly.area() == 10000);
 		}
@@ -333,14 +331,12 @@ CPPUNIT_TEST_SUITE_END();
 				Vector<int>(10, 10),
 				Vector<int>(10, 10)
 			});
-			std::cout << poly << " " << poly.area() << std::endl;
 
 			CPPUNIT_ASSERT(poly.area() <= 0.001);
 		}
 
 		void testEmpty() {
 			Polygon<int> poly;
-			std::cout << poly << " " << poly.area() << std::endl;
 
 			CPPUNIT_ASSERT(poly.area() <= 0.001);
 		}
