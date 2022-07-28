@@ -1,5 +1,5 @@
 //! @file
-//! @brief Processing of ESA S2 L2A products
+//! @brief Processing of ESA S2 L1C / L2A products
 //
 // Copyright 2021 KappaZeta Ltd.
 //

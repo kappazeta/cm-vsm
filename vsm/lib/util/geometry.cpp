@@ -473,6 +473,176 @@ Polygon<T> proj_coords_to_raster(const OGRGeometry *p_geom, GDALDataset *p_datas
 	return poly;
 }
 
+std::vector<std::vector<unsigned char>> fill_poly_overlap(Polygon<int> &poly, float pixel_size_div) {
+    // Inspired by
+    //   http://alienryderflex.com/polygon_fill/
+    int i, j;
+    float xf;
+    std::vector<int> node_x;
+    Vector<int> pixel;
+    Vector<float> local_a, local_b;
+
+    AABB<int> poly_aabb = poly.get_aabb();
+    Vector<int> poly_dim = poly_aabb.vmax - poly_aabb.vmin;
+    // Axis-aligned bounding box in the local reference frame.
+    AABB<int> local_aabb(
+        Vector<int>(0, 0),
+        Vector<int>(ceil(((float) poly_dim.x) / pixel_size_div),
+            ceil(((float) poly_dim.y) / pixel_size_div))
+    );
+
+    // Initialize the subtile mask.
+    std::vector<std::vector<unsigned char>> subtile_mask(local_aabb.vmax.x, std::vector<unsigned char>(local_aabb.vmax.y, 0));
+
+    for (pixel.y=local_aabb.vmin.y; pixel.y < local_aabb.vmax.y; pixel.y++) {
+        node_x.clear();
+        // Build a list of nodes.
+        j = poly.size() - 1;
+        for (i=0; i<(int)poly.size(); i++) {
+            local_a.x = ((float) poly[i].x - poly_aabb.vmin.x) / pixel_size_div;
+            local_a.y = ((float) poly[i].y - poly_aabb.vmin.y) / pixel_size_div;
+            local_b.x = ((float) poly[j].x - poly_aabb.vmin.x) / pixel_size_div;
+            local_b.y = ((float) poly[j].y - poly_aabb.vmin.y) / pixel_size_div;
+
+            if ((local_a.y < (float) pixel.y && local_b.y >= (float) pixel.y)
+                || (local_b.y < (float) pixel.y && local_a.y >= (float) pixel.y)) {
+                // Calculate the x-coordinate of the intersection between AB and y = pixel.y.
+                xf = local_a.x + (pixel.y - local_a.y) / (local_b.y - local_a.y) * (local_b.x - local_a.x);
+                node_x.push_back((int) xf);
+            }
+            j = i;
+        }
+
+        // Sort the nodes.
+        std::sort(node_x.begin(), node_x.end());
+
+        // Fill pixels between node pairs.
+        for (i=0; i<(int)node_x.size(); i+=2) {
+            if (node_x[i] >= local_aabb.vmax.x)
+                break;
+            if (node_x[i + 1] >= local_aabb.vmin.x) {
+                if (node_x[i] < local_aabb.vmin.x)
+                    node_x[i] = local_aabb.vmin.x;
+                if (node_x[i + 1] > local_aabb.vmax.x)
+                    node_x[i + 1] = local_aabb.vmax.x;
+                for (pixel.x=node_x[i]; pixel.x<=node_x[i + 1]; pixel.x++) {
+                    // Fill the pixel covered by the polygon.
+                    subtile_mask[pixel.x][pixel.y] = 1;
+                    // Also fill the immediate surrounding pixels.
+                    if (pixel.x > 0)
+                        subtile_mask[pixel.x-1][pixel.y] = 1;
+                    if (pixel.x < local_aabb.vmax.x)
+                        subtile_mask[pixel.x+1][pixel.y] = 1;
+                    if (pixel.y > 0)
+                        subtile_mask[pixel.x][pixel.y-1] = 1;
+                    if (pixel.y < local_aabb.vmax.y)
+                        subtile_mask[pixel.x][pixel.y+1] = 1;
+                }
+            }
+        }
+    }
+    return subtile_mask;
+}
+
+std::vector<std::vector<unsigned char>> fill_poly_overlap(const AABB<int> &image_aabb, Polygon<int> &poly, float pixel_size_div, bool buffer_out) {
+	// Inspired by
+	//   http://alienryderflex.com/polygon_fill/
+	int i, j;
+	float xf;
+	const float epsilon = 1E-3;
+	std::vector<int> node_x;
+	Vector<int> pixel;
+	Vector<float> local_a, local_b;
+
+	Vector<int> img_dim = image_aabb.vmax - image_aabb.vmin;
+	// Axis-aligned bounding box for the image.
+	AABB<int> local_aabb(
+		Vector<int>(0, 0),
+		Vector<int>(ceil(((float) img_dim.x) / pixel_size_div),
+			ceil(((float) img_dim.y) / pixel_size_div))
+	);
+
+	// Initialize the subtile mask.
+	std::vector<std::vector<unsigned char>> subtile_mask(local_aabb.vmax.x, std::vector<unsigned char>(local_aabb.vmax.y, 0));
+
+	for (pixel.y=local_aabb.vmin.y; pixel.y < local_aabb.vmax.y; pixel.y++) {
+		node_x.clear();
+		// Build a list of nodes.
+		j = poly.size() - 1;
+		for (i=0; i<(int)poly.size(); i++) {
+			local_a.x = ((float) poly[i].x) / pixel_size_div;
+			local_a.y = ((float) poly[i].y) / pixel_size_div;
+			local_b.x = ((float) poly[j].x) / pixel_size_div;
+			local_b.y = ((float) poly[j].y) / pixel_size_div;
+
+			if ((local_a.y <= (float) pixel.y && local_b.y >= (float) pixel.y)
+				|| (local_b.y <= (float) pixel.y && local_a.y >= (float) pixel.y)) {
+				// Calculate the x-coordinate of the intersection between AB and y = pixel.y.
+				xf = local_a.x + (pixel.y - local_a.y) / (local_b.y - local_a.y + epsilon) * (local_b.x - local_a.x + epsilon);
+				node_x.push_back((int) xf);
+			} else if (pixel.y == (int) local_a.y && (int) local_a.y == (int) local_b.y) {
+				if (local_a.x < local_b.x) {
+					node_x.push_back((int) local_a.x);
+					node_x.push_back((int) local_b.x);
+				} else {
+					node_x.push_back((int) local_b.x);
+					node_x.push_back((int) local_a.x);
+				}
+			}
+			j = i;
+		}
+
+		// Sort the nodes.
+		std::sort(node_x.begin(), node_x.end());
+
+		// Fill pixels between node pairs.
+		for (i=0; i<(int)node_x.size(); i+=2) {
+			if (node_x[i] >= local_aabb.vmax.x)
+				break;
+			if (node_x[i + 1] >= local_aabb.vmin.x) {
+				if (node_x[i] < local_aabb.vmin.x)
+					node_x[i] = local_aabb.vmin.x;
+				if (node_x[i + 1] > local_aabb.vmax.x)
+					node_x[i + 1] = local_aabb.vmax.x;
+				for (pixel.x=node_x[i]; pixel.x<=node_x[i + 1]; pixel.x++) {
+					// Fill the pixel covered by the polygon.
+					subtile_mask[pixel.x][pixel.y] = 1;
+					// Also fill the immediate surrounding pixels.
+					if (buffer_out) {
+						if (pixel.x > 0)
+							subtile_mask[pixel.x-1][pixel.y] = 1;
+						if (pixel.x + 1 < local_aabb.vmax.x)
+							subtile_mask[pixel.x+1][pixel.y] = 1;
+						if (pixel.y > 0)
+							subtile_mask[pixel.x][pixel.y-1] = 1;
+						if (pixel.y + 1 < local_aabb.vmax.y)
+							subtile_mask[pixel.x][pixel.y+1] = 1;
+					}
+				}
+			}
+		}
+	}
+	return subtile_mask;
+}
+
+std::vector<std::vector<unsigned char>> fill_whole(const AABB<int> &image_aabb, float tile_size_div) {
+	std::vector<Vector<int>> subtiles;
+	Vector<int> p;
+
+	Vector<int> img_dim = image_aabb.vmax - image_aabb.vmin;
+	// Axis-aligned bounding box in the local reference frame.
+	AABB<int> local_aabb(
+		Vector<int>(0, 0),
+		Vector<int>(ceil(((float) img_dim.x) / tile_size_div),
+			ceil(((float) img_dim.y) / tile_size_div))
+	);
+
+	// Initialize the subtile mask.
+	std::vector<std::vector<unsigned char>> subtile_mask(local_aabb.vmax.x, std::vector<unsigned char>(local_aabb.vmax.y, 1));
+
+	return subtile_mask;
+}
+
 // Explicit template instantiation:
 template class Vector<int>;
 template class Vector<float>;

@@ -20,7 +20,7 @@
 //! @brief Library / tool name.
 #define CM_CONVERTER_NAME_STR		"cm-vsm"
 //! @brief Library version.
-#define CM_CONVERTER_VERSION_STR	"0.2.13"
+#define CM_CONVERTER_VERSION_STR	"0.3.0"
 
 /** \page Changelog
  * \par Changelog
@@ -29,6 +29,7 @@
  *
  * Version | Changes
  * --------|--------
+ * 0.3.0   | Support splitting of KappaZeta rasters.
  * 0.2.13  | Skip subtiles with NetCDF which already has the band. Use `--overwrite` to override.
  * 0.2.12  | Fix an issue in area of interest geometry clipping.
  * 0.2.11  | Improved polyfill for tiny polygons. Error when no subtiles.

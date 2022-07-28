@@ -19,6 +19,7 @@
 #include "raster/esa_s2_scl_jp2.hpp"
 #include "raster/supervisely_raster.hpp"
 #include "raster/segmentsai_raster.hpp"
+#include "raster/kz_s2_tif.hpp"
 #include "vector/gml.hpp"
 #include "vector/cvat_rasterizer.hpp"
 #include "vector/supervisely_rasterizer.hpp"
@@ -67,8 +68,9 @@ int main(int argc, char* argv[]) {
 
 	if (argc < 2) {
 		std::cerr << "Usage: " << CM_CONVERTER_NAME_STR
-			<< " [-d S2_PATH] [-D CVAT_PATH] [-O OUT_PATH] [-r CVAT_XML -n NETCDF] [-b BANDS] [-R SUPERVISELY_DIR -t TILENAME -n NETCDF] [-A CVAT_SAI_PATH] [-S TILESIZE [-s SHRINK]] [-f DEFLATE_LEVEL] [-m RESAMPLING_METHOD] [-o OVERLAP] [--png] [--tiled] [-j JOBS] [-g EWKT] [--overwrite]" << std::endl
+			<< " [-d S2_PATH] [--kz-s2 KZ_S2_PATH] [-D CVAT_PATH] [-O OUT_PATH] [-r CVAT_XML -n NETCDF] [-b BANDS] [-R SUPERVISELY_DIR -t TILENAME -n NETCDF] [-A CVAT_SAI_PATH] [-S TILESIZE [-s SHRINK]] [-f DEFLATE_LEVEL] [-m RESAMPLING_METHOD] [-o OVERLAP] [--png] [--tiled] [-j JOBS] [-g EWKT]" << std::endl
 			<< "\twhere S2_PATH points to the .SAFE directory of an ESA S2 L2A or L1C product." << std::endl
+			<< "\tKZ_S2_PATH points to the KappaZeta .TIF file of an ESA S2 L2A product." << std::endl
 			<< "\tCVAT_PATH points to the .CVAT directory (pre-processed ESA S2 product)." << std::endl
 			<< "\tOUT_PATH points to the directory to store the output files (.CVAT directory, right next to the input .SAFE, by default)." << std::endl
 			<< "\tCVAT_XML points to a CVAT annotations.xml file." << std::endl
@@ -94,7 +96,7 @@ int main(int argc, char* argv[]) {
 	Magick::InitializeMagick(*argv);
 
 	std::string arg_path_s2_dir, arg_path_cvat_dir, arg_path_rasterize, arg_path_nc, arg_path_cvat_sai_dir, arg_path_supervisely, arg_tilename;
-	std::string arg_bands, arg_resampling_method, arg_path_out, arg_wkt_geom;
+	std::string arg_bands, arg_resampling_method, arg_path_out, arg_wkt_geom, arg_path_kz_s2;
 	unsigned int tilesize = 512;
 	int downscale = -1;
 	int deflatelevel = 9;
@@ -106,6 +108,8 @@ int main(int argc, char* argv[]) {
 	for (int i=0; i<argc; i++) {
 		if (!strncmp(argv[i], "-d", 2))
 			arg_path_s2_dir.assign(argv[i + 1]);
+		else if (!strncmp(argv[i], "--kz-s2", 7))
+			arg_path_kz_s2.assign(argv[i + 1]);
 		else if (!strncmp(argv[i], "-O", 2))
 			arg_path_out.assign(argv[i + 1]);
 		else if (!strncmp(argv[i], "-D", 2))
@@ -184,6 +188,43 @@ int main(int argc, char* argv[]) {
 		img.set_overwrite(overwrite_subtiles);
 
 		img.process(path_dir_in, path_dir_out, img_op, bands);
+
+	} else if (arg_path_kz_s2.length() > 0) {
+		KZ_S2_TIF_Image img;
+		KZEmptyImageOperator img_op;
+
+		std::filesystem::path path_in(arg_path_kz_s2);
+		if (!path_in.is_absolute())
+			path_in = std::filesystem::absolute(arg_path_kz_s2);
+
+		std::string str_path_dir_out;
+		if (arg_path_out.empty())
+			str_path_dir_out = path_in.parent_path().string() + "/" + path_in.stem().string() + ".KM";
+		else
+			str_path_dir_out = arg_path_out;
+		std::filesystem::path path_dir_out(str_path_dir_out);
+
+		std::vector<std::string> bands;
+
+		// All bands, by default.
+		if (arg_bands.empty()) {
+			bands = std::vector<std::string>(
+				&KZ_S2_TIF_Image_Operator::data_type_name[0],
+				&KZ_S2_TIF_Image_Operator::data_type_name[KZ_S2_TIF_Image_Operator::DT_KZ_S2_COUNT]
+			);
+		} else {
+			bands = split_str(arg_bands, ',');
+		}
+
+		img.set_tile_size(tilesize);
+		img.set_downscale_factor(downscale);
+		img.set_deflate_factor(deflatelevel);
+		img.set_overlap_factor(overlap);
+		img.set_resampling_method(arg_resampling_method);
+		img.set_png_output(output_png);
+		img.set_aoi_geometry(arg_wkt_geom);
+
+		img.process(path_in, path_dir_out, img_op, bands);
 
 	} else if (arg_path_cvat_dir.length() > 0) {
 		std::cout << arg_path_cvat_dir << std::endl;

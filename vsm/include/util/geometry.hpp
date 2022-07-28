@@ -489,3 +489,28 @@ OGRGeometry *wkt_to_geom(const std::string &wkt, OGRGeometry **p_geom);
 template<class T>
 Polygon<T> proj_coords_to_raster(const OGRGeometry *p_geom, GDALDataset *p_dataset);
 
+/**
+ * @brief Polygon-fill the subtile mask. Each pixel of the subtile mask corresponds to a sub-tile of the whole product.
+ * @param[in] poly Reference to the polygon to fill onto the mask.
+ * @param[in] pixel_size_div Effective pixel size, accounting the overlap.
+ * @return 2D array of values (0 - skipped, 1 - sub-tile within area of interest).
+ */
+std::vector<std::vector<unsigned char>> fill_poly_overlap(Polygon<int> &poly, float pixel_size_div);
+
+/**
+ * @brief Polygon-fill the subtile mask. Each pixel of the subtile mask corresponds to a sub-tile of the whole product.
+ * @param[in] image_aabb Reference to the axis-aligned bounding box of the whole product.
+ * @param[in] poly Reference to the polygon to fill onto the mask.
+ * @param[in] pixel_size_div Effective pixel size, accounting the overlap.
+ * @param[in] buffer_out Buffer by filling surrounding pixels.
+ * @return 2D array of values (0 - skipped, 1 - sub-tile within area of interest).
+ */
+std::vector<std::vector<unsigned char>> fill_poly_overlap(const AABB<int> &image_aabb, Polygon<int> &poly, float pixel_size_div, bool buffer_out);
+
+/**
+ * @brief Fill the entire subtile mask. Each pixel of the subtile mask corresponds to a sub-tile of the whole product.
+ * @param[in] image_aabb Reference to the axis-aligned bounding box of the whole product.
+ * @param[in] tile_size_div Effective pixel size, accounting the overlap.
+ * @return 2D array of values 1 - all sub-tiles within the area of interest.
+ */
+std::vector<std::vector<unsigned char>> fill_whole(const AABB<int> &image_aabb, float tile_size_div);

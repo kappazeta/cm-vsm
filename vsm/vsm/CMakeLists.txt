@@ -17,7 +17,7 @@
 vsm_set_source_files(${CMAKE_CURRENT_SOURCE_DIR} VSM)
 
 add_executable(cm_vsm ${VSM_SRC} ${VSM_INC})
-target_link_libraries(cm_vsm vsm openjp2 png expat stdc++fs GraphicsMagick GraphicsMagick++ netcdf gdal)
+target_link_libraries(cm_vsm vsm openjp2 png expat stdc++fs GraphicsMagick GraphicsMagick++ netcdf gdal tiff)
 set_target_properties(cm_vsm PROPERTIES CXX_STANDARD 17)
 
 install(TARGETS cm_vsm DESTINATION bin)
