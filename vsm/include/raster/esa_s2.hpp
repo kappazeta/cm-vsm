@@ -21,7 +21,7 @@
 #include <vector>
 
 #include "util/geometry.hpp"
-
+#include "raster/cnes_maja_clm_tif.hpp"
 
 /**
  * @brief An operator class for raster or vector layers, which are related to ESA Sentinel-2 images.
@@ -193,6 +193,12 @@ class ESA_S2_Image {
 		void set_overwrite(bool overwrite_subtiles);
 
 		/**
+		 * Whether to interpret the MAJA cloudmask in the THEIA S2 L2A or the MAJA S2 classification scheme.
+		 * @param[in] maja_fmt Either "THEIA" or "MAJA".
+		 */
+		void set_maja_format(const std::string &maja_fmt);
+
+		/**
 		 * Process a Sentinel-2 L1C or L2A image.
 		 * @param path_dir_in Path to the .SAFE directory.
 		 * @param path_dir_out Path to the output directory.
@@ -228,6 +234,8 @@ class ESA_S2_Image {
 		std::vector<std::vector<unsigned char>> subtile_mask;	///< Mask of subtiles to fill.
 		AABB<float> aabb_buf;	///< Buffered axis-aligned bounding box surrounding the area of interest polygon, in relative image coordinates.
 		Polygon<int> aoi_poly;	///< Area of interest polygon in pixel coordinates.
+
+		CNES_MAJA_CLM_TIF::clm_format_t maja_flags_format;	///< MAJA flags format to be expected from MAJA TIF files.
 
 		void extract_geo(const std::filesystem::path &path_in, const AABB<int> &image_aabb, float tile_size_div);
 

@@ -152,6 +152,14 @@ void ESA_S2_Image::set_overwrite(bool overwrite_subtiles) {
 	this->overwrite_subtiles = overwrite_subtiles;
 }
 
+void ESA_S2_Image::set_maja_format(const std::string &maja_fmt) {
+	if (maja_fmt == "THEIA") {
+		maja_flags_format = CNES_MAJA_CLM_TIF::CLM_FMT_THEIA;
+	} else {
+		maja_flags_format = CNES_MAJA_CLM_TIF::CLM_FMT_MAJA;
+	}
+}
+
 std::string ESA_S2_Image::get_product_name_from_path(const std::filesystem::path &path) {
 	for (auto it = path.begin(); it != path.end(); ++it) {
 		if (endswith(*it, ".SAFE"))
@@ -625,7 +633,7 @@ bool ESA_S2_Image::splitTIF(const std::filesystem::path &path_in, const std::fil
 					img_src.remap_values(ESA_S2_Image_Operator::fmc_scl_value_map, sizeof(ESA_S2_Image_Operator::fmc_scl_value_map));
 					tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
 				} else if (data_type == ESA_S2_Image_Operator::DT_MAJAC) {
-					CNES_MAJA_CLM_TIF::remap_majac_values(&img_src);
+					CNES_MAJA_CLM_TIF::remap_majac_values(&img_src, maja_flags_format);
 					tmp_data_type = ESA_S2_Image_Operator::DT_SCL;
 				} else if (data_type == ESA_S2_Image_Operator::DT_GSFC) {
 					img_src.remap_values(ESA_S2_Image_Operator::gsfc_scl_value_map, sizeof(ESA_S2_Image_Operator::gsfc_scl_value_map));
