@@ -68,7 +68,22 @@ int main(int argc, char* argv[]) {
 
 	if (argc < 2) {
 		std::cerr << "Usage: " << CM_CONVERTER_NAME_STR
-			<< " [-d S2_PATH] [--kz-s2 KZ_S2_PATH] [-D CVAT_PATH] [-O OUT_PATH] [-r CVAT_XML -n NETCDF] [-b BANDS] [-R SUPERVISELY_DIR -t TILENAME -n NETCDF] [-A CVAT_SAI_PATH] [-S TILESIZE [-s SHRINK]] [-f DEFLATE_LEVEL] [-m RESAMPLING_METHOD] [-o OVERLAP] [--png] [--tiled] [-j JOBS] [-g EWKT] [-M MAJA_FMT]" << std::endl
+			<< " [-d S2_PATH]"
+			<< " [--kz-s2 KZ_S2_PATH]"
+			<< " [-D CVAT_PATH]"
+			<< " [-O OUT_PATH]"
+			<< " [-r CVAT_XML -n NETCDF]"
+			<< " [-b BANDS]"
+			<< " [-R SUPERVISELY_DIR -t TILENAME -n NETCDF]"
+			<< " [-A CVAT_SAI_PATH]"
+			<< " [-S TILESIZE [-s SHRINK]]"
+			<< " [-f DEFLATE_LEVEL]"
+			<< " [-m RESAMPLING_METHOD]"
+			<< " [-o OVERLAP]"
+			<< " [--png] [--tiled] [-j JOBS]"
+			<< " [-g EWKT]"
+			<< " [-M MAJA_FMT]"
+			<< " [-T SUBTILES]"<< std::endl
 			<< "\twhere S2_PATH points to the .SAFE directory of an ESA S2 L2A or L1C product." << std::endl
 			<< "\tKZ_S2_PATH points to the KappaZeta .TIF file of an ESA S2 L2A product." << std::endl
 			<< "\tCVAT_PATH points to the .CVAT directory (pre-processed ESA S2 product)." << std::endl
@@ -87,7 +102,8 @@ int main(int argc, char* argv[]) {
 			<< "\tJOBS Number of threads to parallelize to (0 for default, negative to use all available threads)." << std::endl
 			<< "\tEWKT Geometry for area of interest (whole product, by default)." << std::endl
 			<< "\t\tFor example: \"SRID=4326;Polygon ((22.64992375534184887 50.27513740160615185, 23.60228115218003708 50.35482161490517683, 23.54514084707420452 49.94024031630130622, 23.3153953947536472 50.21771699530808775, 22.64992375534184887 50.27513740160615185))\"" << std::endl
-			<< "\tMAJA_FMT is either \"THEIA\" for the THEIA S2 L2A, or \"MAJA\" for MAJA S2 format." << std::endl;
+			<< "\tMAJA_FMT is either \"THEIA\" for the THEIA S2 L2A, or \"MAJA\" for MAJA S2 format." << std::endl
+			<< "\tSUBTILES is a comma-separated list of sub-tiles to process. For example, 12_10,13_11." << std::endl;
 		return 1;
 	}
 
@@ -97,7 +113,7 @@ int main(int argc, char* argv[]) {
 	Magick::InitializeMagick(*argv);
 
 	std::string arg_path_s2_dir, arg_path_cvat_dir, arg_path_rasterize, arg_path_nc, arg_path_cvat_sai_dir, arg_path_supervisely, arg_tilename;
-	std::string arg_bands, arg_resampling_method, arg_path_out, arg_wkt_geom, arg_path_kz_s2, arg_maja_fmt = "THEIA";
+	std::string arg_bands, arg_resampling_method, arg_path_out, arg_wkt_geom, arg_path_kz_s2, arg_maja_fmt = "THEIA", arg_subtiles;
 	unsigned int tilesize = 512;
 	int downscale = -1;
 	int deflatelevel = 9;
@@ -149,6 +165,8 @@ int main(int argc, char* argv[]) {
 			arg_wkt_geom.assign(argv[i + 1]);
 		else if (!strncmp(argv[i], "-M", 2))
 			arg_maja_fmt.assign(argv[i + 1]);
+		else if (!strncmp(argv[i], "-T", 2))
+			arg_subtiles.assign(argv[i + 1]);
 	}
 
 	if (arg_path_s2_dir.length() > 0) {
@@ -190,6 +208,9 @@ int main(int argc, char* argv[]) {
 		img.set_aoi_geometry(arg_wkt_geom);
 		img.set_overwrite(overwrite_subtiles);
 		img.set_maja_format(arg_maja_fmt);
+
+		std::vector<Vector<int>> subtiles = extract_coords(arg_subtiles, ',', '_');
+		img.set_subtiles(subtiles);
 
 		img.process(path_dir_in, path_dir_out, img_op, bands);
 

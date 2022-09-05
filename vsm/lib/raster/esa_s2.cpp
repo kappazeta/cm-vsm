@@ -160,6 +160,10 @@ void ESA_S2_Image::set_maja_format(const std::string &maja_fmt) {
 	}
 }
 
+void ESA_S2_Image::set_subtiles(const std::vector<Vector<int>> &subtiles) {
+	limit_to_subtiles = subtiles;
+}
+
 std::string ESA_S2_Image::get_product_name_from_path(const std::filesystem::path &path) {
 	for (auto it = path.begin(); it != path.end(); ++it) {
 		if (endswith(*it, ".SAFE"))
@@ -437,11 +441,20 @@ void ESA_S2_Image::extract_geo(const std::filesystem::path &path_in, const AABB<
 		}
 	// Otherwise take all the subtiles.
 	} else {
-		subtile_mask = fill_whole(image_aabb, tile_size_div);
+		subtile_mask = fill_whole(image_aabb, tile_size_div, 1);
 		if (subtile_mask.empty())
 			throw RasterException("No subtiles for the raster", path_in);
 	}
 	GDALClose(p_dataset);
+
+	// Apply a mask to the subtiles mask, if provided.
+	if (!limit_to_subtiles.empty()) {
+		std::vector<std::vector<unsigned char>> mask = fill_whole(image_aabb, tile_size_div, 0);
+		for (unsigned int i=0; i<limit_to_subtiles.size(); i++) {
+			mask[limit_to_subtiles[i].x][limit_to_subtiles[i].y] = 1;
+		}
+		subtile_mask = apply_mask(subtile_mask, mask);
+	}
 }
 
 //! \todo Generalize the splitting logic, to deduplicate code.

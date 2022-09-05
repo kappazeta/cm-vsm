@@ -199,6 +199,12 @@ class ESA_S2_Image {
 		void set_maja_format(const std::string &maja_fmt);
 
 		/**
+		 * Set list of subtiles to limit processing to.
+		 * @param[in] subtiles Reference to a list of subtile coordinates to process.
+		 */
+		void set_subtiles(const std::vector<Vector<int>> &subtiles);
+
+		/**
 		 * Process a Sentinel-2 L1C or L2A image.
 		 * @param path_dir_in Path to the .SAFE directory.
 		 * @param path_dir_out Path to the output directory.
@@ -231,6 +237,7 @@ class ESA_S2_Image {
 
 		bool geo_extracted;	///< Whether the geo-coordinates have been extracted from at least one of the overlapping rasters.
 		std::string proj_ref;	///< Projection reference, as extracted from the JP2 file.
+		std::vector<Vector<int>> limit_to_subtiles;	///< Limit processing to a list of subtiles.
 		std::vector<std::vector<unsigned char>> subtile_mask;	///< Mask of subtiles to fill.
 		AABB<float> aabb_buf;	///< Buffered axis-aligned bounding box surrounding the area of interest polygon, in relative image coordinates.
 		Polygon<int> aoi_poly;	///< Area of interest polygon in pixel coordinates.

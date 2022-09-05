@@ -22,7 +22,6 @@
 #include <vector>
 #include <regex>
 
-
 /**
  * @brief Check if the string starts with a specific prefix.
  * @param[in] text Reference to the input text.
