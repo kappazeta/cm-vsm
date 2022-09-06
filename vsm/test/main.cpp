@@ -421,10 +421,50 @@ CPPUNIT_TEST_SUITE_END();
 			std::vector<std::vector<unsigned char>> subtile_mask;
 			subtile_mask = fill_whole(AABB<int>(0, 0, 64, 100), 1, 0);
 
+			unsigned int i, j, num = 0;
 			// Count subtiles with value 0.
+			for (i=0; i<subtile_mask.size(); i++) {
+				for (j=0; j<subtile_mask[0].size(); j++) {
+					if (subtile_mask[i][j] == 0)
+						num++;
+				}
+			}
+			CPPUNIT_ASSERT(num == 6400);
+			CPPUNIT_ASSERT(i == 64);
+			CPPUNIT_ASSERT(j == 100);
 		}
 
 		void testApplyMask01() {
+			std::vector<std::vector<unsigned char>> a, b, c;
+			a = fill_whole(AABB<int>(0, 0, 3, 3), 1, 0);
+			b = fill_whole(AABB<int>(0, 0, 3, 3), 1, 0);
+
+			a[1][0] = 1;
+			a[1][1] = 1;
+			a[1][2] = 1;
+			a[0][1] = 1;
+			a[1][1] = 1;
+			a[2][1] = 1;
+
+			b[0][0] = 1;
+			b[1][1] = 1;
+			b[2][2] = 1;
+			b[1][0] = 1;
+
+			c = apply_mask(a, b);
+
+			unsigned int i, j, num = 0;
+			// Count subtiles with value 1.
+			for (i=0; i<c.size(); i++) {
+				for (j=0; j<c[0].size(); j++) {
+					if (c[i][j] == 1)
+						num++;
+				}
+			}
+
+			CPPUNIT_ASSERT(num == 2);
+			CPPUNIT_ASSERT(c[1][0] == 1);
+			CPPUNIT_ASSERT(c[1][1] == 1);
 		}
 };
 
