@@ -471,6 +471,14 @@ class GDALCPLException: public std::exception {
 };
 
 /**
+ * @brief Extract coordinate pairs from a comma-separated string.
+ * @param[in] text Reference to the input text.
+ * @param delim Single character delimiter to use for splitting the text.
+ * @return An std::vector of integer coordinates.
+ */
+std::vector<Vector<int>> extract_coords(std::string const &text, char delim, char coord_delim);
+
+/**
  * @brief Converts a WKT string with SRID into GDAL OGR geometry.
  * @param[in] wkt Reference to the WKT string, in the following format: `SRID=4326;Polygon ((22.64992375534184887 50.27513740160615185, 23.60228115218003708 50.35482161490517683, 23.54514084707420452 49.94024031630130622, 23.3153953947536472 50.21771699530808775, 22.64992375534184887 50.27513740160615185))`.
  * @param[out] p_geom Pointer to the address where to store the pointer to the output OGR geometry.
@@ -511,6 +519,15 @@ std::vector<std::vector<unsigned char>> fill_poly_overlap(const AABB<int> &image
  * @brief Fill the entire subtile mask. Each pixel of the subtile mask corresponds to a sub-tile of the whole product.
  * @param[in] image_aabb Reference to the axis-aligned bounding box of the whole product.
  * @param[in] tile_size_div Effective pixel size, accounting the overlap.
+ * @param[in] value Value to fill with.
  * @return 2D array of values 1 - all sub-tiles within the area of interest.
  */
-std::vector<std::vector<unsigned char>> fill_whole(const AABB<int> &image_aabb, float tile_size_div);
+std::vector<std::vector<unsigned char>> fill_whole(const AABB<int> &image_aabb, float tile_size_div, unsigned char value);
+
+/**
+ * @brief Apply a mask over another mask (multiply them), to obtain an intersection.
+ * @param[in] mask_in Reference to the input mask.
+ * @param[in] mask_to_apply Reference to the mask to apply on the input mask.
+ * @return Intersection of the two masks.
+ */
+std::vector<std::vector<unsigned char>> apply_mask(const std::vector<std::vector<unsigned char>> &mask_in, const std::vector<std::vector<unsigned char>> &mask_to_apply);

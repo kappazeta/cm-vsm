@@ -342,12 +342,139 @@ CPPUNIT_TEST_SUITE_END();
 		}
 };
 
+class TestSubtileCoords: public CppUnit::TestFixture {
+CPPUNIT_TEST_SUITE(TestSubtileCoords);
+CPPUNIT_TEST(testExtractCoords01);
+CPPUNIT_TEST(testExtractCoords02);
+CPPUNIT_TEST(testFillWhole01);
+CPPUNIT_TEST(testApplyMask01);
+CPPUNIT_TEST_SUITE_END();
+
+	public:
+		void setUp() {
+		}
+
+		void tearDown() {
+		}
+
+		void print_mask(std::vector<std::vector<unsigned char>> &subtile_mask) {
+			Vector<int> p;
+			for (p.y=0; p.y<(int)subtile_mask.size(); p.y++) {
+				for (p.x=0; p.x<(int)subtile_mask[p.y].size(); p.x++) {
+					std::cout << (char) ('0' + subtile_mask[p.x][p.y]) << " ";
+				}
+				std::cout << std::endl;
+			}
+		}
+
+		void print_mask_cmp(std::vector<std::vector<unsigned char>> &subtile_mask, const char *expected) {
+			unsigned int total = 0;
+			Vector<int> p;
+
+			std::cout << "Expected:" << std::endl;
+			for (p.y=0; p.y<(int)subtile_mask.size(); p.y++) {
+				for (p.x=0; p.x<(int)subtile_mask[p.y].size(); p.x++) {
+					std::cout << (char) (expected[total]) << " ";
+					total++;
+				}
+				std::cout << std::endl;
+			}
+
+			std::cout << "Result:" << std::endl;
+			print_mask(subtile_mask);
+		}
+
+		void check_mask(std::vector<std::vector<unsigned char>> &subtile_mask, const char *expected) {
+			unsigned int total = 0, correct = 0;
+			Vector<int> p;
+			for (p.y=0; p.y<(int)subtile_mask.size(); p.y++) {
+				for (p.x=0; p.x<(int)subtile_mask[p.y].size(); p.x++) {
+					if ('0' + subtile_mask[p.x][p.y] == expected[total])
+						correct++;
+					total++;
+				}
+			}
+
+			if (total != correct) {
+				print_mask_cmp(subtile_mask, expected);
+			}
+			CPPUNIT_ASSERT(total == correct);
+		}
+
+		void testExtractCoords01() {
+			std::vector<Vector<int>> coords = extract_coords("1_12,23_1", ',', '_');
+
+			CPPUNIT_ASSERT(coords.size() == 2);
+			CPPUNIT_ASSERT(coords[0].x == 1 && coords[0].y == 12);
+			CPPUNIT_ASSERT(coords[1].x == 23 && coords[1].y == 1);
+		}
+
+		void testExtractCoords02() {
+			std::vector<Vector<int>> coords = extract_coords("13_5,23_", ',', '_');
+
+			CPPUNIT_ASSERT(coords.size() == 2);
+			CPPUNIT_ASSERT(coords[0].x == 13 && coords[0].y == 5);
+			CPPUNIT_ASSERT(coords[1].x == 23 && coords[1].y == 0);
+		}
+
+		void testFillWhole01() {
+			std::vector<std::vector<unsigned char>> subtile_mask;
+			subtile_mask = fill_whole(AABB<int>(0, 0, 64, 100), 1, 0);
+
+			unsigned int i, j, num = 0;
+			// Count subtiles with value 0.
+			for (i=0; i<subtile_mask.size(); i++) {
+				for (j=0; j<subtile_mask[0].size(); j++) {
+					if (subtile_mask[i][j] == 0)
+						num++;
+				}
+			}
+			CPPUNIT_ASSERT(num == 6400);
+			CPPUNIT_ASSERT(i == 64);
+			CPPUNIT_ASSERT(j == 100);
+		}
+
+		void testApplyMask01() {
+			std::vector<std::vector<unsigned char>> a, b, c;
+			a = fill_whole(AABB<int>(0, 0, 3, 3), 1, 0);
+			b = fill_whole(AABB<int>(0, 0, 3, 3), 1, 0);
+
+			a[1][0] = 1;
+			a[1][1] = 1;
+			a[1][2] = 1;
+			a[0][1] = 1;
+			a[1][1] = 1;
+			a[2][1] = 1;
+
+			b[0][0] = 1;
+			b[1][1] = 1;
+			b[2][2] = 1;
+			b[1][0] = 1;
+
+			c = apply_mask(a, b);
+
+			unsigned int i, j, num = 0;
+			// Count subtiles with value 1.
+			for (i=0; i<c.size(); i++) {
+				for (j=0; j<c[0].size(); j++) {
+					if (c[i][j] == 1)
+						num++;
+				}
+			}
+
+			CPPUNIT_ASSERT(num == 2);
+			CPPUNIT_ASSERT(c[1][0] == 1);
+			CPPUNIT_ASSERT(c[1][1] == 1);
+		}
+};
+
 int main(int argc, char* argv[]) {
 	CppUnit::TextUi::TestRunner runner;
 
 	runner.addTest(PolyFillTest::suite());
 	runner.addTest(ClipAABBTest::suite());
 	runner.addTest(PolyAreaTest::suite());
+	runner.addTest(TestSubtileCoords::suite());
 	runner.run();
 
 	return 0;

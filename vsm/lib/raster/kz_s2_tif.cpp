@@ -157,7 +157,7 @@ void KZ_S2_TIF_Image::extract_geo(const std::filesystem::path &path_in, const AA
 	// Otherwise take all the subtiles.
 	} else {
 		aabb_buf = AABB<float>(0, 0, 1, 1);
-		subtile_mask = fill_whole(image_aabb, tile_size_div);
+		subtile_mask = fill_whole(image_aabb, tile_size_div, 1);
 	}
 	GDALClose(p_dataset);
 }

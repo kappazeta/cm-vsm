@@ -15,6 +15,7 @@
 // limitations under the License.
 
 #include "util/geometry.hpp"
+#include "util/text.hpp"
 #include <cstring>
 // GDAL
 #include <ogrsf_frmts.h>
@@ -245,14 +246,14 @@ Polygon<T>::~Polygon() {
 
 template<class T>
 Vector<T> &Polygon<T>::operator[](std::size_t idx) {
-	if (idx < 0 || idx >= v.size())
+	if (idx >= v.size())
 		throw std::out_of_range("Polygon vertex index out of range.");
 	return v[idx];
 }
 
 template<class T>
 const Vector<T> &Polygon<T>::operator[](std::size_t idx) const {
-	if (idx < 0 || idx >= v.size())
+	if (idx >= v.size())
 		throw std::out_of_range("Polygon vertex index out of range.");
 	return v[idx];
 }
@@ -331,7 +332,7 @@ void Polygon<T>::push_back(const Vector<T> &p) {
 
 template<class T>
 bool Polygon<T>::remove(std::size_t idx) {
-	if (idx >= 0 && idx < v.size()) {
+	if (idx < v.size()) {
 		v.erase(v.begin() + idx);
 		return true;
 	}
@@ -374,6 +375,18 @@ std::ostream &operator<<(std::ostream &os, const Polygon<T> &poly) {
 	}
 	os << ")";
 	return os;
+}
+
+std::vector<Vector<int>> extract_coords(std::string const &text, char delim, char coord_delim) {
+	std::vector<Vector<int>> coords;
+	std::vector<std::string> tokens = split_str(text, delim);
+
+	for (std::vector<std::string>::iterator it = tokens.begin(); it != tokens.end(); it++) {
+		std::vector<std::string> subtokens = split_str(*it, coord_delim);
+		coords.push_back(Vector<int>(std::atoi(subtokens[0].c_str()), std::atoi(subtokens[1].c_str())));
+	}
+
+	return coords;
 }
 
 OGRGeometry *wkt_to_geom(const std::string &wkt, OGRGeometry **p_geom) {
@@ -625,7 +638,7 @@ std::vector<std::vector<unsigned char>> fill_poly_overlap(const AABB<int> &image
 	return subtile_mask;
 }
 
-std::vector<std::vector<unsigned char>> fill_whole(const AABB<int> &image_aabb, float tile_size_div) {
+std::vector<std::vector<unsigned char>> fill_whole(const AABB<int> &image_aabb, float tile_size_div, unsigned char value) {
 	std::vector<Vector<int>> subtiles;
 	Vector<int> p;
 
@@ -638,9 +651,22 @@ std::vector<std::vector<unsigned char>> fill_whole(const AABB<int> &image_aabb, 
 	);
 
 	// Initialize the subtile mask.
-	std::vector<std::vector<unsigned char>> subtile_mask(local_aabb.vmax.x, std::vector<unsigned char>(local_aabb.vmax.y, 1));
+	std::vector<std::vector<unsigned char>> subtile_mask(local_aabb.vmax.x, std::vector<unsigned char>(local_aabb.vmax.y, value));
 
 	return subtile_mask;
+}
+
+std::vector<std::vector<unsigned char>> apply_mask(const std::vector<std::vector<unsigned char>> &mask_in, const std::vector<std::vector<unsigned char>> &mask_to_apply) {
+	std::vector<std::vector<unsigned char>> mask_out(mask_in);
+	unsigned int i, j;
+
+	for (i=0; i<mask_in.size(); i++) {
+		for (j=0; j<mask_in[0].size(); j++) {
+			mask_out[i][j] = mask_in[i][j] * mask_to_apply[i][j];
+		}
+	}
+
+	return mask_out;
 }
 
 // Explicit template instantiation:
