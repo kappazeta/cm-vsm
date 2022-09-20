@@ -20,7 +20,7 @@
 //! @brief Library / tool name.
 #define CM_CONVERTER_NAME_STR		"cm-vsm"
 //! @brief Library version.
-#define CM_CONVERTER_VERSION_STR	"0.3.2"
+#define CM_CONVERTER_VERSION_STR	"0.3.3"
 
 /** \page Changelog
  * \par Changelog
@@ -29,6 +29,7 @@
  *
  * Version | Changes
  * --------|--------
+ * 0.3.3   | Fix cget dependencies to json v3.11.2, OpenJPEG v2.5.0, NetCDF-c v4.9.0.
  * 0.3.2   | Limit processing to specific sub-tiles with '-T'.
  * 0.3.1   | Support for both MAJA flag formats. Use `-M`to specify.
  * 0.3.0   | Support splitting of KappaZeta rasters.
