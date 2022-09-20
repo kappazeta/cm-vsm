@@ -6,10 +6,11 @@
 #  OPENJPEG_LIBRARIES - link these to use libopenjp2
 
 # Include dir
-# Look from openjpeg-2.3 subdirectories first, then openjpeg, then finally check the generic include directories as well.
+# Look from openjpeg-2.5 subdirectories first, then openjpeg, then finally check the generic include directories as well.
 FIND_PATH(OPENJPEG_INCLUDE_DIR NAMES openjpeg.h PATHS
-/usr/local/include/openjpeg-2.3
-/usr/include/openjpeg-2.3
+${CGET_PREFIX}/include/openjpeg-2.5
+/usr/local/include/openjpeg-2.5
+/usr/include/openjpeg-2.5
 NO_DEFAULT_PATH
 )
 FIND_PATH(OPENJPEG_INCLUDE_DIR NAMES openjpeg.h PATHS
