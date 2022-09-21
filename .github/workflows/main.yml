@@ -34,8 +34,7 @@ jobs:
     - name: Installing dependencies with cget
       run: |
         cd vsm/build
-        mv requirements.txt cget_requirements.backup
-        $HOME/.local/bin/cget install nlohmann/json -DJSON_BuildTests=Off
+        $HOME/.local/bin/cget install -DJSON_BuildTests=Off
 
     # Run CMake
     - name: Running CMake
