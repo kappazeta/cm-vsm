@@ -383,6 +383,8 @@ std::vector<Vector<int>> extract_coords(std::string const &text, char delim, cha
 
 	for (std::vector<std::string>::iterator it = tokens.begin(); it != tokens.end(); it++) {
 		std::vector<std::string> subtokens = split_str(*it, coord_delim);
+		if (subtokens.size() < 2 || subtokens[0].empty() || subtokens[1].empty())
+			break;
 		coords.push_back(Vector<int>(std::atoi(subtokens[0].c_str()), std::atoi(subtokens[1].c_str())));
 	}
 

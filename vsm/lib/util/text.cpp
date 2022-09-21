@@ -63,7 +63,8 @@ std::vector<std::string> split_str(std::string const &text, char delim) {
 	while(ss.good()) {
 		std::string substring;
 		std::getline(ss, substring, delim);
-		result.push_back(substring);
+		if (!substring.empty())
+			result.push_back(substring);
 	}
 	return result;
 }

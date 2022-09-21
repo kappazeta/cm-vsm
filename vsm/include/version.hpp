@@ -20,7 +20,7 @@
 //! @brief Library / tool name.
 #define CM_CONVERTER_NAME_STR		"cm-vsm"
 //! @brief Library version.
-#define CM_CONVERTER_VERSION_STR	"0.3.4"
+#define CM_CONVERTER_VERSION_STR	"0.3.5"
 
 /** \page Changelog
  * \par Changelog
@@ -29,6 +29,7 @@
  *
  * Version | Changes
  * --------|--------
+ * 0.3.5   | Fix crash without -T argument.
  * 0.3.4   | Fix CMake module for finding OpenJPEG v2.5.0.
  * 0.3.3   | Fix cget dependencies to json v3.11.2, OpenJPEG v2.5.0, NetCDF-c v4.9.0.
  * 0.3.2   | Limit processing to specific sub-tiles with '-T'.

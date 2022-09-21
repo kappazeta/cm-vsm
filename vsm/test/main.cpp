@@ -18,6 +18,7 @@
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/TestFixture.h>
 
+#include "util/text.hpp"
 #include "util/geometry.hpp"
 
 std::vector<std::vector<unsigned char>> fill_poly_overlap(const AABB<int> &image_aabb, Polygon<int> &poly, float pixel_size_div, bool buffer_out);
@@ -344,8 +345,11 @@ CPPUNIT_TEST_SUITE_END();
 
 class TestSubtileCoords: public CppUnit::TestFixture {
 CPPUNIT_TEST_SUITE(TestSubtileCoords);
+CPPUNIT_TEST(testSplitStrEmpty01);
+CPPUNIT_TEST(testSplitStr01);
 CPPUNIT_TEST(testExtractCoords01);
 CPPUNIT_TEST(testExtractCoords02);
+CPPUNIT_TEST(testExtractCoordsEmpty01);
 CPPUNIT_TEST(testFillWhole01);
 CPPUNIT_TEST(testApplyMask01);
 CPPUNIT_TEST_SUITE_END();
@@ -401,6 +405,18 @@ CPPUNIT_TEST_SUITE_END();
 			CPPUNIT_ASSERT(total == correct);
 		}
 
+		void testSplitStrEmpty01() {
+			std::vector<std::string> tokens = split_str("", ',');
+			CPPUNIT_ASSERT(tokens.size() == 0);
+		}
+
+		void testSplitStr01() {
+			std::vector<std::string> tokens = split_str("1,2 3,4", ' ');
+			CPPUNIT_ASSERT(tokens.size() == 2);
+			CPPUNIT_ASSERT(tokens[0] == "1,2");
+			CPPUNIT_ASSERT(tokens[1] == "3,4");
+		}
+
 		void testExtractCoords01() {
 			std::vector<Vector<int>> coords = extract_coords("1_12,23_1", ',', '_');
 
@@ -412,9 +428,14 @@ CPPUNIT_TEST_SUITE_END();
 		void testExtractCoords02() {
 			std::vector<Vector<int>> coords = extract_coords("13_5,23_", ',', '_');
 
-			CPPUNIT_ASSERT(coords.size() == 2);
+			CPPUNIT_ASSERT(coords.size() == 1);
 			CPPUNIT_ASSERT(coords[0].x == 13 && coords[0].y == 5);
-			CPPUNIT_ASSERT(coords[1].x == 23 && coords[1].y == 0);
+		}
+
+		void testExtractCoordsEmpty01() {
+			std::vector<Vector<int>> coords = extract_coords("", ',', '_');
+
+			CPPUNIT_ASSERT(coords.size() == 0);
 		}
 
 		void testFillWhole01() {
