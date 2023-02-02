@@ -105,10 +105,10 @@ In the configuration window specify an additional include path:
 and select C++17 as a C++ standard down to the bottom.
 
 ## Usage
-With the `-d` option, `cvat-vsm` can be used to subtile a Sentinel-2 L2A raster image, for example:
+With the `-d` option, `cm_vsm` can be used to subtile a Sentinel-2 L2A raster image, for example:
 
 ```
-./vsm/build/bin/cvat_vsm -d /your/data/path/S2A_MSIL2A_20200529T094041_N0214_R036_T35VLF_20200529T120441.SAFE
+./vsm/build/bin/cm_vsm -d /your/data/path/S2A_MSIL2A_20200529T094041_N0214_R036_T35VLF_20200529T120441.SAFE
 ```
 
 The image will be processed band by band, and it might take about an hour to process the whole raster.
@@ -120,7 +120,7 @@ This is to be performed after the successful subtiling of the raster image.
 Rasterization of a labelled subtile 2, 3, for example:
 
 ```
-./vsm/build/bin/cvat_vsm -r /your/data/path/S2A_MSIL2A_20200529T094041_N0214_R036_T35VLF_20200529T120441.CVAT/tile_2_3/annotations.xml -n /your/data/path/S2A_MSIL2A_20200529T094041_N0214_R036_T35VLF_20200529T120441.CVAT/tile_2_3/T35VLF_tile_2_3.nc
+./vsm/build/bin/cm_vsm -r /your/data/path/S2A_MSIL2A_20200529T094041_N0214_R036_T35VLF_20200529T120441.CVAT/tile_2_3/annotations.xml -n /your/data/path/S2A_MSIL2A_20200529T094041_N0214_R036_T35VLF_20200529T120441.CVAT/tile_2_3/T35VLF_tile_2_3.nc
 ```
 
 ## Supported bands
