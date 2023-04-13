@@ -24,10 +24,10 @@ sudo apt-get install cmake gcc-9 g++-9 python3-pip libgdal-dev gdal-bin libexpat
 pip3 install cget
 ```
 
-Under CentOS-8, run
+On Fedora or CentOS, run
 
 ```
-sudo yum install cmake gcc gcc-c++ python3-pip openjpeg2-devel libpng-devel gdal gdal-devel expat-devel GraphicsMagick-c++-devel netcdf-devel libjpeg-turbo-devel jbigkit-libs jbigkit-devel m4
+sudo yum install cmake gcc gcc-c++ python3-pip openjpeg2-devel libpng-devel gdal gdal-devel expat-devel GraphicsMagick-c++-devel netcdf-devel libjpeg-turbo-devel jbigkit-libs jbigkit-devel m4 cppunit-devel libtiff-devel
 ```
 
 Make sure that your `GDAL_DATA` environment variable has been set, according to your GDAL version, which is indicated by the placeholder `YOUR_GDAL_VERSION` below:
