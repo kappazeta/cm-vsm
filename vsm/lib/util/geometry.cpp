@@ -379,7 +379,12 @@ std::ostream &operator<<(std::ostream &os, const Polygon<T> &poly) {
 
 std::vector<Vector<int>> extract_coords(std::string const &text, char delim, char coord_delim) {
 	std::vector<Vector<int>> coords;
-	std::vector<std::string> tokens = split_str(text, delim);
+	std::vector<std::string> tokens;
+
+	if (text.size() == 0)
+		return coords;
+
+	tokens = split_str(text, delim);
 
 	for (std::vector<std::string>::iterator it = tokens.begin(); it != tokens.end(); it++) {
 		std::vector<std::string> subtokens = split_str(*it, coord_delim);
