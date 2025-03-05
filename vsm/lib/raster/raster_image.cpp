@@ -1,6 +1,6 @@
 // Generic raster image
 //
-// Copyright 2021 - 2022 KappaZeta Ltd.
+// Copyright 2021 - 2025 KappaZeta Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -108,10 +108,32 @@ Magick::FilterTypes RasterImage::set_resampling_filter(const std::string &filter
 		resampling_filter = Magick::PointFilter;
 	} else if (filter_name == "box") {
 		resampling_filter = Magick::BoxFilter;
+	} else if (filter_name == "linear") {
+		resampling_filter = Magick::TriangleFilter;
 	} else if (filter_name == "cubic") {
 		resampling_filter = Magick::CubicFilter;
 	} else if (filter_name == "sinc") {
 		resampling_filter = Magick::SincFilter;
+	} else if (filter_name == "hermite") {
+		resampling_filter = Magick::HermiteFilter;
+	} else if (filter_name == "hanning") {
+		resampling_filter = Magick::HanningFilter;
+	} else if (filter_name == "hamming") {
+		resampling_filter = Magick::HammingFilter;
+	} else if (filter_name == "blackman") {
+		resampling_filter = Magick::BlackmanFilter;
+	} else if (filter_name == "gaussian") {
+		resampling_filter = Magick::GaussianFilter;
+	} else if (filter_name == "quadratic") {
+		resampling_filter = Magick::QuadraticFilter;
+	} else if (filter_name == "catrom") {
+		resampling_filter = Magick::CatromFilter;
+	} else if (filter_name == "mitchell") {
+		resampling_filter = Magick::MitchellFilter;
+	} else if (filter_name == "lanczos") {
+		resampling_filter = Magick::LanczosFilter;
+	} else if (filter_name == "bessel") {
+		resampling_filter = Magick::BesselFilter;
 	} else {
 		resampling_filter = Magick::UndefinedFilter;
 		resampling_filter_name = "undefined";

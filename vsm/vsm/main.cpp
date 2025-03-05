@@ -1,6 +1,6 @@
 // ESA S2 product converter for cloud mask labeling and processing
 //
-// Copyright 2021 - 2022 KappaZeta Ltd.
+// Copyright 2021 - 2025 KappaZeta Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -97,7 +97,7 @@ int main(int argc, char* argv[]) {
 			<< "\tTILESIZE is the number of pixels per the edge of a square subtile (default: 512)." << std::endl
 			<< "\tSHRINK is the factor by which to downscale from the 10 x 10 m^2 S2 bands (default: -1 (original size))." << std::endl
 			<< "\tDEFLATE_LEVEL is the compression factor for NETCDF (between 0 and 9, where 9 is the highest level of compression)." << std::endl
-			<< "\tRESAMPLING_METHOD defines a preferred way for resampling (point, box, cubic or sinc)." << std::endl
+			<< "\tRESAMPLING_METHOD defines a preferred way for resampling (point, box, cubic, sinc, linear, hermite, hanning, hamming, blackman, gaussian, quadratic, catrom, mitchell, lanczos, bessel)." << std::endl
 			<< "\tOVERLAP Overlap between sub-tiles (between 0 and 0.5)." << std::endl
 			<< "\tJOBS Number of threads to parallelize to (0 for default, negative to use all available threads)." << std::endl
 			<< "\tEWKT Geometry for area of interest (whole product, by default)." << std::endl

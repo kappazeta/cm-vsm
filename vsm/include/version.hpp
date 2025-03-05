@@ -1,7 +1,7 @@
 //! @file
 //! @brief Version macros and changelog
 //
-// Copyright 2021 - 2022 KappaZeta Ltd.
+// Copyright 2021 - 2025 KappaZeta Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 //! @brief Library / tool name.
 #define CM_CONVERTER_NAME_STR		"cm-vsm"
 //! @brief Library version.
-#define CM_CONVERTER_VERSION_STR	"0.3.6"
+#define CM_CONVERTER_VERSION_STR	"0.3.7"
 
 /** \page Changelog
  * \par Changelog
@@ -29,6 +29,7 @@
  *
  * Version | Changes
  * --------|--------
+ * 0.3.7   | Support linear, hermite, hanning, hamming, blackman, gaussian, quadratic, catrom, mitchell, lanczos, bessel resampling methods.
  * 0.3.6   | Fix crash with empty geocoordinates string.
  * 0.3.5   | Fix crash without -T argument.
  * 0.3.4   | Fix CMake module for finding OpenJPEG v2.5.0.
